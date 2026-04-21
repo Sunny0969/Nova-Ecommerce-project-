@@ -1,0 +1,2 @@
+"use strict";(globalThis.webpackChunknova_shop_frontend=globalThis.webpackChunknova_shop_frontend||[]).push([[380],{9380(o,n,e){e.r(n),e.d(n,{default:()=>a});e(5043);var s=e(3216),t=e(579);function a(){const{slug:o}=(0,s.g)();return(0,t.jsx)(s.C5,{to:`/shop?category=${encodeURIComponent(o||"")}`,replace:!0})}}}]);
+//# sourceMappingURL=380.323813a2.chunk.js.map
