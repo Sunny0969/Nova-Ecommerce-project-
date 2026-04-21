@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import SEO from '../components/SEO';
 import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import RecommendationRow from '../components/RecommendationRow';
-import { recommendationsAPI } from '../api/axios';
+import api, { recommendationsAPI } from '../api/axios';
 
 const SUPPORT_MAIL = 'support@novashop.com';
 
@@ -17,7 +16,7 @@ export default function NotFound() {
   const loadCategories = useCallback(async () => {
     setCategoriesLoading(true);
     try {
-      const res = await axios.get('/api/categories');
+      const res = await api.get('/api/categories');
       const list = unwrapCategoriesResponse(res);
       const active = (Array.isArray(list) ? list : []).filter((c) => c.isActive !== false);
       setCategories(active.slice(0, 8));

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
 import { LayoutGrid, List, SlidersHorizontal, Search, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
@@ -8,6 +7,7 @@ import Pagination from '../components/Pagination';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
 import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
+import api from '../api/axios';
 
 const PAGE_SIZE = 12;
 const VIEW_STORAGE_KEY = 'nova-shop-products-view';
@@ -103,12 +103,12 @@ const Products = () => {
     setCategoriesLoading(true);
     setCategoriesError(null);
     try {
-      const res = await axios.get('/api/categories');
+      const res = await api.get('/api/categories');
       const list = unwrapCategoriesResponse(res);
       setCategories(Array.isArray(list) ? list : []);
     } catch (error) {
       console.error(error);
-      setCategoriesError(apiMessage(error, 'Failed to load categories'));
+      setCategoriesError(String(apiMessage(error, 'Failed to load categories') || 'Failed to load categories'));
       setCategories([]);
     } finally {
       setCategoriesLoading(false);
@@ -148,7 +148,7 @@ const Products = () => {
       if (stock) params.set('inStock', 'true');
 
       try {
-        const response = await axios.get(`/api/products?${params.toString()}`);
+        const response = await api.get(`/api/products?${params.toString()}`);
         const { products, totalCount: tc, totalPages: tp } = unwrapProductListResponse(response);
         if (cancelled) return;
         setItems(products);
@@ -161,7 +161,7 @@ const Products = () => {
         error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')
             ? 'Cannot reach the API. Is the backend running on port 5000?'
             : apiMessage(error, 'Failed to load products');
-      setFetchError(msg);
+      setFetchError(String(msg || 'Failed to load products'));
         setItems([]);
         setTotalCount(0);
         setTotalPages(1);

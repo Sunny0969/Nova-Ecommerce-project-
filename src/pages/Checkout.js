@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useForm, useWatch } from 'react-hook-form';
 import SEO from '../components/SEO';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -17,6 +16,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
 import { computeTotalsPreview } from '../utils/pricing';
 import { storeSettingsAPI } from '../api/axios';
+import { ordersAPI } from '../api/axios';
 
 const pk = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = pk ? loadStripe(pk) : null;
@@ -163,14 +163,10 @@ function PlaceOrderButton({ clientSecret, shippingAddress, billingSameAsShipping
         toast.error('Payment was not completed');
         return;
       }
-      const confirmRes = await axios.post(
-        '/api/orders/confirm',
-        {
-          paymentIntentId: paymentIntent.id,
-          shippingAddress: toShippingPayload(shippingAddress)
-        },
-        { withCredentials: true }
-      );
+      const confirmRes = await ordersAPI.confirm({
+        paymentIntentId: paymentIntent.id,
+        shippingAddress: toShippingPayload(shippingAddress)
+      });
       toast.success('Order placed — thank you!');
       onSuccess();
       const orderId = confirmRes?.data?.data?.order?._id;
@@ -379,14 +375,10 @@ export default function Checkout() {
     }
     setCreatingPi(true);
     try {
-      const res = await axios.post(
-        '/api/stripe/create-payment-intent',
-        {
-          deliveryOption: data.deliveryOption,
-          shippingAddress: toShippingPayload(data)
-        },
-        { withCredentials: true }
-      );
+      const res = await ordersAPI.create({
+        deliveryOption: data.deliveryOption,
+        shippingAddress: toShippingPayload(data)
+      });
       const secret = res.data?.data?.clientSecret;
       const summary = res.data?.data?.checkoutSummary;
       if (!secret) {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
@@ -14,7 +13,7 @@ import {
 } from '../utils/seo';
 import { formatPKR } from '../utils/currency';
 import RecommendationRow from '../components/RecommendationRow';
-import { recommendationsAPI } from '../api/axios';
+import api, { recommendationsAPI, productsAPI } from '../api/axios';
 import { getSessionId } from '../lib/sessionId';
 
 /** Emoji icon by category slug (API-driven names; slug is stable). */
@@ -62,12 +61,12 @@ const Home = () => {
     setCategoriesLoading(true);
     setCategoriesError(null);
     try {
-      const res = await axios.get('/api/categories');
+      const res = await api.get('/api/categories');
       const list = unwrapCategoriesResponse(res);
       setCategories(list.slice(0, HOME_CATEGORY_LIMIT));
     } catch (error) {
       console.error('Categories fetch error:', error);
-      setCategoriesError(apiMessage(error, 'Failed to load categories'));
+      setCategoriesError(String(apiMessage(error, 'Failed to load categories') || 'Failed to load categories'));
       setCategories([]);
     } finally {
       setCategoriesLoading(false);
@@ -82,7 +81,7 @@ const Home = () => {
     setFeaturedLoading(true);
     setFeaturedError(null);
     try {
-      const response = await axios.get('/api/products/featured');
+      const response = await productsAPI.getFeatured();
       const list = unwrapFeaturedResponse(response);
       setFeaturedProducts(list.slice(0, FEATURED_PRODUCT_LIMIT));
     } catch (error) {
@@ -91,7 +90,7 @@ const Home = () => {
         error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')
           ? 'Cannot reach the API. Start the backend (port 5000) — from the project folder run npm run dev, or cd backend && npm start.'
           : apiMessage(error, 'Failed to load products');
-      setFeaturedError(msg);
+      setFeaturedError(String(msg || 'Failed to load products'));
       setFeaturedProducts([]);
     } finally {
       setFeaturedLoading(false);

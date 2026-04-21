@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
 import Skeleton from 'react-loading-skeleton';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
@@ -19,6 +18,7 @@ import { eventsAPI, recommendationsAPI } from '../api/axios';
 import { getSessionId } from '../lib/sessionId';
 import StarRating from '../components/StarRating';
 import { buildFakeReviews } from '../lib/fakeReviews';
+import api, { productsAPI } from '../api/axios';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -64,7 +64,7 @@ export default function ProductDetail() {
     setNotFound(false);
     setNotifyBanner(null);
     try {
-      const res = await axios.get(`/api/products/${encodeURIComponent(slug)}`);
+      const res = await productsAPI.getOne(slug);
       const data = res.data?.data;
       if (data?.unavailable) {
         setProduct(data);
@@ -132,7 +132,7 @@ export default function ProductDetail() {
     setNotifySubmitting(true);
     setNotifyBanner(null);
     try {
-      const res = await axios.post(`/api/products/${encodeURIComponent(slug)}/notify-stock`, {
+      const res = await api.post(`/api/products/${encodeURIComponent(slug)}/notify-stock`, {
         email: notifyEmail.trim()
       });
       const msg = res.data?.data?.message || 'Thanks — we will email you when this item is back in stock.';
@@ -314,11 +314,7 @@ export default function ProductDetail() {
     if (!product?.reviewEligible || !product._id) return;
     setReviewSubmitting(true);
     try {
-      await axios.post(
-        `/api/products/${product._id}/reviews`,
-        { rating: reviewRating, comment: reviewComment.trim() },
-        { withCredentials: true }
-      );
+      await productsAPI.addReview(product._id, { rating: reviewRating, comment: reviewComment.trim() });
       toast.success('Thank you — your review was posted');
       setReviewComment('');
       setReviewRating(5);
