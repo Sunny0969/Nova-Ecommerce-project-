@@ -32,10 +32,33 @@ export function unwrapCategoriesResponse(res) {
   return Array.isArray(d) ? d : [];
 }
 
+function stringifyApiDetail(value) {
+  if (value == null) return null;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => stringifyApiDetail(v)).filter(Boolean).join(' ') || null;
+  }
+  if (typeof value === 'object' && (value.message != null || value.error != null)) {
+    return stringifyApiDetail(value.message != null ? value.message : value.error);
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/** User-facing string from an Axios / API error (avoids non-string values that break React as children). */
 export function apiMessage(error, fallback) {
-  return (
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    fallback
-  );
+  const raw = error?.response?.data;
+  if (raw && typeof raw === 'string') {
+    return raw;
+  }
+  const msg = stringifyApiDetail(raw?.message ?? raw?.error);
+  return msg && msg.trim() !== '' ? msg : fallback;
 }

@@ -14,6 +14,21 @@ const baseURL = normalizeApiOrigin(
   process.env.NEXT_PUBLIC_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000'
 );
 
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+  if (!process.env.NEXT_PUBLIC_API_URL && !process.env.REACT_APP_API_URL) {
+    // eslint-disable-next-line no-console
+    console.error(
+      '[api] Set REACT_APP_API_URL in Vercel to your Render backend (e.g. https://your-service.onrender.com) and redeploy. ' +
+        'Default localhost only works in development.'
+    );
+  } else if (baseURL.includes('localhost') || baseURL.includes('127.0.0.1')) {
+    // eslint-disable-next-line no-console
+    console.error(
+      '[api] REACT_APP_API_URL should be your public backend URL in production, not localhost.'
+    );
+  }
+}
+
 export const api = axios.create({
   baseURL,
   withCredentials: true,

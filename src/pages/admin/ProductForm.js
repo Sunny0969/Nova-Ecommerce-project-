@@ -7,21 +7,20 @@ import toast from 'react-hot-toast';
 import { Loader2, GripVertical, X } from 'lucide-react';
 import { adminAPI } from '../../api/axios';
 
-/** SEO slug from title: lowercase, hyphens, no digits (matches server rules). */
+/** Preview of public URL path from the product title (matches server slug-from-name rules). */
 function seoSlugFromTitle(s) {
-  let t = String(s || '')
+  return String(s || '')
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-');
-  t = t.replace(/[0-9]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  return t || 'product';
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'product';
 }
 
 const LS_PREFIX = 'nova_shop_admin_product_form_v1_';
 
 const schema = yup.object({
   name: yup.string().required('Name is required').max(200),
-  slug: yup.string().max(200, 'URL slug is too long'),
   shortDescription: yup.string().max(500, 'Short description is at most 500 characters'),
   description: yup.string().default(''),
   price: yup
@@ -67,7 +66,6 @@ const schema = yup.object({
 
 const defaultForm = {
   name: '',
-  slug: '',
   shortDescription: '',
   description: '',
   price: 0,
@@ -104,7 +102,6 @@ export default function ProductForm() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(!isNew);
   const [submitting, setSubmitting] = useState(false);
-  const [slugTouched, setSlugTouched] = useState(false);
   const [imageSlots, setImageSlots] = useState(
     () => /** @type {Array<{ type: 'server'; public_id: string; url: string } | { type: 'local'; id: string; file: File; url: string }>}> */ ([])
   );
@@ -129,7 +126,6 @@ export default function ProductForm() {
   });
 
   const nameW = useWatch({ control, name: 'name' });
-  const slugW = useWatch({ control, name: 'slug' });
   const shortW = useWatch({ control, name: 'shortDescription' });
   const descW = useWatch({ control, name: 'description' });
   const priceW = useWatch({ control, name: 'price' });
@@ -141,12 +137,6 @@ export default function ProductForm() {
     costW != null && Number.isFinite(Number(costW)) && Number.isFinite(Number(priceW)) && Number(priceW) > 0
       ? Math.round(((Number(priceW) - Number(costW)) / Number(priceW)) * 10000) / 100
       : null;
-
-  // Auto slug from name until user edits slug (no digits — SEO-friendly)
-  useEffect(() => {
-    if (slugTouched) return;
-    setValue('slug', seoSlugFromTitle(nameW || ''), { shouldDirty: true, shouldValidate: true });
-  }, [nameW, setValue, slugTouched]);
 
   // Categories
   useEffect(() => {
@@ -192,7 +182,6 @@ export default function ProductForm() {
           navigate('/admin/products');
           return;
         }
-        setSlugTouched(!!(p.name && p.slug));
         setImageSlots(
           (p.images || []).map((im) => ({
             type: 'server',
@@ -211,7 +200,6 @@ export default function ProductForm() {
                 : '';
         reset({
           name: p.name || '',
-          slug: p.slug || '',
           shortDescription: p.shortDescription != null ? String(p.shortDescription) : '',
           description: p.description != null ? String(p.description) : '',
           price: Number(p.price) || 0,
@@ -347,7 +335,6 @@ export default function ProductForm() {
       return [];
     });
     setTagInput('');
-    setSlugTouched(false);
     reset({ ...defaultForm });
     try {
       localStorage.removeItem(draftKey);
@@ -406,7 +393,6 @@ export default function ProductForm() {
           ? ''
           : String(data.lowStockThreshold)
       ],
-      ['slug', data.slug != null && String(data.slug).trim() ? seoSlugFromTitle(String(data.slug)) : ''],
       ['color', data.color != null ? String(data.color) : ''],
       ['texture', data.texture != null ? String(data.texture) : ''],
       ['size', data.size != null ? String(data.size) : ''],
@@ -497,7 +483,7 @@ export default function ProductForm() {
     }
   };
 
-  const seopath = `${typeof window !== 'undefined' ? window.location.origin : ''}/shop/${(slugW && String(slugW)) || seoSlugFromTitle(nameW) || 'product'}`;
+  const seopath = `${typeof window !== 'undefined' ? window.location.origin : ''}/shop/${seoSlugFromTitle(nameW || '')}`;
   const seoTitle = (nameW && String(nameW).trim()) || 'Product title';
   const dtrim = (descW && String(descW).trim()) || '';
   const shortTrim = (shortW && String(shortW).trim()) || '';
@@ -541,20 +527,14 @@ export default function ProductForm() {
               />
               {errors.name && <span className="product-form__err">{errors.name.message}</span>}
             </label>
-            <label className="product-form__label">
-              URL slug
+            <div className="product-form__label">
+              Store URL (from product title)
               <span className="product-form__field-hint">
-                Auto-generated from the title for SEO (letters and hyphens only, no numbers). Edit only if you need a
-                custom URL.
+                The public link is always built from the title, e.g.{' '}
+                <code>{`/shop/${seoSlugFromTitle(nameW || '')}`}</code>. If that path is already taken, the server may
+                append <code>-2</code>, <code>-3</code>, etc.
               </span>
-              <input
-                className="product-form__input"
-                type="text"
-                {...register('slug')}
-                onInput={() => setSlugTouched(true)}
-              />
-              {errors.slug && <span className="product-form__err">{errors.slug.message}</span>}
-            </label>
+            </div>
             <label className="product-form__label">
               Short description
               <input

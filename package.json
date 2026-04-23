@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Frontend React application for Nova Shop",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@stripe/react-stripe-js": "^2.9.0",
