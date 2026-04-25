@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ordersAPI } from '../../api/axios';
+import { ordersAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
 import LoadingSpinner from '../../components/LoadingSpinner';

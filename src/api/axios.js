@@ -10,24 +10,26 @@ function normalizeApiOrigin(url) {
   return u;
 }
 
-const baseURL = normalizeApiOrigin(
-  process.env.NEXT_PUBLIC_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000'
-);
+/**
+ * Production API (Render) — hardcoded so Hostinger builds never miss env vars.
+ * Optional override: `public/api-config.js` sets `window.__REACT_APP_API_URL__` (e.g. to test another API).
+ * Local `npm start`: uses http://localhost:5000 (your machine’s backend).
+ */
+const HARDCODED_PRODUCTION_API = 'https://nova-ecommerce-project-backend.onrender.com';
 
-if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-  if (!process.env.NEXT_PUBLIC_API_URL && !process.env.REACT_APP_API_URL) {
-    // eslint-disable-next-line no-console
-    console.error(
-      '[api] Set REACT_APP_API_URL in Vercel to your Render backend (e.g. https://your-service.onrender.com) and redeploy. ' +
-        'Default localhost only works in development.'
-    );
-  } else if (baseURL.includes('localhost') || baseURL.includes('127.0.0.1')) {
-    // eslint-disable-next-line no-console
-    console.error(
-      '[api] REACT_APP_API_URL should be your public backend URL in production, not localhost.'
-    );
+function readRuntimeApiOrigin() {
+  if (typeof window === 'undefined' || !window.__REACT_APP_API_URL__) {
+    return '';
   }
+  return String(window.__REACT_APP_API_URL__);
 }
+
+const baseURL = normalizeApiOrigin(
+  readRuntimeApiOrigin() ||
+    (process.env.NODE_ENV === 'production'
+      ? HARDCODED_PRODUCTION_API
+      : 'http://localhost:5000')
+);
 
 export const api = axios.create({
   baseURL,
@@ -45,9 +47,9 @@ export const storeSettingsAPI = {
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    const staffToken = localStorage.getItem('staffToken');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    else if (staffToken) config.headers.Authorization = `Bearer ${staffToken}`;
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       delete config.headers['Content-Type'];
       if (config.headers.common) {
@@ -258,6 +260,12 @@ export const adminAPI = {
 
     listAdmin: (params) => api.get('/api/admin/products', { params }),
 
+    pendingApprovals: () => api.get('/api/admin/products/pending'),
+
+    approve: (id) => api.post(`/api/admin/products/${encodeURIComponent(id)}/approve`, {}),
+
+    reject: (id, body) => api.post(`/api/admin/products/${encodeURIComponent(id)}/reject`, body || {}),
+
     /** Admin edit: Mongo _id, includes drafts */
     getOneForEdit: (id) => api.get(`/api/admin/products/${encodeURIComponent(id)}`),
 
@@ -286,6 +294,17 @@ export const adminAPI = {
 
     delete: (id, hard = false) =>
       api.delete(`/api/products/${id}`, hard ? { params: { hard: 'true' } } : undefined)
+  },
+
+  staff: {
+    list: () => api.get('/api/admin/staff'),
+    create: (body) => api.post('/api/admin/staff/create', body),
+    updatePermissions: (id, permissions) =>
+      api.put(`/api/admin/staff/${encodeURIComponent(id)}/permissions`, { permissions }),
+    block: (id, durationHours) =>
+      api.post(`/api/admin/staff/${encodeURIComponent(id)}/block`, { duration: durationHours }),
+    unblock: (id) => api.post(`/api/admin/staff/${encodeURIComponent(id)}/unblock`, {}),
+    remove: (id) => api.delete(`/api/admin/staff/${encodeURIComponent(id)}`)
   },
 
   orders: {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ordersAPI } from '../../api/axios';
+import { ordersAPI } from 'api';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { productImageUrl } from '../../lib/productImage';

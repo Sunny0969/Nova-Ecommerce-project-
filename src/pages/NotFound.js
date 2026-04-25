@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import RecommendationRow from '../components/RecommendationRow';
-import api, { recommendationsAPI } from '../api/axios';
+import api, { recommendationsAPI } from 'api';
 
 const SUPPORT_MAIL = 'support@novashop.com';
 

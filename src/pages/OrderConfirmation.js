@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import SEO from '../components/SEO';
-import { ordersAPI } from '../api/axios';
+import { ordersAPI } from 'api';
 import { apiMessage } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';

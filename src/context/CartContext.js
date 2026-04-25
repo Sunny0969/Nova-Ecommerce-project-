@@ -8,7 +8,7 @@ import React, {
   useRef
 } from 'react';
 import toast from 'react-hot-toast';
-import { cartAPI } from '../api/axios';
+import { cartAPI } from 'api';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext();

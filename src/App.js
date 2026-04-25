@@ -8,6 +8,7 @@ import RouteFallback from './components/RouteFallback';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { StaffAuthProvider } from './context/StaffAuthContext';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Products'));
@@ -47,6 +48,13 @@ const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const AdminStoreSettings = lazy(() => import('./pages/admin/AdminStoreSettings'));
 const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'));
 const AdminFraud = lazy(() => import('./pages/admin/AdminFraud'));
+const StaffManagement = lazy(() => import('./pages/admin/StaffManagement'));
+const StaffLogin = lazy(() => import('./pages/StaffLogin'));
+const StaffLayout = lazy(() => import('./pages/staff/StaffLayout'));
+const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
+const StaffProducts = lazy(() => import('./pages/staff/StaffProducts'));
+const StaffCategories = lazy(() => import('./pages/staff/StaffCategories'));
+const StaffOrders = lazy(() => import('./pages/staff/StaffOrders'));
 const Navbar = lazy(() => import('./components/Navbar'));
 const Footer = lazy(() => import('./components/Footer'));
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
@@ -54,20 +62,21 @@ const ChatWidget = lazy(() => import('./components/ChatWidget'));
 function AppShell() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const isStaff = location.pathname.startsWith('/staff');
   return (
     <div className="App">
       <AppToaster />
-      {!isAdmin && (
+      {!isAdmin && !isStaff && (
         <Suspense fallback={<header className="site-chrome-placeholder site-chrome-placeholder--header" aria-hidden />}>
           <Navbar />
         </Suspense>
       )}
-      {!isAdmin && (
+      {!isAdmin && !isStaff && (
         <Suspense fallback={null}>
           <ChatWidget />
         </Suspense>
       )}
-      <main className={isAdmin ? 'main-content main-content--admin' : 'main-content'}>
+      <main className={isAdmin || isStaff ? 'main-content main-content--admin' : 'main-content'}>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
                       <Route path="/" element={<Home />} />
@@ -141,6 +150,14 @@ function AppShell() {
                       <Route path="/wishlist" element={<WishlistPage />} />
                       <Route path="/blog" element={<Blog />} />
 
+                      <Route path="/staff-login" element={<StaffLogin />} />
+                      <Route path="/staff" element={<StaffLayout />}>
+                        <Route path="dashboard" element={<StaffDashboard />} />
+                        <Route path="products" element={<StaffProducts />} />
+                        <Route path="categories" element={<StaffCategories />} />
+                        <Route path="orders" element={<StaffOrders />} />
+                      </Route>
+
                       <Route
                         path="/admin"
                         element={
@@ -164,6 +181,7 @@ function AppShell() {
                         <Route path="fraud" element={<AdminFraud />} />
                         <Route path="analytics" element={<AdminAnalytics />} />
                         <Route path="store-settings" element={<AdminStoreSettings />} />
+                      <Route path="staff" element={<StaffManagement />} />
                       </Route>
 
             {/* Catch-all: unknown storefront paths → custom 404 (noIndex in NotFound) */}
@@ -187,7 +205,9 @@ function App() {
         <WishlistProvider>
           <CartProvider>
             <Router>
-              <AppShell />
+              <StaffAuthProvider>
+                <AppShell />
+              </StaffAuthProvider>
             </Router>
           </CartProvider>
         </WishlistProvider>

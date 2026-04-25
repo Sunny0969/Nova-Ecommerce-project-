@@ -1,0 +1,2 @@
+"use strict";(globalThis.webpackChunknova_shop_frontend=globalThis.webpackChunknova_shop_frontend||[]).push([[887],{2887(e,n,r){r.r(n),r.d(n,{default:()=>i});r(5043);var t=r(579);function i(e){let{title:n,description:r}=e;return(0,t.jsxs)("div",{children:[(0,t.jsx)("h2",{style:{fontSize:"1.25rem",marginBottom:"0.75rem"},children:n}),(0,t.jsx)("p",{style:{color:"var(--gray)",maxWidth:520},children:r||"Connect this screen to your admin API routes (see `adminAPI` in `src/api`)."})]})}}}]);
+//# sourceMappingURL=887.80c90514.chunk.js.map

@@ -12,7 +12,7 @@ import {
   Bar
 } from 'recharts';
 import { Wallet, ShoppingCart, Package, Users } from 'lucide-react';
-import { adminAPI } from '../../api/axios';
+import { adminAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
 import LoadingSpinner from '../../components/LoadingSpinner';

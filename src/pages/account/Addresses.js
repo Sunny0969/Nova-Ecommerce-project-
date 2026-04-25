@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { authAPI } from '../../api/axios';
+import { authAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal';

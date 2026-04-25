@@ -7,7 +7,7 @@ import Pagination from '../components/Pagination';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
 import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
-import api from '../api/axios';
+import api from 'api';
 
 const PAGE_SIZE = 12;
 const VIEW_STORAGE_KEY = 'nova-shop-products-view';

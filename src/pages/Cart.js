@@ -10,9 +10,8 @@ import EmptyState from '../components/EmptyState';
 import CartItem from '../components/CartItem';
 import { formatPKR } from '../utils/currency';
 import { computeTotalsPreview } from '../utils/pricing';
-import { storeSettingsAPI } from '../api/axios';
+import { storeSettingsAPI, recommendationsAPI } from 'api';
 import RecommendationRow from '../components/RecommendationRow';
-import { recommendationsAPI } from '../api/axios';
 import { getSessionId } from '../lib/sessionId';
 
 function round2(n) {

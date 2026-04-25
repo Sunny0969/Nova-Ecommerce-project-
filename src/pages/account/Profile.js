@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import toast from 'react-hot-toast';
-import { authAPI } from '../../api/axios';
+import { authAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 

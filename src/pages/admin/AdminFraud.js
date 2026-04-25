@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Trash2, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from '../../api/axios';
+import { adminAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { formatPKR } from '../../utils/currency';

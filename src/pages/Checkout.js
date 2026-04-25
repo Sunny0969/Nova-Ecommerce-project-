@@ -11,12 +11,10 @@ import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { apiMessage } from '../lib/api';
-import { authAPI } from '../api/axios';
+import { authAPI, storeSettingsAPI, ordersAPI } from 'api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
 import { computeTotalsPreview } from '../utils/pricing';
-import { storeSettingsAPI } from '../api/axios';
-import { ordersAPI } from '../api/axios';
 
 const pk = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = pk ? loadStripe(pk) : null;

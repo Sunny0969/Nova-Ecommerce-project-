@@ -12,11 +12,13 @@ import {
   BarChart3,
   SlidersHorizontal,
   Shield,
+  UserCog,
   Bell,
   LogOut,
   ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { adminAPI } from 'api';
 
 const NAV_LINKS = [
   { to: '/admin', end: true, label: 'Dashboard', icon: LayoutDashboard },
@@ -27,7 +29,8 @@ const NAV_LINKS = [
   { to: '/admin/coupons', label: 'Coupons', icon: TicketPercent },
   { to: '/admin/fraud', label: 'Fraud', icon: Shield },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/admin/store-settings', label: 'Shipping & tax', icon: SlidersHorizontal }
+  { to: '/admin/store-settings', label: 'Shipping & tax', icon: SlidersHorizontal },
+  { to: '/admin/staff', label: 'Staff', icon: UserCog }
 ];
 
 function navLinkClass({ isActive }) {
@@ -77,8 +80,26 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const crumbs = useAdminBreadcrumbs();
+  const [pendingCount, setPendingCount] = React.useState(0);
 
   const displayName = user?.name || user?.email || 'Admin';
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await adminAPI.products.pendingApprovals();
+        const list = res.data?.data || res.data;
+        const n = Array.isArray(list) ? list.length : 0;
+        if (mounted) setPendingCount(n);
+      } catch (e) {
+        if (mounted) setPendingCount(0);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <>
@@ -102,6 +123,19 @@ export default function AdminLayout() {
                   <NavLink to={to} end={end} className={navLinkClass} title={label}>
                     <Icon className="admin-sidebar__icon" size={20} strokeWidth={1.75} aria-hidden />
                     <span className="admin-sidebar__label">{label}</span>
+                    {to === '/admin/products' && pendingCount > 0 ? (
+                      <span
+                        className="nav-badge nav-badge--cart"
+                        style={{
+                          position: 'static',
+                          marginLeft: 'auto',
+                          transform: 'none'
+                        }}
+                        aria-label={`${pendingCount} pending approvals`}
+                      >
+                        {pendingCount}
+                      </span>
+                    ) : null}
                   </NavLink>
                 </li>
               ))}

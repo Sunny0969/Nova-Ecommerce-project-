@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Skeleton from 'react-loading-skeleton';
 import toast from 'react-hot-toast';
 import SEO from '../components/SEO';
-import { ordersAPI } from '../api/axios';
+import { ordersAPI } from 'api';
 import { apiMessage } from '../lib/api';
 import { formatPKR } from '../utils/currency';
 

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Sparkles, TrendingUp } from 'lucide-react';
-import { productsAPI, api } from '../api/axios';
+import { productsAPI, api } from 'api';
 import { apiMessage } from '../lib/api';
 import { formatPKR } from '../utils/currency';
 import { productImageUrl } from '../lib/productImage';

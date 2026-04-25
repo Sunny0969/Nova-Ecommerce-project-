@@ -13,7 +13,7 @@ import {
 } from '../utils/seo';
 import { formatPKR } from '../utils/currency';
 import RecommendationRow from '../components/RecommendationRow';
-import api, { recommendationsAPI, productsAPI } from '../api/axios';
+import api, { recommendationsAPI, productsAPI } from 'api';
 import { getSessionId } from '../lib/sessionId';
 
 /** Emoji icon by category slug (API-driven names; slug is stable). */
@@ -86,10 +86,13 @@ const Home = () => {
       setFeaturedProducts(list.slice(0, FEATURED_PRODUCT_LIMIT));
     } catch (error) {
       console.error('Error fetching products:', error);
-      const msg =
-        error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')
+      const isNet =
+        error.code === 'ERR_NETWORK' || error.message?.includes('Network Error');
+      const msg = isNet
+        ? process.env.NODE_ENV === 'development'
           ? 'Cannot reach the API. Start the backend (port 5000) — from the project folder run npm run dev, or cd backend && npm start.'
-          : apiMessage(error, 'Failed to load products');
+          : 'Cannot load products. Set REACT_APP_API_URL to your Render API URL in .env.production, then run npm run build and upload the new build folder. Check browser DevTools → Network if it still fails.'
+        : apiMessage(error, 'Failed to load products');
       setFeaturedError(String(msg || 'Failed to load products'));
       setFeaturedProducts([]);
     } finally {

@@ -14,11 +14,11 @@ import ImageGallery from '../components/ImageGallery';
 import NotFound from './NotFound';
 import ProductImage from '../components/ProductImage';
 import RecommendationRow from '../components/RecommendationRow';
-import { eventsAPI, recommendationsAPI } from '../api/axios';
+import { eventsAPI, recommendationsAPI } from 'api';
 import { getSessionId } from '../lib/sessionId';
 import StarRating from '../components/StarRating';
 import { buildFakeReviews } from '../lib/fakeReviews';
-import api, { productsAPI } from '../api/axios';
+import api, { productsAPI } from 'api';
 
 function stripHtml(html) {
   if (!html) return '';

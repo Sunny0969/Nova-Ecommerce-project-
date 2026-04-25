@@ -5,7 +5,7 @@ import * as yup from 'yup';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader2, GripVertical, X } from 'lucide-react';
-import { adminAPI } from '../../api/axios';
+import { adminAPI } from 'api';
 
 /** Preview of public URL path from the product title (matches server slug-from-name rules). */
 function seoSlugFromTitle(s) {

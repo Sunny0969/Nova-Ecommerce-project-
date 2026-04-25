@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { authAPI, productsAPI } from '../../api/axios';
+import { authAPI, productsAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
 import Modal from '../../components/Modal';

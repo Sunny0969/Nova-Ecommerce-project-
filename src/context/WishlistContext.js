@@ -8,7 +8,7 @@ import React, {
   useRef
 } from 'react';
 import toast from 'react-hot-toast';
-import { wishlistAPI, productsAPI } from '../api/axios';
+import { wishlistAPI, productsAPI } from 'api';
 import { useAuth } from './AuthContext';
 
 const WishlistContext = createContext();

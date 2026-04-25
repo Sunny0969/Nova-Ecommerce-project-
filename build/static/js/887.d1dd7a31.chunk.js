@@ -1,2 +1,0 @@
-"use strict";(globalThis.webpackChunknova_shop_frontend=globalThis.webpackChunknova_shop_frontend||[]).push([[887],{2887(e,n,r){r.r(n),r.d(n,{default:()=>t});r(5043);var s=r(579);function t(e){let{title:n,description:r}=e;return(0,s.jsxs)("div",{children:[(0,s.jsx)("h2",{style:{fontSize:"1.25rem",marginBottom:"0.75rem"},children:n}),(0,s.jsx)("p",{style:{color:"var(--gray)",maxWidth:520},children:r||"Connect this screen to your admin API routes (see `adminAPI` in `src/api/axios.js`)."})]})}}}]);
-//# sourceMappingURL=887.d1dd7a31.chunk.js.map

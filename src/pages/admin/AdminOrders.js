@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from '../../api/axios';
+import { adminAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 

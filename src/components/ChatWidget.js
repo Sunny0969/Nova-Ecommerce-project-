@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Minimize2, Send, Volume2, VolumeX } from 'lucide-react';
-import { chatbotAPI } from '../api/axios';
+import { chatbotAPI } from 'api';
 import { apiMessage } from '../lib/api';
 import { getSessionId } from '../lib/sessionId';
 
