@@ -19,7 +19,7 @@
     "react-lazy-load-image-component": "^1.6.3",
     "react-loading-skeleton": "^3.5.0",
     "react-router-dom": "^6.28.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-star-ratings": "^2.3.0",
     "recharts": "^2.15.0",
     "yup": "^1.6.1"
