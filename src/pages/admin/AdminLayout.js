@@ -89,7 +89,7 @@ export default function AdminLayout() {
     (async () => {
       try {
         const res = await adminAPI.products.pendingApprovals();
-        const list = res.data?.data || res.data;
+        const list = res.data?.data || res.data?.products || res.data;
         const n = Array.isArray(list) ? list.length : 0;
         if (mounted) setPendingCount(n);
       } catch (e) {
