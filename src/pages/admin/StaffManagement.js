@@ -109,7 +109,7 @@ export default function StaffManagement() {
     setLoading(true);
     try {
       const res = await adminAPI.staff.list();
-      const list = res.data?.data || res.data;
+      const list = res.data?.data || res.data?.staff || res.data;
       setStaff(Array.isArray(list) ? list : []);
     } catch (e) {
       toast.error(apiMessage(e, 'Could not load staff members'));
@@ -123,7 +123,7 @@ export default function StaffManagement() {
     setPendingLoading(true);
     try {
       const res = await adminAPI.products.pendingApprovals();
-      const list = res.data?.data || res.data;
+      const list = res.data?.data || res.data?.products || res.data;
       setPending(Array.isArray(list) ? list : []);
     } catch (e) {
       setPending([]);

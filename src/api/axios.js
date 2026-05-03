@@ -46,7 +46,7 @@ export const storeSettingsAPI = {
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem('nova_shop_token');
     const staffToken = localStorage.getItem('staffToken');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     else if (staffToken) config.headers.Authorization = `Bearer ${staffToken}`;
@@ -298,7 +298,7 @@ export const adminAPI = {
 
   staff: {
     list: () => api.get('/api/admin/staff'),
-    create: (body) => api.post('/api/admin/staff/create', body),
+    create: (body) => api.post('/api/admin/staff', body),
     updatePermissions: (id, permissions) =>
       api.put(`/api/admin/staff/${encodeURIComponent(id)}/permissions`, { permissions }),
     block: (id, durationHours) =>
