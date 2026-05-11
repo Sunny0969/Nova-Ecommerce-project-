@@ -1,4 +1,5 @@
 /* eslint-disable */
-// Set your Render API URL (no trailing slash). This file runs BEFORE the app bundle.
-// You can edit ONLY this file on Hostinger (File Manager) to fix "cannot load products" without rebuilding.
+// Production only: `src/api/axios.js` reads this when NODE_ENV === 'production'.
+// For local `npm start`, the app uses http://localhost:5000 and ignores this line.
+// On Hostinger, set your API origin (no trailing slash) if it differs from the built-in Render URL.
 window.__REACT_APP_API_URL__ = 'https://nova-ecommerce-project-backend.onrender.com';

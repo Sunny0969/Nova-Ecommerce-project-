@@ -7,11 +7,20 @@ function normalizeApiOrigin(url) {
   return u;
 }
 
-// Keep consistent with src/api/axios.js production URL.
+// Keep consistent with src/api/axios.js (runtime override + production fallback).
 const HARDCODED_PRODUCTION_API = 'https://nova-ecommerce-project-backend.onrender.com';
 
+function readRuntimeApiOrigin() {
+  if (typeof window === 'undefined' || !window.__REACT_APP_API_URL__) {
+    return '';
+  }
+  return String(window.__REACT_APP_API_URL__);
+}
+
 const baseURL = normalizeApiOrigin(
-  process.env.NODE_ENV === 'production' ? HARDCODED_PRODUCTION_API : 'http://localhost:5000'
+  process.env.NODE_ENV === 'production'
+    ? readRuntimeApiOrigin() || HARDCODED_PRODUCTION_API
+    : 'http://localhost:5000'
 );
 
 export const staffApi = axios.create({

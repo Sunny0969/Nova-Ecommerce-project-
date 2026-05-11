@@ -24,11 +24,12 @@ function readRuntimeApiOrigin() {
   return String(window.__REACT_APP_API_URL__);
 }
 
+// In development, ignore `public/api-config.js` so requests hit the local backend (port 5000).
+// In production, Hostinger can override the API via `window.__REACT_APP_API_URL__`.
 const baseURL = normalizeApiOrigin(
-  readRuntimeApiOrigin() ||
-    (process.env.NODE_ENV === 'production'
-      ? HARDCODED_PRODUCTION_API
-      : 'http://localhost:5000')
+  process.env.NODE_ENV === 'production'
+    ? readRuntimeApiOrigin() || HARDCODED_PRODUCTION_API
+    : 'http://localhost:5000'
 );
 
 export const api = axios.create({
