@@ -15,7 +15,7 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-// products API autocomplete is superseded by SmartSearchBar (AI + hybrid search)
+// SmartSearchBar: keyword product search + local blog index (no OpenAI)
 import SmartSearchBar from './SmartSearchBar';
 
 function useDebouncedCallback(fn, delay) {
@@ -118,7 +118,7 @@ export default function Navbar() {
     setDrawerOpen(false);
   }, [location.pathname]);
 
-  // Search results are handled by SmartSearchBar (hybrid AI + keyword)
+  // Search: SmartSearchBar (products API + blog index)
 
   const handleLogout = async () => {
     setAccountOpen(false);
@@ -232,6 +232,8 @@ export default function Navbar() {
                       navigate(`/shop/${encodeURIComponent(picked.slug)}`);
                     } else if (picked?.type === 'basic') {
                       navigate(`/shop/${encodeURIComponent(picked.slug)}`);
+                    } else if (picked?.type === 'blog' && picked.slug) {
+                      navigate(`/blog/${encodeURIComponent(picked.slug)}`);
                     } else if (picked?.type === 'query') {
                       navigate(`/shop?search=${encodeURIComponent(picked.query)}`);
                     }

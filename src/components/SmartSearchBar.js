@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Sparkles, TrendingUp } from 'lucide-react';
+import { Search, Sparkles, TrendingUp, BookOpen } from 'lucide-react';
 import { productsAPI, api } from 'api';
-import { apiMessage } from '../lib/api';
+import { apiMessage, unwrapProductListResponse } from '../lib/api';
 import { formatPKR } from '../utils/currency';
 import { productImageUrl } from '../lib/productImage';
+import blogSearchIndex from '../data/blogSearchIndex.json';
 
 const RECENT_KEY = 'nova_shop_recent_searches_v1';
 
@@ -34,18 +35,65 @@ function saveRecent(next) {
   }
 }
 
+function matchBlogEntries(q, limit = 5) {
+  const t = String(q || '')
+    .trim()
+    .toLowerCase();
+  if (t.length < 2) return [];
+  const entries = Array.isArray(blogSearchIndex) ? blogSearchIndex : [];
+  return entries
+    .filter((e) => {
+      const blob = `${e.title || ''} ${e.excerpt || ''} ${(e.tags || []).join(' ')}`.toLowerCase();
+      return blob.includes(t);
+    })
+    .slice(0, limit);
+}
+
+function buildLocalSuggestions(q, products, max = 6) {
+  const lc = String(q || '')
+    .trim()
+    .toLowerCase();
+  if (!lc) return [];
+  const out = [];
+  const seen = new Set([lc]);
+  for (const p of products || []) {
+    const n = String(p?.name || '').trim();
+    if (!n) continue;
+    const nl = n.toLowerCase();
+    if (nl.includes(lc) && !seen.has(nl)) {
+      seen.add(nl);
+      out.push(n);
+      if (out.length >= max) break;
+    }
+  }
+  return out;
+}
+
+function trendingKey(row, i) {
+  if (row && typeof row === 'object' && row.query != null) return String(row.query);
+  if (typeof row === 'string') return row;
+  return `t-${i}`;
+}
+
+function trendingLabel(row) {
+  if (row && typeof row === 'object' && row.query != null) return String(row.query);
+  if (typeof row === 'string') return row;
+  return '';
+}
+
 export default function SmartSearchBar({
   value,
   onChange,
   onPick,
-  placeholder = 'Search products…',
+  placeholder = 'Search products, blogs & more…',
   isOpen,
   onClose,
   inputRef
 }) {
-  const [aiProducts, setAiProducts] = useState([]);
-  const [basicResults, setBasicResults] = useState([]);
+  const [searchRows, setSearchRows] = useState([]);
+  const [listProducts, setListProducts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [blogMatches, setBlogMatches] = useState([]);
   const [trending, setTrending] = useState([]);
   const [recent, setRecent] = useState(() => loadRecent());
   const [loading, setLoading] = useState(false);
@@ -55,6 +103,7 @@ export default function SmartSearchBar({
   const lastQueryRef = useRef('');
 
   const trimmed = String(debounced || '').trim();
+  const rawTrim = String(value || '').trim();
 
   const refreshTrending = useCallback(async () => {
     try {
@@ -74,9 +123,10 @@ export default function SmartSearchBar({
     if (!isOpen) return;
     const q = String(trimmed);
     if (!q) {
-      setAiProducts([]);
-      setBasicResults([]);
+      setSearchRows([]);
+      setListProducts([]);
       setSuggestions([]);
+      setBlogMatches([]);
       setHint('');
       return;
     }
@@ -84,29 +134,32 @@ export default function SmartSearchBar({
     setLoading(true);
     setHint('');
     try {
-      const [aiRes, basicRes, sugRes] = await Promise.all([
-        api.get('/api/products/ai-search', { params: { q } }),
+      const [searchRes, listRes] = await Promise.all([
         productsAPI.search({ q }),
-        api.get('/api/products/ai-suggest', { params: { q } }).catch(() => ({ data: { data: [] } }))
+        productsAPI.getAll({ search: q, limit: 12, page: 1 }).catch(() => ({ data: {} }))
       ]);
 
-      const ai = aiRes.data?.data?.products || [];
-      setAiProducts(Array.isArray(ai) ? ai : []);
+      const rows = searchRes?.data?.data;
+      setSearchRows(Array.isArray(rows) ? rows : []);
 
-      const basic = basicRes?.data?.data || [];
-      setBasicResults(Array.isArray(basic) ? basic : []);
+      const { products } = unwrapProductListResponse(listRes);
+      setListProducts(Array.isArray(products) ? products : []);
 
-      const sug = sugRes?.data?.data || [];
-      setSuggestions(Array.isArray(sug) ? sug : []);
+      const blogs = matchBlogEntries(q);
+      setBlogMatches(blogs);
+      setSuggestions(buildLocalSuggestions(q, products));
 
-      if ((!ai || ai.length === 0) && (!basic || basic.length === 0)) {
-        setHint('No matches');
+      const hasProducts = (Array.isArray(products) && products.length > 0) || (Array.isArray(rows) && rows.length > 0);
+      const hasBlogs = blogs.length > 0;
+      if (!hasProducts && !hasBlogs) {
+        setHint('No matches — try another word or browse the shop.');
       }
     } catch (e) {
       setHint(apiMessage(e, 'Search failed'));
-      setAiProducts([]);
-      setBasicResults([]);
+      setSearchRows([]);
+      setListProducts([]);
       setSuggestions([]);
+      setBlogMatches([]);
     } finally {
       setLoading(false);
     }
@@ -117,23 +170,24 @@ export default function SmartSearchBar({
   }, [run]);
 
   const mergedProducts = useMemo(() => {
-    // Prefer AI results; fallback to basic.
     const seen = new Set();
     const out = [];
-    for (const p of aiProducts || []) {
-      const id = p?._id || p?.slug;
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      out.push({ kind: 'product', source: 'ai', product: p });
+    for (const p of listProducts || []) {
+      const slug = p?.slug;
+      if (!slug || seen.has(slug)) continue;
+      seen.add(slug);
+      out.push({ kind: 'product', product: p });
     }
-    for (const r of basicResults || []) {
-      const id = r?.slug;
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      out.push({ kind: 'basic', source: 'keyword', row: r });
+    for (const r of searchRows || []) {
+      const slug = r?.slug;
+      if (!slug || seen.has(slug)) continue;
+      seen.add(slug);
+      out.push({ kind: 'basic', row: r });
     }
     return out.slice(0, 12);
-  }, [aiProducts, basicResults]);
+  }, [listProducts, searchRows]);
+
+  const showDropdown = isOpen;
 
   const onPickQuery = (q) => {
     const s = String(q || '').trim();
@@ -153,16 +207,28 @@ export default function SmartSearchBar({
       setRecent(next);
       saveRecent(next);
     }
-    try {
-      await api.post('/api/products/search-click', {
-        query: q,
-        productId: p?._id,
-        source: 'smart-search'
-      });
-    } catch {
-      // ignore
+    if (p?._id) {
+      try {
+        await api.post('/api/products/search-click', {
+          query: q,
+          productId: p._id,
+          source: 'smart-search'
+        });
+      } catch {
+        // ignore
+      }
     }
     onPick?.({ type: 'product', slug, product: p });
+  };
+
+  const onPickBlog = (slug) => {
+    const q = String(lastQueryRef.current || '').trim();
+    if (q) {
+      const next = [q, ...recent.filter((x) => x !== q)];
+      setRecent(next);
+      saveRecent(next);
+    }
+    onPick?.({ type: 'blog', slug });
   };
 
   return (
@@ -180,23 +246,23 @@ export default function SmartSearchBar({
           aria-controls="nav-search-results"
           autoComplete="off"
         />
-        <span className="smart-search__badge" title="AI Search">
-          <Sparkles size={14} aria-hidden="true" /> AI
+        <span className="smart-search__badge" title="Keyword search — no external AI">
+          <Sparkles size={14} aria-hidden="true" /> Smart
         </span>
         <button type="button" className="nav-search__close" aria-label="Close search" onClick={onClose}>
           Close
         </button>
       </div>
 
-      {isOpen && (String(value || '').trim().length >= 1 || loading) && (
+      {showDropdown && (
         <div className="nav-search__dropdown" id="nav-search-results" role="listbox">
           {loading && <div className="nav-search__hint">Searching…</div>}
-          {!loading && hint ? <div className="nav-search__hint">{hint}</div> : null}
+          {!loading && rawTrim.length >= 1 && hint ? <div className="nav-search__hint">{hint}</div> : null}
 
-          {!loading && suggestions.length > 0 && (
+          {!loading && rawTrim.length >= 1 && suggestions.length > 0 && (
             <div className="smart-search__section">
               <div className="smart-search__section-title">
-                <Sparkles size={14} aria-hidden="true" /> AI suggestions
+                <Sparkles size={14} aria-hidden="true" /> Suggestions
               </div>
               {suggestions.map((s) => (
                 <button
@@ -212,7 +278,7 @@ export default function SmartSearchBar({
             </div>
           )}
 
-          {!loading && mergedProducts.length > 0 && (
+          {!loading && rawTrim.length >= 1 && mergedProducts.length > 0 && (
             <div className="smart-search__section">
               <div className="smart-search__section-title">
                 <Search size={14} aria-hidden="true" /> Products
@@ -253,7 +319,27 @@ export default function SmartSearchBar({
             </div>
           )}
 
-          {!loading && String(value || '').trim().length < 1 && recent.length > 0 && (
+          {!loading && rawTrim.length >= 1 && blogMatches.length > 0 && (
+            <div className="smart-search__section">
+              <div className="smart-search__section-title">
+                <BookOpen size={14} aria-hidden="true" /> Blog
+              </div>
+              {blogMatches.map((post) => (
+                <button
+                  key={post.slug}
+                  type="button"
+                  role="option"
+                  className="nav-search__item smart-search__blog"
+                  onClick={() => onPickBlog(post.slug)}
+                >
+                  <span className="smart-search__blog-title">{post.title}</span>
+                  <span className="smart-search__blog-excerpt">{post.excerpt}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!loading && rawTrim.length < 1 && recent.length > 0 && (
             <div className="smart-search__section">
               <div className="smart-search__section-title">Recent</div>
               {recent.map((s) => (
@@ -275,17 +361,21 @@ export default function SmartSearchBar({
               <div className="smart-search__section-title">
                 <TrendingUp size={14} aria-hidden="true" /> Trending
               </div>
-              {trending.slice(0, 6).map((t) => (
-                <button
-                  key={t.query}
-                  type="button"
-                  role="option"
-                  className="nav-search__item smart-search__query"
-                  onClick={() => onPickQuery(t.query)}
-                >
-                  {t.query}
-                </button>
-              ))}
+              {trending.slice(0, 6).map((t, i) => {
+                const label = trendingLabel(t);
+                if (!label) return null;
+                return (
+                  <button
+                    key={trendingKey(t, i)}
+                    type="button"
+                    role="option"
+                    className="nav-search__item smart-search__query"
+                    onClick={() => onPickQuery(label)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -293,4 +383,3 @@ export default function SmartSearchBar({
     </div>
   );
 }
-

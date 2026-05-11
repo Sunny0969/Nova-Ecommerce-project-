@@ -1,0 +1,172 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [
+        "hi", "hello", "hey", "salam", "assalam", "good morning",
+        "good evening", "helo", "hlw", "kya hal", "how are you",
+        "aoa", "assalamualaikum", "help", "start"
+      ],
+      "responses": [
+        "Assalam o Alaikum! 👋 Nova Shop mein khush amdeed!\n\nMein aapki help kar sakta hoon:\n🛍️ Products & Prices\n🚚 Delivery Info\n↩️ Returns & Refunds\n💳 Payment Methods\n📦 Order Tracking\n\nAap kya jaanna chahte hain?",
+        "Hello! Welcome to Nova Shop 😊 Aap kaise help kar sakta hoon aapki?"
+      ]
+    },
+    {
+      "tag": "price",
+      "patterns": [
+        "price", "cost", "kitna", "rate", "pricing", "charges", "how much",
+        "dam", "qeemat", "kya rate", "price kya ha", "kitne ka", "amount",
+        "affordable", "cheap", "expensive", "mehnga", "sasta"
+      ],
+      "responses": [
+        "💰 Humare prices yeh hain:\n\n👕 Clothing: PKR 800 - 5,000\n👟 Footwear: PKR 1,500 - 8,000\n💍 Accessories: PKR 300 - 2,500\n🏠 Home Decor: PKR 500 - 15,000\n\nHar product page pe exact price diya hua hai. Sale items pe 20-50% discount bhi milta hai! 🎉"
+      ]
+    },
+    {
+      "tag": "delivery",
+      "patterns": [
+        "delivery", "shipping", "kitne din", "how long", "days", "dispatch",
+        "arrive", "when will", "deliver", "bhejdo", "send", "courier",
+        "kb aye ga", "kab milega", "deliver hoga", "delivery charges",
+        "free delivery", "fast delivery", "express", "same day"
+      ],
+      "responses": [
+        "🚚 Delivery Details:\n\n📍 Standard (3-5 days): FREE on orders above PKR 2,000\n⚡ Express (1-2 days): PKR 200 extra\n🏙️ Same Day: Sirf Lahore mein available (PKR 350)\n\n✅ Lahore, Karachi, Islamabad: Fastest\n📦 All Pakistan: TCS & Leopards se\n\nOrder track karne ke liye Order ID WhatsApp karein: 0300-1234567"
+      ]
+    },
+    {
+      "tag": "return_refund",
+      "patterns": [
+        "return", "refund", "exchange", "replace", "money back", "wapsi",
+        "change", "wrong item", "damaged", "broken", "quality issue",
+        "vapas", "return policy", "kya wapas", "change kar", "exchange policy"
+      ],
+      "responses": [
+        "↩️ Return & Refund Policy:\n\n✅ 7-din return policy\n✅ Damaged/Wrong item? 100% refund\n✅ Size exchange: Free\n✅ Refund: 3-5 business days\n\n📋 Conditions:\n• Item unused hona chahiye\n• Original packaging mein hona chahiye\n• Receipt/Order ID zaroor ho\n\nReturn ke liye WhatsApp: 0300-1234567"
+      ]
+    },
+    {
+      "tag": "payment",
+      "patterns": [
+        "payment", "pay", "cod", "cash", "card", "easypaisa", "jazzcash",
+        "bank transfer", "online payment", "how to pay", "payment method",
+        "kaise pay", "cash on delivery", "advance", "prepaid",
+        "visa", "mastercard", "debit", "credit"
+      ],
+      "responses": [
+        "💳 Payment Methods:\n\n💵 Cash on Delivery (COD) - Sab se popular!\n📱 EasyPaisa\n📱 JazzCash\n🏦 Bank Transfer (HBL, MCB, UBL)\n💳 Visa / Mastercard\n\n✅ COD pe koi extra charges nahi\n✅ Online payment pe 5% discount!"
+      ]
+    },
+    {
+      "tag": "order_track",
+      "patterns": [
+        "track", "order status", "where is my order", "order kahan",
+        "track order", "my order", "order id", "parcel", "check order",
+        "order track", "mera order", "kb aye ga mera order"
+      ],
+      "responses": [
+        "📦 Order Track Karne ke Tarike:\n\n1️⃣ Website: My Account → My Orders\n2️⃣ WhatsApp: 0300-1234567 (Order ID bhejein)\n3️⃣ Email: orders@novashop.pk\n\n⏰ Orders 24 hours mein dispatch ho jaate hain\n📲 Dispatch hone pe SMS aata hai tracking number ka"
+      ]
+    },
+    {
+      "tag": "contact",
+      "patterns": [
+        "contact", "phone", "number", "email", "whatsapp", "call",
+        "reach", "support", "customer service", "help line", "helpline",
+        "baat karna", "contact karna", "complain", "complaint"
+      ],
+      "responses": [
+        "📞 Humse Contact Karein:\n\n💬 WhatsApp: 0300-1234567\n📧 Email: support@novashop.pk\n📸 Instagram: @novashop\n📘 Facebook: Nova Shop PK\n\n⏰ Available: Mon-Sat, 9AM - 8PM\n⚡ WhatsApp pe fastest reply milta hai!"
+      ]
+    },
+    {
+      "tag": "discount",
+      "patterns": [
+        "discount", "sale", "offer", "coupon", "promo", "deal", "code",
+        "voucher", "special offer", "student discount", "first order",
+        "sale kab", "offer ha", "cheap", "saving", "percent off"
+      ],
+      "responses": [
+        "🎉 Discounts & Offers:\n\n🆕 First Order: 10% off (Code: NOVA10)\n💌 Newsletter Subscribe: 15% off\n👥 Refer a Friend: PKR 200 cashback\n🛒 Buy 2 Get 1: Selected items\n\n📲 Latest deals ke liye:\nInstagram follow karein: @novashop\nYa newsletter subscribe karein!"
+      ]
+    },
+    {
+      "tag": "size_guide",
+      "patterns": [
+        "size", "sizing", "fit", "measurements", "size chart", "kaunsa size",
+        "size guide", "small medium large", "xl", "xxl", "size nahi pata",
+        "which size", "size kya loon"
+      ],
+      "responses": [
+        "📏 Size Guide:\n\nHar product page pe Size Chart diya hua hai.\n\n💡 Tips:\n• Doubt ho to 1 size bada lein\n• Measurements dene ke liye WhatsApp karein\n• Free size exchange available hai\n\n📐 Custom Size chahiye? Contact: 0300-1234567"
+      ]
+    },
+    {
+      "tag": "product_availability",
+      "patterns": [
+        "available", "in stock", "out of stock", "stock", "hai kya",
+        "milega", "product available", "colors", "variants", "kaunse colors",
+        "new arrivals", "new stock", "latest"
+      ],
+      "responses": [
+        "🛍️ Stock & Availability:\n\n✅ Website pe jo show ho raha hai, available hai\n🔴 Out of Stock items notify kar sakte hain\n🆕 New arrivals: Har Monday & Thursday\n\n📲 Specific item ke baare mein:\nWhatsApp: 0300-1234567\nYa product page pe 'Notify Me' click karein"
+      ]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "bye", "goodbye", "thanks", "thank you", "shukriya", "ok thanks",
+        "theek ha", "that's all", "done", "no more questions", "allah hafiz"
+      ],
+      "responses": [
+        "Allah Hafiz! 😊 Nova Shop pe shopping ke liye shukriya!\n\nKoi bhi sawaal ho, hum yahan hain. Have a great day! 🌟",
+        "Shukriya! 🙏 Aur koi help chahiye to zaroor poochein. Khuda Hafiz! 😊"
+      ]
+    }
+  ],
+  "contextual_followups": {
+    "delivery": [
+      "Delivery charges kya hain?",
+      "Express delivery available hai?",
+      "Same day delivery?"
+    ],
+    "payment": [
+      "COD available hai?",
+      "Online payment pe discount?",
+      "Bank transfer details?"
+    ],
+    "return_refund": [
+      "Return ka process kya hai?",
+      "Refund kitne din mein?",
+      "Exchange free hai?"
+    ]
+  },
+  "smalltalk": [
+    {
+      "patterns": ["kya hal", "how are you", "kaisa ho", "theek ho"],
+      "response": "Mein bilkul theek hoon, shukriya poochne ka! 😊 Aap batain, kya help chahiye?"
+    },
+    {
+      "patterns": ["joke", "funny", "hasao"],
+      "response": "😄 Hahaha! Mein toh sirf customer support jaanta hoon. Lekin yeh zaroor jaanta hoon ke Nova Shop ke deals sach mein funny hain - itni sasti prices! 😂"
+    },
+    {
+      "patterns": ["who are you", "kya ho tum", "bot", "robot", "ai"],
+      "response": "Mein Nova Shop ka virtual assistant hoon! 🤖 Aapki shopping mein help karna mera kaam hai. Real agent se baat karni ho to WhatsApp: 0300-1234567"
+    }
+  ],
+  "defaultResponses": [
+    "Hmm, mujhe samajh nahi aaya. 🤔 Kya aap thoda aur detail mein bata sakte hain?",
+    "Is baare mein mujhe puri maloomat nahi. Please WhatsApp karein: 0300-1234567",
+    "Yeh question mujhse thoda mushkil hai! 😅 Hamari team se poochein: support@novashop.pk"
+  ],
+  "quickReplies": [
+    "📦 Delivery info",
+    "💰 Prices",
+    "↩️ Return policy",
+    "💳 Payment methods",
+    "📞 Contact us",
+    "🎉 Discounts"
+  ]
+}

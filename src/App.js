@@ -57,7 +57,7 @@ const StaffCategories = lazy(() => import('./pages/staff/StaffCategories'));
 const StaffOrders = lazy(() => import('./pages/staff/StaffOrders'));
 const Navbar = lazy(() => import('./components/Navbar'));
 const Footer = lazy(() => import('./components/Footer'));
-const ChatWidget = lazy(() => import('./components/ChatWidget'));
+const Chatbot = lazy(() => import('./components/Chatbot/Chatbot'));
 
 function AppShell() {
   const location = useLocation();
@@ -73,7 +73,7 @@ function AppShell() {
       )}
       {!isAdmin && !isStaff && (
         <Suspense fallback={null}>
-          <ChatWidget />
+          <Chatbot />
         </Suspense>
       )}
       <main className={isAdmin || isStaff ? 'main-content main-content--admin' : 'main-content'}>
@@ -148,6 +148,7 @@ function AppShell() {
                         }
                       />
                       <Route path="/wishlist" element={<WishlistPage />} />
+                      <Route path="/blog/:slug" element={<Blog />} />
                       <Route path="/blog" element={<Blog />} />
 
                       <Route path="/staff-login" element={<StaffLogin />} />
