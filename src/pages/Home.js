@@ -171,7 +171,7 @@ const Home = () => {
             width={1200}
             height={1800}
             decoding="async"
-            fetchPriority="high"
+
             loading="eager"
           />
           <div className="hero__media-scrim" aria-hidden="true" />

@@ -162,7 +162,7 @@ export default function ImageGallery({ images, productName, showSaleBadge }) {
               width={1400}
               height={1400}
               decoding="async"
-              fetchPriority="high"
+
             />
             {list.length > 1 ? (
               <p className="image-gallery-lightbox__counter">

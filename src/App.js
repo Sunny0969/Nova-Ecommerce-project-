@@ -35,6 +35,7 @@ const MyReviews = lazy(() => import('./pages/account/MyReviews'));
 const Orders = lazy(() => import('./pages/Orders'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const Blog = lazy(() => import('./pages/Blog'));
+const BlogDetailsPage = lazy(() => import('./pages/BlogDetailsPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -148,8 +149,8 @@ function AppShell() {
                         }
                       />
                       <Route path="/wishlist" element={<WishlistPage />} />
-                      <Route path="/blog/:slug" element={<Blog />} />
                       <Route path="/blog" element={<Blog />} />
+<Route path="/blog/:slug" element={<BlogDetailsPage />} />
 
                       <Route path="/staff-login" element={<StaffLogin />} />
                       <Route path="/staff" element={<StaffLayout />}>
