@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState, useId } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader2, GripVertical, X } from 'lucide-react';
+import JoditEditor from 'jodit-react';
+import 'jodit/es2021/jodit.min.css';
 import { adminAPI } from 'api';
 
 /** Preview of public URL path from the product title (matches server slug-from-name rules). */
@@ -19,10 +21,19 @@ function seoSlugFromTitle(s) {
 
 const LS_PREFIX = 'nova_shop_admin_product_form_v1_';
 
+/** Soft cap for description HTML (whole MongoDB document must stay under 16MB BSON). */
+const RICH_DESC_MAX_TOTAL_CHARS = 14_000_000;
+
 const schema = yup.object({
   name: yup.string().required('Name is required').max(200),
   shortDescription: yup.string().max(500, 'Short description is at most 500 characters'),
-  description: yup.string().default(''),
+  description: yup
+    .string()
+    .default('')
+    .max(
+      RICH_DESC_MAX_TOTAL_CHARS,
+      'Full description is extremely long. If save still fails, shorten text or use fewer embedded images (MongoDB document size limit).'
+    ),
   price: yup
     .number()
     .typeError('Valid price is required')
@@ -58,9 +69,6 @@ const schema = yup.object({
   tags: yup.array().of(yup.string().max(60)).default([]),
   isFeatured: yup.boolean().default(false),
   isPublished: yup.boolean().default(false),
-  color: yup.string().max(120, 'Too long').default(''),
-  texture: yup.string().max(120, 'Too long').default(''),
-  size: yup.string().max(120, 'Too long').default(''),
   variantGroupKey: yup.string().max(120, 'Too long').default('')
 });
 
@@ -78,14 +86,379 @@ const defaultForm = {
   tags: [],
   isFeatured: false,
   isPublished: false,
-  color: '',
-  texture: '',
-  size: '',
   variantGroupKey: ''
 };
 
 function newLocalKey() {
   return `L-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+const VARIANT_AXIS_KEYS = [
+  { key: 'color', label: 'Color' },
+  { key: 'shape', label: 'Shape / material' },
+  { key: 'size', label: 'Size' }
+];
+
+function defaultVariantAxesState() {
+  return {
+    color: { enabled: false, selectionMode: 'single', options: [] },
+    shape: { enabled: false, selectionMode: 'single', options: [] },
+    size: { enabled: false, selectionMode: 'single', options: [] }
+  };
+}
+
+function migrateLegacyToVariantAxes(color, texture, size) {
+  const base = defaultVariantAxesState();
+  const parts = (s) =>
+    String(s || '')
+      .split(/[,;|]/g)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  const c = parts(color);
+  if (c.length) {
+    base.color = {
+      enabled: true,
+      selectionMode: c.length > 1 ? 'multiple' : 'single',
+      options: c.map((label) => ({ label, image: null }))
+    };
+  }
+  const sh = parts(texture);
+  if (sh.length) {
+    base.shape = {
+      enabled: true,
+      selectionMode: sh.length > 1 ? 'multiple' : 'single',
+      options: sh.map((label) => ({ label, image: null }))
+    };
+  }
+  const sz = parts(size);
+  if (sz.length) {
+    base.size = {
+      enabled: true,
+      selectionMode: sz.length > 1 ? 'multiple' : 'single',
+      options: sz.map((label) => ({ label, image: null }))
+    };
+  }
+  return base;
+}
+
+function normalizeLoadedVariantAxes(apiAxes, legacyColor, legacyTexture, legacySize) {
+  if (apiAxes && typeof apiAxes === 'object' && (apiAxes.color || apiAxes.shape || apiAxes.size)) {
+    const base = defaultVariantAxesState();
+    for (const { key } of VARIANT_AXIS_KEYS) {
+      const ax = apiAxes[key];
+      if (!ax) continue;
+      const options = (ax.options || [])
+        .map((o) => ({
+          label: String(o.label || ''),
+          image:
+            o.image?.url && o.image?.public_id
+              ? { type: 'server', url: o.image.url, public_id: o.image.public_id }
+              : o.image?.url
+                ? { type: 'server', url: o.image.url, public_id: o.image.public_id || '' }
+                : null
+        }))
+        .filter((o) => String(o.label || '').trim());
+      base[key] = {
+        enabled: Boolean(ax.enabled) && options.length > 0,
+        selectionMode: ax.selectionMode === 'multiple' ? 'multiple' : 'single',
+        options
+      };
+    }
+    const hasAny =
+      base.color.enabled ||
+      base.shape.enabled ||
+      base.size.enabled ||
+      base.color.options.length ||
+      base.shape.options.length ||
+      base.size.options.length;
+    if (hasAny) return base;
+  }
+  return migrateLegacyToVariantAxes(legacyColor, legacyTexture, legacySize);
+}
+
+function variantAxesPayloadForApi(va) {
+  const axes = {};
+  for (const { key } of VARIANT_AXIS_KEYS) {
+    const ax = va[key] || {};
+    const opts = (ax.options || [])
+      .map((o) => ({
+        label: String(o.label || '').trim().slice(0, 80),
+        image:
+          o.image?.type === 'server' && o.image.url
+            ? { url: o.image.url, public_id: o.image.public_id || '' }
+            : null
+      }))
+      .filter((o) => o.label);
+    const enabled = Boolean(ax.enabled) && opts.length > 0;
+    axes[key] = {
+      enabled,
+      selectionMode: ax.selectionMode === 'multiple' ? 'multiple' : 'single',
+      options: enabled ? opts : []
+    };
+  }
+  return axes;
+}
+
+function variantAxesForDraft(va) {
+  const out = defaultVariantAxesState();
+  for (const { key } of VARIANT_AXIS_KEYS) {
+    const ax = va[key] || {};
+    out[key] = {
+      enabled: Boolean(ax.enabled),
+      selectionMode: ax.selectionMode === 'multiple' ? 'multiple' : 'single',
+      options: (ax.options || []).map((o) => ({
+        label: o.label || '',
+        image:
+          o.image?.type === 'server' && o.image.url
+            ? { type: 'server', url: o.image.url, public_id: o.image.public_id || '' }
+            : null
+      }))
+    };
+  }
+  return out;
+}
+
+function parseDraftVariantAxes(raw) {
+  if (!raw || typeof raw !== 'object') return defaultVariantAxesState();
+  return normalizeLoadedVariantAxes(raw, '', '', '');
+}
+
+/** Plain text from HTML (e.g. search preview) — same idea as the storefront product page. */
+function stripHtml(html) {
+  if (!html) return '';
+  const d = document.createElement('div');
+  d.innerHTML = String(html);
+  return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+/** Jodit toolbar: headings, bold styles, font size, lists, table, image, alignment, undo/source. */
+function useProductDescriptionEditorConfig() {
+  return useMemo(
+    () => ({
+      theme: 'dark',
+      height: 440,
+      minHeight: 380,
+      toolbarSticky: false,
+      toolbarAdaptive: true,
+      placeholder:
+        'Use the toolbar for headings, bold, font size, bullets, numbers, tables, and images. Content is saved as HTML.',
+      askBeforePasteHTML: false,
+      askBeforePasteFromWord: false,
+      showCharsCounter: true,
+      showWordsCounter: true,
+      allowResizeY: true,
+      uploader: { insertImageAsBase64URI: true },
+      style: {
+        color: '#111111',
+        font: '16px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        lineHeight: 'normal'
+      },
+      buttons: [
+        'bold',
+        'italic',
+        'underline',
+        'strikethrough',
+        '|',
+        'fontsize',
+        'brush',
+        '|',
+        'paragraph',
+        '|',
+        'ul',
+        'ol',
+        '|',
+        'outdent',
+        'indent',
+        '|',
+        'align',
+        '|',
+        'table',
+        'link',
+        'image',
+        '|',
+        'undo',
+        'redo',
+        '|',
+        'hr',
+        'eraser',
+        '|',
+        'fullsize',
+        'source'
+      ]
+    }),
+    []
+  );
+}
+
+function VariantAxesEditor({ value, onChange }) {
+  const setAxis = (key, partial) => {
+    onChange({ ...value, [key]: { ...value[key], ...partial } });
+  };
+
+  const setAxisEnabled = (key, enabled) => {
+    const ax = value[key] || defaultVariantAxesState()[key];
+    if (!enabled) {
+      for (const o of ax.options || []) {
+        if (o.image?.type === 'local' && o.image.url) URL.revokeObjectURL(o.image.url);
+      }
+      setAxis(key, { enabled: false, selectionMode: ax.selectionMode || 'single', options: [] });
+      return;
+    }
+    setAxis(key, {
+      enabled: true,
+      options: ax.options?.length ? ax.options : [{ label: '', image: null }],
+      selectionMode: ax.selectionMode || 'single'
+    });
+  };
+
+  const addOption = (key) => {
+    const ax = value[key] || defaultVariantAxesState()[key];
+    setAxis(key, { options: [...(ax.options || []), { label: '', image: null }] });
+  };
+
+  const removeOption = (key, idx) => {
+    const ax = value[key];
+    const opt = ax.options[idx];
+    if (opt?.image?.type === 'local' && opt.image.url) URL.revokeObjectURL(opt.image.url);
+    const next = ax.options.filter((_, i) => i !== idx);
+    setAxis(key, { options: next });
+  };
+
+  const updateOptionLabel = (key, idx, label) => {
+    const ax = value[key];
+    const options = ax.options.map((o, i) => (i === idx ? { ...o, label } : o));
+    setAxis(key, { options });
+  };
+
+  const setOptionImageFile = (key, idx, file) => {
+    const ax = value[key];
+    const options = ax.options.map((o, i) => {
+      if (i !== idx) return o;
+      if (o.image?.type === 'local' && o.image.url) URL.revokeObjectURL(o.image.url);
+      if (!file) return { ...o, image: null };
+      return { ...o, image: { type: 'local', id: newLocalKey(), file, url: URL.createObjectURL(file) } };
+    });
+    setAxis(key, { options });
+  };
+
+  const clearOptionImage = (key, idx) => {
+    const ax = value[key];
+    const options = ax.options.map((o, i) => {
+      if (i !== idx) return o;
+      if (o.image?.type === 'local' && o.image.url) URL.revokeObjectURL(o.image.url);
+      return { ...o, image: null };
+    });
+    setAxis(key, { options });
+  };
+
+  return (
+    <div className="product-form__variant-wrap">
+      {VARIANT_AXIS_KEYS.map(({ key, label }) => {
+        const ax = value[key] || defaultVariantAxesState()[key];
+        return (
+          <div key={key} className="product-form__variant-axis">
+            <label className="product-form__variant-enable">
+              <input
+                type="checkbox"
+                checked={Boolean(ax.enabled)}
+                onChange={(e) => setAxisEnabled(key, e.target.checked)}
+              />
+              <span>Enable {label}</span>
+            </label>
+            {ax.enabled ? (
+              <>
+                <div className="product-form__variant-mode" role="radiogroup" aria-label={`${label} selection`}>
+                  <span className="product-form__variant-mode-label">Selection</span>
+                  <label className="product-form__variant-radio">
+                    <input
+                      type="radio"
+                      name={`${key}-mode`}
+                      checked={ax.selectionMode !== 'multiple'}
+                      onChange={() => setAxis(key, { selectionMode: 'single' })}
+                    />
+                    Single
+                  </label>
+                  <label className="product-form__variant-radio">
+                    <input
+                      type="radio"
+                      name={`${key}-mode`}
+                      checked={ax.selectionMode === 'multiple'}
+                      onChange={() => setAxis(key, { selectionMode: 'multiple' })}
+                    />
+                    Multiple
+                  </label>
+                </div>
+                <ul className="product-form__variant-options">
+                  {ax.options.map((opt, idx) => (
+                    <li
+                      key={`${key}-${idx}-${opt.image?.id || opt.image?.public_id || 'x'}`}
+                      className="product-form__variant-row"
+                    >
+                      <input
+                        className="product-form__input product-form__variant-label"
+                        placeholder={`e.g. ${key === 'color' ? 'Navy' : key === 'shape' ? 'Round' : 'M'}`}
+                        value={opt.label}
+                        onChange={(e) => updateOptionLabel(key, idx, e.target.value)}
+                      />
+                      <div className="product-form__variant-img-col">
+                        {opt.image?.url ? (
+                          <div className="product-form__variant-thumb-wrap">
+                            <img
+                              className="product-form__variant-thumb"
+                              src={opt.image.url}
+                              alt=""
+                              width={48}
+                              height={48}
+                            />
+                            <button
+                              type="button"
+                              className="product-form__variant-img-clear"
+                              onClick={() => clearOptionImage(key, idx)}
+                              title="Remove image"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : null}
+                        <label className="product-form__variant-file">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="product-form__file-input"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              e.target.value = '';
+                              if (!f) return;
+                              if (!f.type?.startsWith('image/')) {
+                                toast.error('Please choose an image');
+                                return;
+                              }
+                              if (f.size > 5 * 1024 * 1024) {
+                                toast.error('Image must be at most 5MB');
+                                return;
+                              }
+                              setOptionImageFile(key, idx, f);
+                            }}
+                          />
+                          <span>{opt.image ? 'Change image' : 'Image (optional)'}</span>
+                        </label>
+                      </div>
+                      <button type="button" className="product-form__variant-remove" onClick={() => removeOption(key, idx)}>
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <button type="button" className="product-form__variant-add" onClick={() => addOption(key)}>
+                  + Add option
+                </button>
+              </>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 /**
@@ -108,6 +481,8 @@ export default function ProductForm() {
   const [tagInput, setTagInput] = useState('');
   const [dragFileActive, setDragFileActive] = useState(false);
   const [dragItemIndex, setDragItemIndex] = useState(/** @type {null | number} */ (null));
+  const [variantAxes, setVariantAxes] = useState(() => defaultVariantAxesState());
+  const variantAxesRef = useRef(variantAxes);
 
   const fileInputId = `product-form-files-${useId()}`;
   const draftKey = isNew ? `${LS_PREFIX}new` : `${LS_PREFIX}${editId}`;
@@ -132,6 +507,12 @@ export default function ProductForm() {
   const costW = useWatch({ control, name: 'costPrice' });
   const tagsW = useWatch({ control, name: 'tags' });
   const tagsList = Array.isArray(tagsW) ? tagsW : [];
+
+  useEffect(() => {
+    variantAxesRef.current = variantAxes;
+  }, [variantAxes]);
+
+  const descriptionEditorConfig = useProductDescriptionEditorConfig();
 
   const margin =
     costW != null && Number.isFinite(Number(costW)) && Number.isFinite(Number(priceW)) && Number(priceW) > 0
@@ -162,6 +543,8 @@ export default function ProductForm() {
             const p = JSON.parse(raw);
             if (p && typeof p === 'object' && p.form) {
               reset({ ...defaultForm, ...p.form, tags: Array.isArray(p.form.tags) ? p.form.tags : [] });
+              if (p.form.variantAxes) setVariantAxes(parseDraftVariantAxes(p.form.variantAxes));
+              else setVariantAxes(defaultVariantAxesState());
             }
           }
         } catch {
@@ -215,11 +598,11 @@ export default function ProductForm() {
           tags: Array.isArray(p.tags) ? p.tags : [],
           isFeatured: Boolean(p.isFeatured),
           isPublished: Boolean(p.isPublished),
-          color: p.color != null ? String(p.color) : '',
-          texture: p.texture != null ? String(p.texture) : '',
-          size: p.size != null ? String(p.size) : '',
           variantGroupKey: p.variantGroupKey != null ? String(p.variantGroupKey) : ''
         });
+        setVariantAxes(
+          normalizeLoadedVariantAxes(p.variantAxes, p.color, p.texture, p.size)
+        );
       } catch (e) {
         toast.error(e?.response?.data?.message || 'Failed to load product');
         navigate('/admin/products');
@@ -237,7 +620,8 @@ export default function ProductForm() {
       return {
         form: {
           ...form,
-          tags: Array.isArray(form.tags) ? form.tags : []
+          tags: Array.isArray(form.tags) ? form.tags : [],
+          variantAxes: variantAxesForDraft(variantAxesRef.current)
         },
         at: new Date().toISOString()
       };
@@ -266,7 +650,8 @@ export default function ProductForm() {
           form: {
             ...form,
             tags: Array.isArray(form.tags) ? form.tags : [],
-            isPublished: false
+            isPublished: false,
+            variantAxes: variantAxesForDraft(variantAxesRef.current)
           },
           at: new Date().toISOString()
         };
@@ -335,6 +720,7 @@ export default function ProductForm() {
       return [];
     });
     setTagInput('');
+    setVariantAxes(defaultVariantAxesState());
     reset({ ...defaultForm });
     try {
       localStorage.removeItem(draftKey);
@@ -368,6 +754,16 @@ export default function ProductForm() {
       }
     }
 
+    for (const { key, label } of VARIANT_AXIS_KEYS) {
+      const ax = variantAxes[key];
+      if (!ax?.enabled) continue;
+      const hasLabel = (ax.options || []).some((o) => String(o.label || '').trim());
+      if (!hasLabel) {
+        toast.error(`Add at least one ${label} value or disable “${label}”.`);
+        return;
+      }
+    }
+
     const fd = new FormData();
     const normTags = (Array.isArray(data.tags) ? data.tags : [])
       .map((s) => (typeof s === 'string' ? s : String(s)).trim())
@@ -393,16 +789,23 @@ export default function ProductForm() {
           ? ''
           : String(data.lowStockThreshold)
       ],
-      ['color', data.color != null ? String(data.color) : ''],
-      ['texture', data.texture != null ? String(data.texture) : ''],
-      ['size', data.size != null ? String(data.size) : ''],
       ['variantGroupKey', data.variantGroupKey != null ? String(data.variantGroupKey) : ''],
       ['isFeatured', data.isFeatured ? 'true' : 'false'],
       ['isPublished', published ? 'true' : 'false'],
-      ['tags', JSON.stringify(normTags)]
+      ['tags', JSON.stringify(normTags)],
+      ['variantAxes', JSON.stringify(variantAxesPayloadForApi(variantAxes))]
     ].forEach(([k, v]) => {
       if (k != null) fd.append(k, v);
     });
+
+    for (const { key } of VARIANT_AXIS_KEYS) {
+      const opts = variantAxes[key]?.options || [];
+      opts.forEach((o, idx) => {
+        if (o.image?.type === 'local' && o.image.file) {
+          fd.append(`variantOptionImage_${key}_${idx}`, o.image.file, o.image.file.name);
+        }
+      });
+    }
 
     if (isNew) {
       imageSlots.forEach((s) => {
@@ -447,6 +850,9 @@ export default function ProductForm() {
       }
       const { data: res } = await adminAPI.products.update(editId, fd, { asFormData: true });
       const doc = res && res.data;
+      if (doc?.variantAxes) {
+        setVariantAxes(normalizeLoadedVariantAxes(doc.variantAxes, '', '', ''));
+      }
       if (Array.isArray(doc?.images)) {
         setImageSlots(
           doc.images
@@ -485,11 +891,11 @@ export default function ProductForm() {
 
   const seopath = `${typeof window !== 'undefined' ? window.location.origin : ''}/shop/${seoSlugFromTitle(nameW || '')}`;
   const seoTitle = (nameW && String(nameW).trim()) || 'Product title';
-  const dtrim = (descW && String(descW).trim()) || '';
+  const dPlain = stripHtml(descW || '') || '';
   const shortTrim = (shortW && String(shortW).trim()) || '';
   const seoDesc =
     shortTrim ||
-    (dtrim ? dtrim.slice(0, 200) : '') ||
+    (dPlain ? dPlain.slice(0, 200) : '') ||
     'Add a short description to improve how this appears in search results.';
 
   if (loading) {
@@ -547,9 +953,28 @@ export default function ProductForm() {
                 <span className="product-form__err">{errors.shortDescription.message}</span>
               )}
             </label>
-            <label className="product-form__label">
+            <label className="product-form__label product-form__label--block">
               Full description
-              <textarea className="product-form__textarea" rows={5} {...register('description')} />
+              <span className="product-form__field-hint">
+                The product page shows your HTML as saved—sizes, colours, spacing, lists, and tables match what you set
+                in the editor (plain text defaults to black). Very large pages may take longer to save.
+              </span>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <div className="product-form__rich-editor">
+                    <JoditEditor
+                      value={field.value ?? ''}
+                      config={descriptionEditorConfig}
+                      tabIndex={0}
+                      onBlur={field.onBlur}
+                      onChange={(html) => field.onChange(html)}
+                    />
+                  </div>
+                )}
+              />
+              {errors.description && <span className="product-form__err">{errors.description.message}</span>}
             </label>
             <label className="product-form__label">
               Category
@@ -566,30 +991,13 @@ export default function ProductForm() {
           </section>
 
           <section className="product-form__section">
-            <h2 className="product-form__section-title">Clothing &amp; variants</h2>
-            <p className="product-form__hint">Optional — use for apparel (color, feel, size).</p>
-            <div className="product-form__grid-3">
-              <label className="product-form__label">
-                Color
-                <input className="product-form__input" type="text" {...register('color')} placeholder="e.g. Navy" />
-                {errors.color && <span className="product-form__err">{errors.color.message}</span>}
-              </label>
-              <label className="product-form__label">
-                Texture / material
-                <input
-                  className="product-form__input"
-                  type="text"
-                  {...register('texture')}
-                  placeholder="e.g. Cotton twill"
-                />
-                {errors.texture && <span className="product-form__err">{errors.texture.message}</span>}
-              </label>
-              <label className="product-form__label">
-                Size
-                <input className="product-form__input" type="text" {...register('size')} placeholder="e.g. M, 32 waist" />
-                {errors.size && <span className="product-form__err">{errors.size.message}</span>}
-              </label>
-            </div>
+            <h2 className="product-form__section-title">Variants</h2>
+            <p className="product-form__hint">
+              Turn on Color, Shape/material, and/or Size. Each can be <strong>single</strong> or <strong>multiple</strong>{' '}
+              choice. Add one row per value; optional image per row (e.g. colour swatch). Shoppers see these on the
+              product page.
+            </p>
+            <VariantAxesEditor value={variantAxes} onChange={setVariantAxes} />
             <label className="product-form__label">
               Group key (same category)
               <span className="product-form__field-hint">

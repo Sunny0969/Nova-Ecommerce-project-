@@ -8,6 +8,8 @@
     "@stripe/react-stripe-js": "^2.9.0",
     "@stripe/stripe-js": "^4.10.0",
     "axios": "^1.7.9",
+    "jodit": "^4.12.2",
+    "jodit-react": "^5.3.21",
     "lucide-react": "^0.468.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

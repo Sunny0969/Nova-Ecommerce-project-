@@ -27,6 +27,60 @@ function stripHtml(html) {
   return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
 }
 
+const VARIANT_AXIS_LABELS = {
+  color: 'Color',
+  shape: 'Shape / material',
+  size: 'Size'
+};
+
+function hasStructuredVariantAxes(va) {
+  if (!va || typeof va !== 'object') return false;
+  return ['color', 'shape', 'size'].some(
+    (k) =>
+      va[k]?.enabled &&
+      Array.isArray(va[k].options) &&
+      va[k].options.some((o) => String(o?.label || '').trim())
+  );
+}
+
+function trimVariantOptions(options) {
+  if (!Array.isArray(options)) return [];
+  return options.filter((o) => String(o?.label || '').trim());
+}
+
+/** Match product image URL to variant swatch URL (ignore query/hash). */
+function urlsMatchImage(a, b) {
+  if (!a || !b || typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a === b) return true;
+  const strip = (u) => u.split('?')[0].split('#')[0].trim();
+  if (strip(a) === strip(b)) return true;
+  try {
+    const ua = new URL(a);
+    const ub = new URL(b);
+    return ua.origin === ub.origin && ua.pathname === ub.pathname;
+  } catch {
+    return false;
+  }
+}
+
+/** Human-readable variant line for cart / toast (storefront always single-select per axis). */
+function buildVariantSelectionSummary(variantAxes, pick) {
+  if (!variantAxes || !pick || typeof pick !== 'object') return '';
+  const parts = [];
+  for (const key of ['color', 'shape', 'size']) {
+    const ax = variantAxes[key];
+    if (!ax?.enabled) continue;
+    const opts = trimVariantOptions(ax.options);
+    if (!opts.length) continue;
+    const sel = pick[key];
+    const idx = Array.isArray(sel) && sel.length ? Number(sel[0]) : 0;
+    const safeIdx = Number.isFinite(idx) && idx >= 0 && idx < opts.length ? idx : 0;
+    const lab = opts[safeIdx]?.label;
+    if (lab && String(lab).trim()) parts.push(`${VARIANT_AXIS_LABELS[key]}: ${String(lab).trim()}`);
+  }
+  return parts.join(' · ');
+}
+
 function formatCategoryLabel(slug, name) {
   if (name && String(name).trim()) return String(name).trim();
   if (!slug) return 'Shop';
@@ -55,6 +109,9 @@ export default function ProductDetail() {
   const [copied, setCopied] = useState(false);
   const [alsoBought, setAlsoBought] = useState([]);
   const [similar, setSimilar] = useState([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [variantGalleryExtraUrl, setVariantGalleryExtraUrl] = useState(null);
+  const [variantPick, setVariantPick] = useState({});
 
   // Must be declared before any early returns (hooks order).
   const fake = useMemo(() => buildFakeReviews(product), [product]);
@@ -157,7 +214,10 @@ export default function ProductDetail() {
     if (!product) return;
     setAdding(true);
     try {
-      await addToCart(product, qty);
+      const cartVariantNote = hasStructuredVariantAxes(product.variantAxes)
+        ? buildVariantSelectionSummary(product.variantAxes, variantPick)
+        : '';
+      await addToCart(product, qty, { cartVariantNote });
     } finally {
       setAdding(false);
     }
@@ -211,6 +271,94 @@ export default function ProductDetail() {
     const u = productImageUrl(product);
     return u ? [{ url: u }] : [];
   }, [product]);
+
+  const galleryImagesForUi = useMemo(() => {
+    const base = images;
+    if (!variantGalleryExtraUrl) return base;
+    if (base.some((im) => urlsMatchImage(im.url, variantGalleryExtraUrl))) return base;
+    return [{ url: variantGalleryExtraUrl }, ...base];
+  }, [images, variantGalleryExtraUrl]);
+
+  useEffect(() => {
+    setGalleryIndex((i) => Math.min(Math.max(0, i), Math.max(0, galleryImagesForUi.length - 1)));
+  }, [galleryImagesForUi]);
+
+  useEffect(() => {
+    setGalleryIndex(0);
+    setVariantGalleryExtraUrl(null);
+    setVariantPick({});
+  }, [slug]);
+
+  useEffect(() => {
+    if (!product) return;
+    if (product.unavailable || !hasStructuredVariantAxes(product.variantAxes)) {
+      setVariantPick({});
+      setVariantGalleryExtraUrl(null);
+      setGalleryIndex(0);
+      return;
+    }
+    const baseImgs =
+      Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : (() => {
+            const u = productImageUrl(product);
+            return u ? [{ url: u }] : [];
+          })();
+
+    const next = {};
+    ['color', 'shape', 'size'].forEach((axisKey) => {
+      const ax = product.variantAxes[axisKey];
+      if (!ax?.enabled || !ax.options?.length) return;
+      const opts = trimVariantOptions(ax.options);
+      if (!opts.length) return;
+      next[axisKey] = [0];
+    });
+    setVariantPick(next);
+    setVariantGalleryExtraUrl(null);
+    setGalleryIndex(0);
+
+    for (const key of ['color', 'shape', 'size']) {
+      const ax = product.variantAxes[key];
+      if (!ax?.enabled) continue;
+      const opts = trimVariantOptions(ax.options);
+      if (!opts.length || !opts[0]?.image?.url) continue;
+      const u = opts[0].image.url;
+      const idx = baseImgs.findIndex((im) => urlsMatchImage(im.url, u));
+      if (idx >= 0) {
+        setGalleryIndex(idx);
+        return;
+      }
+      setVariantGalleryExtraUrl(u);
+      setGalleryIndex(0);
+      return;
+    }
+  }, [product?._id, product?.unavailable]);
+
+  const handleVariantOptionClick = useCallback(
+    (axisKey, flatOptionIndex) => {
+      if (!product || !hasStructuredVariantAxes(product.variantAxes)) return;
+      const ax = product.variantAxes[axisKey];
+      if (!ax?.enabled) return;
+      const opts = trimVariantOptions(ax.options);
+      const opt = opts[flatOptionIndex];
+      if (!opt) return;
+
+      setVariantPick((p) => ({ ...p, [axisKey]: [flatOptionIndex] }));
+
+      const imageUrl = opt.image?.url;
+      if (!imageUrl) return;
+
+      const idx = images.findIndex((im) => urlsMatchImage(im.url, imageUrl));
+      if (idx >= 0) {
+        setVariantGalleryExtraUrl(null);
+        setGalleryIndex(idx);
+      } else {
+        setVariantGalleryExtraUrl(imageUrl);
+        setGalleryIndex(0);
+      }
+    },
+    [product, images]
+  );
 
   const stockMax = useMemo(() => {
     if (!product) return 1;
@@ -393,9 +541,11 @@ export default function ProductDetail() {
             <div className="product-detail-grid">
               <div className="product-detail-gallery-col">
                 <ImageGallery
-                  images={images}
+                  images={galleryImagesForUi}
                   productName={product.name}
                   showSaleBadge={Boolean(hasSale)}
+                  activeIndex={galleryIndex}
+                  onActiveIndexChange={setGalleryIndex}
                 />
               </div>
               <div className="product-detail-info">
@@ -512,9 +662,11 @@ export default function ProductDetail() {
         <div className="container product-detail-grid">
           <div className="product-detail-gallery-col">
             <ImageGallery
-              images={images}
+              images={galleryImagesForUi}
               productName={product.name}
               showSaleBadge={Boolean(hasSale)}
+              activeIndex={galleryIndex}
+              onActiveIndexChange={setGalleryIndex}
             />
           </div>
 
@@ -588,7 +740,53 @@ export default function ProductDetail() {
               <p className="product-detail-short">{product.shortDescription}</p>
             ) : null}
 
-            {(product.color || product.texture || product.size) && (
+            {hasStructuredVariantAxes(product.variantAxes) ? (
+              <div className="product-detail-variants" aria-label="Product variants">
+                {['color', 'shape', 'size'].map((key) => {
+                  const ax = product.variantAxes[key];
+                  if (!ax?.enabled || !ax.options?.length) return null;
+                  const opts = ax.options.filter((o) => String(o.label || '').trim());
+                  if (!opts.length) return null;
+                  return (
+                    <div key={key} className="product-detail-variant-block">
+                      <div className="product-detail-variant-head">
+                        <span className="product-detail-attrs__k">{VARIANT_AXIS_LABELS[key]}</span>
+                        <span className="product-detail-variant-mode">Choose one</span>
+                      </div>
+                      <ul className="product-detail-variant-list" role="list">
+                        {opts.map((o, i) => {
+                          const sel = variantPick[key];
+                          const cur = Array.isArray(sel) && sel.length ? sel : [0];
+                          const isSelected = cur.includes(i);
+                          return (
+                            <li key={`${key}-${i}-${o.label}`} role="none">
+                              <button
+                                type="button"
+                                className={`product-detail-variant-chip${isSelected ? ' is-selected' : ''}`}
+                                aria-pressed={isSelected}
+                                aria-label={`${VARIANT_AXIS_LABELS[key]}: ${o.label}`}
+                                onClick={() => handleVariantOptionClick(key, i)}
+                              >
+                                {o.image?.url ? (
+                                  <img
+                                    className="product-detail-variant-swatch"
+                                    src={o.image.url}
+                                    alt=""
+                                    width={36}
+                                    height={36}
+                                  />
+                                ) : null}
+                                <span>{o.label}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (product.color || product.texture || product.size) ? (
               <ul className="product-detail-attrs" aria-label="Product details">
                 {product.color ? (
                   <li>
@@ -606,7 +804,7 @@ export default function ProductDetail() {
                   </li>
                 ) : null}
               </ul>
-            )}
+            ) : null}
 
             <div className="product-detail-qty">
               <span className="form-label">Quantity</span>
@@ -696,7 +894,7 @@ export default function ProductDetail() {
           >
             {activeTab === 'description' && product.description ? (
               <div
-                className="product-detail-html rte-content"
+                className="product-detail-html product-description-html"
                 dangerouslySetInnerHTML={{ __html: product.description }}
               />
             ) : activeTab === 'description' ? (

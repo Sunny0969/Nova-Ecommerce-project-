@@ -277,14 +277,20 @@ export const adminAPI = {
 
     create: (formData) =>
       api.post('/api/products', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 0,
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
       }),
 
     update: (id, body, options = {}) => {
       const isFd = typeof FormData !== 'undefined' && body instanceof FormData;
       if (isFd || options.asFormData) {
         return api.put(`/api/products/${id}`, body, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 0,
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity
         });
       }
       return api.put(`/api/products/${id}`, body);

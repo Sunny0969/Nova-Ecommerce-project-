@@ -8,19 +8,40 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
  * @param {{ url: string }[]} props.images
  * @param {string} props.productName
  * @param {boolean} [props.showSaleBadge]
+ * @param {number} [props.activeIndex] — controlled slide index (use with onActiveIndexChange)
+ * @param {(index: number) => void} [props.onActiveIndexChange] — when set, gallery index is controlled by parent
  */
-export default function ImageGallery({ images, productName, showSaleBadge }) {
-  const list = Array.isArray(images) && images.length ? images : [];
-  const [active, setActive] = useState(0);
+export default function ImageGallery({
+  images,
+  productName,
+  showSaleBadge,
+  activeIndex: activeIndexProp,
+  onActiveIndexChange
+}) {
+  const raw = Array.isArray(images) && images.length ? images : [];
+  const list = raw
+    .map((im) => ({ ...im, url: String(im?.url || '').trim() }))
+    .filter((im) => im.url);
+  const controlled = typeof onActiveIndexChange === 'function';
+  const [internalActive, setInternalActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [lbIndex, setLbIndex] = useState(0);
 
   useEffect(() => {
-    setActive(0);
-  }, [images]);
+    if (!controlled) setInternalActive(0);
+  }, [images, controlled]);
 
+  const active = controlled && typeof activeIndexProp === 'number' ? activeIndexProp : internalActive;
   const safeActive = Math.min(active, Math.max(0, list.length - 1));
-  const mainUrl = list[safeActive]?.url || '';
+
+  const commitActive = useCallback(
+    (i) => {
+      const n = Math.min(Math.max(0, i), Math.max(0, list.length - 1));
+      if (controlled) onActiveIndexChange(n);
+      else setInternalActive(n);
+    },
+    [controlled, onActiveIndexChange, list.length]
+  );
 
   const openLightbox = useCallback(
     (index) => {
@@ -53,13 +74,15 @@ export default function ImageGallery({ images, productName, showSaleBadge }) {
     };
   }, [lightbox]);
 
-  if (!mainUrl) {
+  if (!list.length) {
     return (
       <div className="image-gallery image-gallery--empty" aria-hidden>
         <div className="image-gallery__main image-gallery__main--placeholder">📦</div>
       </div>
     );
   }
+
+  const mainUrl = list[safeActive]?.url || list[0]?.url;
 
   const lbUrl = list[lbIndex]?.url || mainUrl;
 
@@ -77,13 +100,13 @@ export default function ImageGallery({ images, productName, showSaleBadge }) {
         aria-label={`View larger image ${safeActive + 1} of ${list.length}`}
       >
         <LazyLoadImage
+          key={mainUrl}
           src={mainUrl}
           alt={productName}
-          effect="blur"
+          effect=""
           className="image-gallery__main-img"
           width={1200}
           height={1200}
-          visibleByDefault={safeActive === 0}
           decoding="async"
         />
       </button>
@@ -92,12 +115,12 @@ export default function ImageGallery({ images, productName, showSaleBadge }) {
         <div className="image-gallery__thumbs" role="tablist" aria-label="Product images">
           {list.map((im, i) => (
             <button
-              key={`${im.url}-${i}`}
+              key={`gallery-thumb-${i}`}
               type="button"
               role="tab"
               aria-selected={i === safeActive}
               className={`image-gallery__thumb ${i === safeActive ? 'is-active' : ''}`}
-              onClick={() => setActive(i)}
+              onClick={() => commitActive(i)}
             >
               <LazyLoadImage
                 src={im.url}

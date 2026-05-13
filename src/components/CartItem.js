@@ -15,7 +15,7 @@ import { productImageUrl } from '../lib/productImage';
  */
 export default function CartItem({ line, animationDelay, onUpdateQuantity, onRemove }) {
   const p = line.product || {};
-  const ref = String(p._id || line.product || '');
+  const ref = String(p.cartLineKey || p._id || line.product || '');
   const img = productImageUrl(p);
   const unit = Number(line.price) || 0;
   const lineTotal = Number(line.lineTotal ?? unit * (line.quantity || 0)) || 0;
@@ -49,6 +49,9 @@ export default function CartItem({ line, animationDelay, onUpdateQuantity, onRem
         <Link to={`/shop/${p.slug || ''}`} className="cart-item-name-link">
           <h3 className="cart-item-name cart-item__name">{p.name}</h3>
         </Link>
+        {p.cartVariantNote ? (
+          <p className="cart-item-variant-note">{p.cartVariantNote}</p>
+        ) : null}
         <p className="cart-item-unit-price" aria-label="Unit price">
           {formatPKR(unit)} <span className="cart-item-unit-price__each">each</span>
         </p>

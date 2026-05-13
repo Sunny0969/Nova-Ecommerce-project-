@@ -46,8 +46,13 @@ function emptyNormalized() {
   };
 }
 
-function minimalProduct(p) {
+function minimalProduct(p, opts = {}) {
   if (!p || typeof p !== 'object') return {};
+  const noteFromOpts = opts.cartVariantNote != null ? String(opts.cartVariantNote).trim() : '';
+  const noteFromP = p.cartVariantNote != null ? String(p.cartVariantNote).trim() : '';
+  const note = noteFromOpts || noteFromP;
+  const id = p._id != null ? String(p._id) : '';
+  const cartLineKey = note ? `${id}::${encodeURIComponent(note)}` : id;
   return {
     _id: p._id,
     slug: p.slug,
@@ -56,7 +61,9 @@ function minimalProduct(p) {
     images: Array.isArray(p.images) ? p.images : [],
     stock: p.stock ?? p.stockQuantity,
     shortDescription: p.shortDescription,
-    category: p.category
+    category: p.category,
+    cartVariantNote: note,
+    cartLineKey
   };
 }
 
@@ -83,7 +90,9 @@ function normalizeGuestState(parsed) {
     return emptyNormalized();
   }
   const items = parsed.items.map((line) => {
-    const product = minimalProduct(line.product);
+    const product = minimalProduct(line.product, {
+      cartVariantNote: line.product?.cartVariantNote
+    });
     const qty = Math.max(0, Number(line.quantity) || 0);
     const unit = Number(line.price ?? product.price) || 0;
     return {
@@ -268,6 +277,8 @@ export const CartProvider = ({ children }) => {
   const addToCart = useCallback(
     async (product, quantity = 1, options = {}) => {
       const silent = Boolean(options.silent);
+      const cartVariantNote = String(options.cartVariantNote || '').trim();
+      const toastSuffix = cartVariantNote ? ` (${cartVariantNote})` : '';
       const ref = product?._id || product?.productId || product?.slug;
       if (!ref) {
         toast.error('Invalid product');
@@ -281,7 +292,9 @@ export const CartProvider = ({ children }) => {
         const lines = [...prev.items];
         const pid = String(product._id || ref);
         const idx = lines.findIndex(
-          (l) => String(l.product?._id || '') === pid
+          (l) =>
+            String(l.product?._id || '') === pid &&
+            String(l.product?.cartVariantNote || '').trim() === cartVariantNote
         );
         const unit = Number(product.price) || 0;
         const stock = product.stock ?? product.stockQuantity;
@@ -302,7 +315,7 @@ export const CartProvider = ({ children }) => {
           };
         } else {
           lines.push({
-            product: minimalProduct(product),
+            product: minimalProduct(product, { cartVariantNote }),
             quantity: qty,
             price: unit,
             lineTotal: Math.round(unit * qty * 100) / 100
@@ -315,14 +328,14 @@ export const CartProvider = ({ children }) => {
         );
         writeGuestNormalized(norm);
         applyNormalized(norm);
-        if (!silent) toast.success(`${name} added to cart`);
+        if (!silent) toast.success(`${name}${toastSuffix} added to cart`);
         return { success: true };
       }
 
       try {
         await cartAPI.addItem({ productId: String(ref), quantity: qty });
         await fetchCart();
-        if (!silent) toast.success(`${name} added to cart`);
+        if (!silent) toast.success(`${name}${toastSuffix} added to cart`);
         return { success: true };
       } catch (error) {
         const msg = apiErrorMessage(error, 'Failed to add to cart');
@@ -341,7 +354,8 @@ export const CartProvider = ({ children }) => {
         const prev = readGuestFromStorage();
         const lines = prev.items
           .map((line) => {
-            if (String(line.product?._id) !== String(productRef)) return line;
+            const lineRef = String(line.product?.cartLineKey || line.product?._id || '');
+            if (lineRef !== String(productRef)) return line;
             if (!Number.isInteger(q) || q <= 0) return null;
             const unit = Number(line.price) || 0;
             const stock = line.product?.stock;
@@ -388,9 +402,10 @@ export const CartProvider = ({ children }) => {
     async (productRef) => {
       if (!user) {
         const prev = readGuestFromStorage();
-        const filtered = prev.items.filter(
-          (line) => String(line.product?._id) !== String(productRef)
-        );
+        const filtered = prev.items.filter((line) => {
+          const lineRef = String(line.product?.cartLineKey || line.product?._id || '');
+          return lineRef !== String(productRef);
+        });
         const norm = buildGuestNormalized(
           filtered,
           prev.coupon,

@@ -212,7 +212,10 @@ function CheckoutStripeSteps({
   const s = shippingAddress || {};
   return (
     <>
-      <div className={step === 2 ? 'checkout-panel' : 'checkout-panel checkout-panel--hidden'}>
+      <div
+        id="checkout-step-payment"
+        className={step === 2 ? 'checkout-panel' : 'checkout-panel checkout-panel--hidden'}
+      >
         <h2 className="checkout-card-title">Payment</h2>
         <p className="checkout-panel__lead">
           Enter your card. You will confirm the full total on the next step before we charge your card.
@@ -249,7 +252,10 @@ function CheckoutStripeSteps({
         </button>
       </div>
 
-      <div className={step === 3 ? 'checkout-panel' : 'checkout-panel checkout-panel--hidden'}>
+      <div
+        id="checkout-step-review"
+        className={step === 3 ? 'checkout-panel' : 'checkout-panel checkout-panel--hidden'}
+      >
         <h2 className="checkout-card-title">Confirm order</h2>
         <p className="checkout-panel__lead">Review your details and place your order. Your card will be charged now.</p>
 
@@ -353,6 +359,14 @@ export default function Checkout() {
   useEffect(() => {
     reset(defaultsFromUser(user));
   }, [user, reset]);
+
+  useEffect(() => {
+    if (step < 2 || step > 3) return;
+    window.requestAnimationFrame(() => {
+      const id = step === 2 ? 'checkout-step-payment' : 'checkout-step-review';
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [step]);
 
   const onSubmitShipping = async (data) => {
     if (!cart.length) {
@@ -470,19 +484,32 @@ export default function Checkout() {
         <div className="container">
           <CheckoutProgress step={step} />
 
-        {!pk && (
-          <div className="api-error-banner" role="alert">
+        {!pk ? (
+          <div className="api-error-banner checkout-stripe-banner" role="alert">
             <p>
               <strong>Stripe publishable key missing.</strong> Add{' '}
               <code>REACT_APP_STRIPE_PUBLISHABLE_KEY</code> to <code>frontend/.env</code> and restart the dev server.
+              Until then, payment cannot start after this step.
             </p>
           </div>
-        )}
+        ) : null}
 
         <div className="checkout-layout checkout-layout--wizard">
           <div className="checkout-main-col">
             {step === 1 && (
-              <form className="checkout-shipping card-like" onSubmit={handleSubmit(onSubmitShipping)} noValidate>
+              <form
+                className="checkout-shipping card-like"
+                onSubmit={handleSubmit(onSubmitShipping, () => {
+                  toast.error('Please fix the highlighted fields');
+                  window.requestAnimationFrame(() => {
+                    document.querySelector('.checkout-shipping .form-error')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center'
+                    });
+                  });
+                })}
+                noValidate
+              >
                 <h2 className="checkout-card-title">Step 1 — Shipping address</h2>
 
                 <div className="form-group">
@@ -588,7 +615,7 @@ export default function Checkout() {
                   </label>
                 ) : null}
 
-                <button type="submit" className="btn btn-primary btn-full checkout-continue-btn" disabled={creatingPi || !pk}>
+                <button type="submit" className="btn btn-primary btn-full checkout-continue-btn" disabled={creatingPi}>
                   {creatingPi ? 'Preparing checkout…' : 'Continue to payment'}
                 </button>
 

@@ -111,7 +111,10 @@ export default function AdminStoreSettings() {
             value={form.freeShippingMin}
             onChange={onChange('freeShippingMin')}
           />
-          <p className="mt-1 text-xs text-neutral-500">Example: {formatPKR(form.freeShippingMin)} — standard delivery is free at or above this.</p>
+          <p className="mt-1 text-xs text-neutral-500">
+            Example: {formatPKR(form.freeShippingMin)} — express / next-day delivery is free at or above this subtotal
+            (standard shipping uses the flat &quot;Standard shipping&quot; rate below).
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">

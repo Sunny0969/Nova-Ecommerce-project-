@@ -97,8 +97,6 @@ const Cart = () => {
     navigate('/checkout');
   };
 
-  const emptyFreeExample = publicSettings?.freeShippingMin ?? 50;
-
   return (
     <>
       <SEO
@@ -149,7 +147,7 @@ const Cart = () => {
                     className="cart-empty-state"
                     illustration={<ShoppingCart className="h-12 w-12 sm:h-14 sm:w-14" strokeWidth={1.25} aria-hidden />}
                     title="Your cart is empty"
-                    message={`Browse the shop and add products you love — free standard delivery on orders over ${formatPKR(emptyFreeExample)} (store minimum).`}
+                    message="Browse the shop and add products you love. Standard delivery is a flat rate; express options may qualify for free shipping over your store minimum at checkout."
                     actionLabel="Continue Shopping"
                     onAction={() => navigate('/shop')}
                   />
@@ -214,20 +212,8 @@ const Cart = () => {
                     <>
                       <div className="summary-row">
                         <span className="label">Shipping (standard)</span>
-                        <span className="value">
-                          {preview.shippingPrice === 0 ? (
-                            <span className="cart-summary__free">Free</span>
-                          ) : (
-                            formatPKR(preview.shippingPrice)
-                          )}
-                        </span>
+                        <span className="value">{formatPKR(preview.shippingPrice)}</span>
                       </div>
-                      {subtotal < freeThreshold ? (
-                        <p className="cart-summary__ship-hint">
-                          Add {formatPKR(freeThreshold - subtotal)} more in items for free standard shipping (over{' '}
-                          {formatPKR(freeThreshold)} subtotal).
-                        </p>
-                      ) : null}
                       {preview.taxPrice > 0 ? (
                         <div className="summary-row">
                           <span className="label">Tax</span>
@@ -266,7 +252,8 @@ const Cart = () => {
                     </li>
                     <li>
                       <Truck size={16} strokeWidth={1.75} aria-hidden />
-                      Free standard delivery on orders over {formatPKR(freeThreshold)}
+                      Standard delivery {preview ? formatPKR(preview.shippingPrice) : formatPKR(299)} — express options
+                      may be free over {formatPKR(freeThreshold)} at checkout
                     </li>
                   </ul>
                   <p className="cart-summary__hint">
