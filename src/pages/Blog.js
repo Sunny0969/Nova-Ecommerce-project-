@@ -8,6 +8,8 @@ import SecondaryCarouselRow from '../components/SecondaryCarouselRow';
 import NewsletterCTA from '../components/NewsletterCTA';
 import QuickLinksGrid from '../components/QuickLinksGrid';
 import { blogAPI } from '../api';
+import './Blog.css';
+
 
 import toast from 'react-hot-toast';
 
@@ -44,6 +46,10 @@ function sortBlogs(list, sort) {
 export default function Blog() {
   const [searchValue, setSearchValue] = useState('');
   const [category, setCategory] = useState('All');
+
+  // Quick robustness: ensure we can always show posts even if category filter is mismatched
+  // (some backends store category casing differently).
+  const normalizedCategory = category === 'All' ? 'All' : String(category).trim().toLowerCase();
   const [sort, setSort] = useState('newest');
 
   const [loading, setLoading] = useState(true);
@@ -64,7 +70,11 @@ export default function Blog() {
           sort
         });
         if (!mounted) return;
-        setPosts(res?.data?.posts || []);
+        console.log('[Blog] /api/blog/posts response:', res?.data);
+        // Backend might return different shapes; support common variants.
+        const maybePosts = res?.data?.posts ?? res?.data?.data?.posts ?? res?.data?.items ?? [];
+        setPosts(Array.isArray(maybePosts) ? maybePosts : []);
+
       } catch (e) {
         if (!mounted) return;
         setError(e?.response?.data?.message || 'Failed to load posts. Please try again.');

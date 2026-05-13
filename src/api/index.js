@@ -1,10 +1,21 @@
+import api from './axios';
+
 /**
  * Central API entry — `import ... from 'api'`.
- * Create React App: set `REACT_APP_API_URL` in `.env.production` before `npm run build`.
- * (This repo uses react-scripts, not Vite — `VITE_API_URL` is not injected here.)
+ * Create React App: set `REACT_APP_API_URL` in `.env.production`
  */
-export { default } from './axios';
-export * from './axios';
 
+export default api;
+
+export * from './axios';
 export * from './blog';
 
+/* ============================================================
+   Staff APIs
+   ============================================================ */
+
+export const staffAPI = {
+  login: (body) => api.post('/api/staff/login', body),
+  getMe: () => api.get('/api/staff/me'),
+  logout: () => Promise.resolve()
+};

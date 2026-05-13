@@ -77,8 +77,21 @@ api.interceptors.response.use(
       if (!skipRedirect) {
         localStorage.removeItem(TOKEN_KEY);
         delete api.defaults.headers.common.Authorization;
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.assign('/login');
+
+        if (typeof window !== 'undefined') {
+          const pathname = window.location.pathname;
+
+          // ✅ Never send staff to public home ("/") on auth failure.
+          // Always route staff API failures to /staff-login.
+          const urlForCheck = String(url || '').toLowerCase();
+          const isStaffAuthFlow = urlForCheck.includes('/api/staff/') || pathname.startsWith('/staff');
+
+          const target = isStaffAuthFlow ? '/staff-login' : '/login';
+
+          // Avoid pointless navigation when already on target.
+          if (pathname !== target) {
+            window.location.assign(target);
+          }
         }
       }
     }
@@ -299,7 +312,7 @@ export const adminAPI = {
 
   staff: {
     list: () => api.get('/api/admin/staff'),
-    create: (body) => api.post('/api/admin/staff', body),
+    create: (body) => api.post('/api/admin/staff/create', body),
     updatePermissions: (id, permissions) =>
       api.put(`/api/admin/staff/${encodeURIComponent(id)}/permissions`, { permissions }),
     block: (id, durationHours) =>
