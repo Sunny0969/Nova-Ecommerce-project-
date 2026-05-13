@@ -3,8 +3,9 @@
    ============================================ */
 
 .blog-detail-page {
-  background: #ffffff;
+  background: var(--cream, #f5f0e8);
 }
+
 
 /* ============================================
    BREADCRUMB

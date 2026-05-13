@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import './BlogDetailsPage.css';
+
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -36,6 +38,11 @@ export default function BlogDetailsPage() {
         const res = await blogAPI.getBySlug(slug);
         if (!mounted) return;
         setBlog(res?.data?.post || null);
+
+        // If backend returns success but no post, keep null to trigger fallback UI
+        if (!res?.data?.post) {
+          setBlog(null);
+        }
       } catch (e) {
         if (!mounted) return;
         toast.error('Blog post not found');

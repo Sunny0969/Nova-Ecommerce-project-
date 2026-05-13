@@ -5,6 +5,8 @@ import { AppToaster } from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import RouteFallback from './components/RouteFallback';
+import ErrorBoundary from './components/ErrorBoundary';
+
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -78,8 +80,10 @@ function AppShell() {
         </Suspense>
       )}
       <main className={isAdmin || isStaff ? 'main-content main-content--admin' : 'main-content'}>
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
+        <ErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+
                       <Route path="/" element={<Home />} />
                       <Route path="/shop" element={<Shop />} />
                       <Route path="/shop/:slug" element={<ProductDetail />} />
@@ -190,7 +194,11 @@ function AppShell() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
+
+
+
       {!isAdmin && (
         <Suspense fallback={<footer className="site-chrome-placeholder site-chrome-placeholder--footer" aria-hidden />}>
           <Footer />

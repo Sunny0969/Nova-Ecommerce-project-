@@ -34,11 +34,16 @@ export default function BlogCard({
 
   // ✅ Always navigate to BlogDetailsPage
   // App routes support: /blog (shows Blog page) and /blog/:slug (shows Blog details)
+  // Prefer slug (backend uses /api/blog/posts/:slug). Fallback to id for cases where slug isn't present.
+  // BlogDetailsPage supports fetching by slug only, so if only id exists we still route to /blog/:id
+  // (backend returns 404 unless you add an id->slug lookup; this is still better than dead links).
   const detailsHref = blog?.slug
     ? `/blog/${encodeURIComponent(blog.slug)}`
-    : blog?.id
-      ? `/blog/${encodeURIComponent(blog.id)}`
-      : '/blog';
+    : blog?._id
+      ? `/blog/${encodeURIComponent(blog._id)}`
+      : blog?.id
+        ? `/blog/${encodeURIComponent(blog.id)}`
+        : '/blog';
 
   return (
     <article className={`blog-card blog-card--${variant}`}>

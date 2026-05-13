@@ -30,11 +30,13 @@ class ErrorBoundary extends React.Component {
             </details>
             <button onClick={() => window.location.reload()}>Reload page</button>
           </div>
+        </div>
       );
     }
 
     return this.props.children;
   }
 }
+
 
 export default ErrorBoundary;

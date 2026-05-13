@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SEO from '../components/SEO';
 import api from 'api';
+import { useStaffAuth } from '../context/StaffAuthContext';
 
 export default function StaffLogin() {
   const navigate = useNavigate();
+  const { setStaffToken, setStaffUser, setPermissions } = useStaffAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -16,30 +19,49 @@ export default function StaffLogin() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit || busy) return;
+
     setBusy(true);
     setError('');
+
     try {
       const res = await api.post('/api/staff/login', {
         email: email.trim(),
         password
       });
+
       const token = res.data?.token;
       const staff = res.data?.staff;
+
       if (!token || !staff) {
         setError('Login failed. Please try again.');
         return;
       }
+
+      // ✅ Save to localStorage
       localStorage.setItem('staffToken', String(token));
-      localStorage.setItem('staffPermissions', JSON.stringify(staff.permissions || {}));
       localStorage.setItem('staffUser', JSON.stringify(staff));
+      localStorage.setItem(
+        'staffPermissions',
+        JSON.stringify(staff.permissions || {})
+      );
+
+      // ✅ Sync Context immediately
+      setStaffToken(String(token));
+      setStaffUser(staff);
+      setPermissions(staff.permissions || {});
+
       toast.success('Welcome — staff access granted');
-      navigate('/staff/dashboard', { replace: true });
+
+      // Staff ko admin panel URL pe le aao
+      navigate('/admin', { replace: true });
+
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
         'Login failed';
+
       setError(String(msg));
     } finally {
       setBusy(false);
@@ -48,7 +70,12 @@ export default function StaffLogin() {
 
   return (
     <>
-      <SEO noIndex title="Staff Access Login" description="Staff access login for Nova Shop." />
+      <SEO
+        noIndex
+        title="Staff Access Login"
+        description="Staff access login for Nova Shop."
+      />
+
       <main className="auth-page" id="main-content">
         <div className="auth-page__shell">
           <div className="auth-page__panel" style={{ maxWidth: 520 }}>
@@ -66,7 +93,10 @@ export default function StaffLogin() {
               Enter your credentials provided by admin
             </p>
 
-            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, marginTop: 16 }}>
+            <form
+              onSubmit={onSubmit}
+              style={{ display: 'grid', gap: 12, marginTop: 16 }}
+            >
               <label className="auth-field">
                 <span className="auth-field__label">Email</span>
                 <input
@@ -91,13 +121,21 @@ export default function StaffLogin() {
                 />
               </label>
 
-              {error ? (
-                <div className="api-error-banner" role="alert" style={{ marginTop: 6 }}>
+              {error && (
+                <div
+                  className="api-error-banner"
+                  role="alert"
+                  style={{ marginTop: 6 }}
+                >
                   {error}
                 </div>
-              ) : null}
+              )}
 
-              <button type="submit" className="btn btn-primary" disabled={!canSubmit || busy}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={!canSubmit || busy}
+              >
                 {busy ? 'Logging in…' : 'Login'}
               </button>
             </form>
@@ -107,4 +145,3 @@ export default function StaffLogin() {
     </>
   );
 }
-
