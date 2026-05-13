@@ -10,7 +10,7 @@ export default function VerifyEmail() {
       <SEO
         noIndex
         title="Verify email"
-        description="Complete email verification for your Nova Shop account. This link is personal and is not shown in public search results."
+        description="Complete email verification for your Souvenir Handicraft account. This link is personal and is not shown in public search results."
         canonicalUrl={token ? `/verify-email/${token}` : '/verify-email'}
       />
       <h1 style={{ marginBottom: '1rem' }}>Verify your email</h1>

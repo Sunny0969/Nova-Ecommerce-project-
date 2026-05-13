@@ -10,7 +10,7 @@ export default function ForgotPassword() {
       <SEO
         noIndex
         title="Reset password"
-        description="Request a password reset link for your Nova Shop account. Secure and private — not for search indexing."
+        description="Request a password reset link for your Souvenir Handicraft account. Secure and private — not for search indexing."
         canonicalUrl="/forgot-password"
       />
       <div className="auth-card">

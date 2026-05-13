@@ -10,7 +10,7 @@ import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from 
 import api from 'api';
 
 const PAGE_SIZE = 12;
-const VIEW_STORAGE_KEY = 'nova-shop-products-view';
+const VIEW_STORAGE_KEY = 'Souvenir Handicraft-shop-products-view';
 
 function categoriesFromSearchParams(searchParams) {
   const multi = searchParams.getAll('category');
@@ -496,7 +496,7 @@ const Products = () => {
     <>
       <SEO
         title="Shop All Products"
-        description="Shop all products at Nova Shop—filter by category, price, rating, and availability. Secure checkout, fast delivery, and curated quality."
+        description="Shop all products at Souvenir Handicraft Shop—filter by category, price, rating, and availability. Secure checkout, fast delivery, and curated quality."
         canonicalUrl={listingCanonicalUrl}
         schema={listingBreadcrumbJsonLd}
       />
@@ -546,7 +546,7 @@ const Products = () => {
             </div>
           )}
 
-          <div className="shop-layout shop-layout--nova">
+          <div className="shop-layout shop-layout--Souvenir Handicraft">
             {isDesktopFilters ? (
               <aside className="filter-sidebar shop-filters-desktop" aria-labelledby="shop-filters-heading">
                 {filterPanel}
@@ -621,7 +621,7 @@ const Products = () => {
             </div>
           )}
 
-              <div className="shop-toolbar shop-toolbar--nova">
+              <div className="shop-toolbar shop-toolbar--Souvenir Handicraft">
                 <p className="results-count" aria-live="polite">
                   {loading ? (
                     <span className="results-count__label">Loading results…</span>

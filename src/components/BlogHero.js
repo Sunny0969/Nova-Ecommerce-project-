@@ -18,7 +18,7 @@ export default function BlogHero({ searchValue, onSearchChange, onSubmit }) {
             <div className="blog-hero__art-icon blog-hero__art-icon--compass">
               <Compass size={30} strokeWidth={1.75} />
             </div>
-            <div className="blog-hero__art-sub">Nova Journal</div>
+            <div className="blog-hero__art-sub">Souvenir Handicraft  Journal</div>
           </div>
         </div>
 

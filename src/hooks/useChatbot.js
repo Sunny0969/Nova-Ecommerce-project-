@@ -5,7 +5,7 @@ function createWelcomeMessage() {
   return {
     id: `welcome_${Date.now()}`,
     type: 'bot',
-    text: "Assalam o Alaikum! 👋 Nova Shop mein khush amdeed!\n\nMein aapka virtual assistant hoon. Kaise help kar sakta hoon?",
+    text: "Assalam o Alaikum! 👋 Souvenir Handicraft mein khush amdeed!\n\nMein aapka virtual assistant hoon. Kaise help kar sakta hoon?",
     timestamp: new Date(),
     showQuickReplies: true
   };

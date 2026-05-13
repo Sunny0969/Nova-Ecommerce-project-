@@ -10,7 +10,7 @@ export default function ResetPassword() {
       <SEO
         noIndex
         title="Set new password"
-        description="Set a new password for your Nova Shop account using the secure link from your email. One-time, private page."
+        description="Set a new password for your Souvenir Handicraft account using the secure link from your email. One-time, private page."
         canonicalUrl={token ? `/reset-password/${token}` : '/reset-password'}
       />
       <div className="auth-card">

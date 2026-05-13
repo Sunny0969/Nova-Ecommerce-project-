@@ -1,11 +1,11 @@
 /**
- * Central SEO configuration — Nova Shop (Create React App).
+ * Central SEO configuration — Souvenir Handicraft Shop (Create React App).
  * Use with react-helmet-async. For production, set REACT_APP_SITE_URL to the canonical
  * public origin (no trailing slash), e.g. https://www.example.com
  */
 
 /** @type {string} Human-readable site name (brand) */
-export const siteName = 'Nova Shop';
+export const siteName = 'Souvenir Handicraft Shop';
 
 /** Home hero image (LCP); keep in sync with `Home.js` hero `<img>` src for preload. */
 export const homeHeroImageUrl =
@@ -48,20 +48,20 @@ export const getBaseUrl = getSiteUrl;
  * Default document title (shown when a route does not set a <title>).
  * Distinct from the per-page title template in {@link titleTemplate}.
  */
-export const defaultTitle = 'Nova Shop | Premium Products Delivered';
+export const defaultTitle = 'Souvenir Handicraft Shop | Premium Products Delivered';
 
 /**
  * When using short segment titles, full title = titleTemplate with %s replaced, e.g.
- * `formatPageTitle('My Account')` → "My Account | Nova Shop"
+ * `formatPageTitle('My Account')` → "My Account | Souvenir HandicraftShop"
  */
-export const titleTemplate = '%s | Nova Shop';
+export const titleTemplate = '%s |Souvenir Handicraft Shop';
 
 /**
  * Google typically displays ~150–160 characters; this default is 155.
  * Keep in sync with `public/index.html` meta name="description" (first paint / no-JS).
  */
 export const defaultDescription =
-  'Nova Shop: your store for premium products, fast delivery, and secure payment. Curated quality, easy returns, and support. Shop online with confidence now.';
+  'Souvenir Handicraft Shop: your store for premium products, fast delivery, and secure payment. Curated quality, easy returns, and support. Shop online with confidence now.';
 
 if (defaultDescription.length !== 155) {
   // Defensive: avoid silent length drift
@@ -100,7 +100,7 @@ export const defaultOgType = 'website';
 
 /**
  * Formats a short page segment into a full <title> using {@link titleTemplate}.
- * @param {string} [titleSegment] — e.g. "Sign in" → "Sign in | Nova Shop"
+ * @param {string} [titleSegment] — e.g. "Sign in" → "Sign in | Souvenir Handicraft Shop"
  * @returns {string}
  */
 export function formatPageTitle(titleSegment) {

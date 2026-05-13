@@ -104,7 +104,7 @@ const Home = () => {
     await addToCart(product, 1);
   };
 
-  const PROMO_CODE = 'NOVA20';
+  const PROMO_CODE = 'Souvenir Handicraft20';
 
   const handleCopyPromoCode = async () => {
     try {
@@ -120,12 +120,12 @@ const Home = () => {
     <>
       <SEO
         title="Premium Online Shopping"
-        description="Shop premium products with fast delivery and secure checkout. Nova Shop offers curated style across electronics, fashion, home, beauty, and sports. Find your next favorite online."
+        description="Shop premium products with fast delivery and secure checkout. Souvenir Handicraft Shop offers curated style across electronics, fashion, home, beauty, and sports. Find your next favorite online."
         schema={buildWebSiteWithSearchActionSchema(getSiteUrl() || undefined)}
         preload={[{ href: homeHeroImageUrl, as: 'image', crossOrigin: 'anonymous' }]}
       />
 
-      {/* Hero — split: copy + lifestyle image (Nova Shop) */}
+      {/* Hero — split: copy + lifestyle image (Souvenir Handicraft Shop) */}
       <section className="hero hero--home" aria-label="Hero banner">
         <div className="hero__copy">
           <div className="hero__copy-inner container">
@@ -297,7 +297,7 @@ const Home = () => {
       </div>
 
       <section
-        className="promo-banner promo-banner--nova"
+        className="promo-banner promo-banner--Souvenir Handicrat"
         aria-label="Promotional offer"
         style={{ '--promo-bg-image': `url("${promoBannerBgUrl}")` }}
       >
@@ -320,7 +320,7 @@ const Home = () => {
       <section className="section bg-cream trust-badges" aria-label="Why choose us">
         <div className="container">
           <div className="section-header text-center">
-            <span className="section-tag">WHY NOVA SHOP</span>
+            <span className="section-tag">WHY Souvenir Handicraft</span>
             <h2>Shopping Made Simple</h2>
           </div>
           <div className="trust-grid">

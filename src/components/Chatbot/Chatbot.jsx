@@ -179,7 +179,7 @@ export default function Chatbot() {
           <>
             <header className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-[#fafaf8] px-3 py-2.5">
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold text-[#0a0a0a]">Nova Shop Support</h2>
+                <h2 className="truncate text-sm font-semibold text-[#0a0a0a]">Souvenir Handicraft  Support</h2>
                 <p className="text-xs text-gray-500">Roman Urdu & English — instant replies</p>
               </div>
               <div className="flex items-center gap-0.5">

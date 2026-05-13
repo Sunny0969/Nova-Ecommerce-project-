@@ -73,7 +73,7 @@ export default function StaffLogin() {
       <SEO
         noIndex
         title="Staff Access Login"
-        description="Staff access login for Nova Shop."
+        description="Staff access login for Souvenir Handicraft Shop."
       />
 
       <main className="auth-page" id="main-content">
@@ -81,7 +81,7 @@ export default function StaffLogin() {
           <div className="auth-page__panel" style={{ maxWidth: 520 }}>
             <div className="auth-page__brand" style={{ marginBottom: 18 }}>
               <span className="auth-page__logo" aria-hidden>
-                Nova
+             Souvenir Handicraft
               </span>
               <span className="auth-page__logo-dot" aria-hidden>
                 .

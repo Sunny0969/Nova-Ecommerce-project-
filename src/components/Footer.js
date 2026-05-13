@@ -22,12 +22,12 @@ const Footer = () => {
   };
 
   return (
-    <footer className="footer footer--nova" role="contentinfo">
+    <footer className="footer footer--Souvenir Handicraft " role="contentinfo">
       <div className="container">
-        <div className="footer-grid footer-grid--nova">
+        <div className="footer-grid footer-grid--Souvenir Handicraft ">
           <div className="footer-brand">
             <Link to="/" className="footer-logo">
-              Nova<span className="footer-logo__dot">.</span>
+             Souvenir Handicraft <span className="footer-logo__dot">.</span>
             </Link>
             <p className="footer-tagline">
               Premium lifestyle products curated from around the world. Quality you can feel, delivered with care.
@@ -141,7 +141,7 @@ const Footer = () => {
             <h4 className="footer-newsletter__title">Newsletter</h4>
             <p>Subscribe for new arrivals, offers, and style inspiration.</p>
           </div>
-          <form className="footer-newsletter__form" onSubmit={handleNewsletter} noValidate>
+          <form className="footer-newsletter__form" onSubmit={handleNewsletter} novalidate>
             <label htmlFor="footer-newsletter-email" className="visually-hidden">
               Email address
             </label>
@@ -161,9 +161,9 @@ const Footer = () => {
           </form>
         </div>
 
-        <div className="footer-bottom footer-bottom--nova">
+        <div className="footer-bottom footer-bottom--Souvenir Handicraft ">
           <p className="footer-copyright">
-            © {new Date().getFullYear()} Nova Shop. All rights reserved. Powered by Rathisoft Innovation.
+            © {new Date().getFullYear()} Souvenir Handicraft . All rights reserved. Powered by Rathisoft Innovation.
           </p>
           <div className="footer-payments" aria-label="Accepted payment methods">
             <span className="footer-pay footer-pay--visa" title="Visa">

@@ -70,7 +70,7 @@ export default function OrderConfirmation() {
         <SEO
           noIndex
           title="Order confirmation"
-          description="Loading your Nova Shop order confirmation."
+          description="Loading your Souvenir Handicraft Shop order confirmation."
           canonicalUrl={id ? `/order-confirmation/${id}` : '/order-confirmation'}
         />
         <LoadingSpinner size="lg" label="Loading order" />
@@ -109,7 +109,7 @@ export default function OrderConfirmation() {
       <SEO
         noIndex
         title={`Order #${orderNo} confirmed`}
-        description={`Your Nova Shop order #${orderNo} is confirmed. Thank you for your purchase.`}
+        description={`Your Souvenir Handicraft Shop order #${orderNo} is confirmed. Thank you for your purchase.`}
         canonicalUrl={`/order-confirmation/${id}`}
       />
 

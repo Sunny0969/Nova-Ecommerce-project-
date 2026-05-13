@@ -156,13 +156,13 @@ export default function Blog() {
 
   return (
     <>
-      <SEO title="Blog" description="Browse articles and guides from Nova Shop." canonicalUrl="/blog" />
+      <SEO title="Blog" description="Browse articles and guides from Souvenir Handicraft Shop." canonicalUrl="/blog" />
 
       {/* Keep existing top header / breadcrumb markup intact style-wise */}
       <header className="page-header">
         <div className="container">
           <h1 className="page-header__title">Blog</h1>
-          <p className="page-header__subtitle">Stories and style notes from Nova — more posts coming soon.</p>
+          <p className="page-header__subtitle">Stories and style notes from Souvenir Handicraft — more posts coming soon.</p>
           <ol className="breadcrumb" aria-label="Breadcrumb">
             <li>
               <Link to="/">Home</Link>
