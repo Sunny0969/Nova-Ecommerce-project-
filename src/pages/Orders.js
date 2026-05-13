@@ -77,7 +77,7 @@ export default function Orders({ embedded }) {
         <SEO
           noIndex
           title="My orders"
-          description="View your order history and delivery status at Nova Shop. Private to your account."
+          description="View your order history and delivery status at Souvenir Handicraft Shop. Private to your account."
         />
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Orders</h2>
         {body}
@@ -90,7 +90,7 @@ export default function Orders({ embedded }) {
       <SEO
         noIndex
         title="My orders"
-        description="Your Nova Shop order history — track past purchases and order status. Sign in required."
+        description="Your Souvenir Handicraft Shop order history — track past purchases and order status. Sign in required."
         canonicalUrl="/orders"
       />
       <header className="page-header">

@@ -73,7 +73,7 @@ const Login = ({ defaultTab = 'login' }) => {
         navigate('/', { replace: true });
         return;
       }
-      toast.success('Welcome back to Nova Shop');
+      toast.success('Welcome back to Souvenir Handicraft Shop');
       navigate(nextPath || '/');
     } else {
       if (result.code === 'USER_NOT_FOUND' || result.status === 404) {
@@ -92,7 +92,7 @@ const Login = ({ defaultTab = 'login' }) => {
 
     const result = await register(registerData);
     if (result.success) {
-      toast.success('Account created — welcome to Nova Shop');
+      toast.success('Account created — welcome toSouvenir Handicraft Shop');
       navigate(nextPath && !nextPath.startsWith('/admin') ? nextPath : '/');
     } else {
       toast.error(result.error || 'Registration failed');
@@ -106,8 +106,8 @@ const Login = ({ defaultTab = 'login' }) => {
         title={activeTab === 'register' ? 'Create account' : 'Sign in'}
         description={
           activeTab === 'register'
-            ? 'Create a Nova Shop account to track orders, save addresses, and checkout faster.'
-            : 'Sign in to your Nova Shop account to manage orders, profile, and wishlist.'
+            ? 'Create a Souvenir Handicraft Shop account to track orders, save addresses, and checkout faster.'
+            : 'Sign in to your Souvenir Handicraft account to manage orders, profile, and wishlist.'
         }
       />
       <main
@@ -119,7 +119,7 @@ const Login = ({ defaultTab = 'login' }) => {
           <div className="auth-page__panel">
             <div className="auth-page__brand">
               <a href="/" className="nav-logo" style={{ fontSize: '2rem', display: 'inline-block', marginBottom: '0.5rem' }}>
-                Nova<span>.</span>
+               Souvenir Handicraft<span>.</span>
               </a>
               <p className="auth-page__tagline">Your premium shopping destination</p>
             </div>

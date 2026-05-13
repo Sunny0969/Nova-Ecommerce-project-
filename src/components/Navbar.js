@@ -15,8 +15,10 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-// SmartSearchBar: keyword product search + local blog index (no OpenAI)
 import SmartSearchBar from './SmartSearchBar';
+
+// ✅ Logo import karein
+import logo from '../assets/images/logo.png';
 
 function useDebouncedCallback(fn, delay) {
   const t = useRef(null);
@@ -118,8 +120,6 @@ export default function Navbar() {
     setDrawerOpen(false);
   }, [location.pathname]);
 
-  // Search: SmartSearchBar (products API + blog index)
-
   const handleLogout = async () => {
     setAccountOpen(false);
     setDrawerOpen(false);
@@ -199,8 +199,9 @@ export default function Navbar() {
       >
         <div className="nav-inner">
           <div className="nav-brand">
-            <Link to="/" className="nav-logo" aria-label="Nova Shop Home" onClick={() => setDrawerOpen(false)}>
-              Nova<span className="nav-logo__dot">.</span>
+            <Link to="/" className="nav-logo" aria-label="Souvenir Handicraft Home" onClick={() => setDrawerOpen(false)}>
+              {/* ✅ Logo image yahan lagaya */}
+              <img src={logo} alt="Souvenir Handicraft" className="nav-logo__img" />
             </Link>
             <div className="nav-main nav-main--desktop">{renderNavLinks(() => {})}</div>
           </div>
@@ -314,9 +315,8 @@ export default function Navbar() {
         aria-label="Mobile menu"
       >
         <div className="nav-drawer__head">
-          <span className="nav-logo">
-            Nova<span className="nav-logo__dot">.</span>
-          </span>
+          {/* ✅ Mobile drawer mein bhi logo */}
+          <img src={logo} alt="Souvenir Handicraft" className="nav-drawer__logo" />
           <button
             type="button"
             className="nav-drawer__close"

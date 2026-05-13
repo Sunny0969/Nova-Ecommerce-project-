@@ -15,7 +15,7 @@ import {
  * Per-route meta + Open Graph + Twitter; always outputs canonical and robots.
  *
  * @param {object} props
- * @param {string} [props.title] — short segment; full title = `formatPageTitle(title)` (e.g. "Contact" → "Contact | Nova Shop")
+ * @param {string} [props.title] — short segment; full title = `formatPageTitle(title)` (e.g. "Contact" → "Contact | Souvenir Handicraft")
  * @param {string} [props.description] — meta description; falls back to default from utils/seo
  * @param {string} [props.canonicalUrl] — absolute https URL, or path starting with `/` (no query). Omits = current path only (strips search params for duplicate-URL control)
  * @param {string} [props.ogImage] — absolute image URL; default site OG image

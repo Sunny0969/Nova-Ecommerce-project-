@@ -5,7 +5,7 @@ import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import RecommendationRow from '../components/RecommendationRow';
 import api, { recommendationsAPI } from 'api';
 
-const SUPPORT_MAIL = 'support@novashop.com';
+const SUPPORT_MAIL = 'support@Souvenir Handicraftshop.com';
 
 export default function NotFound() {
   const { pathname } = useLocation();
@@ -44,7 +44,7 @@ export default function NotFound() {
       <SEO
         noIndex
         title="404 - Page Not Found"
-        description="The page you requested does not exist on Nova Shop. Go home, browse the shop, or contact support for help."
+        description="The page you requested does not exist on Souvenir HandicraftShop. Go home, browse the shop, or contact support for help."
         canonicalUrl={pathname}
       />
 

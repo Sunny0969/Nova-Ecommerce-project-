@@ -123,7 +123,7 @@ export default function AdminLayout() {
       <SEO
         noIndex
         title={getAdminSeoTitle(pathname)}
-        description="Nova Shop admin console."
+        description="Souvenir Handicraft admin console."
         canonicalUrl={pathname}
       />
 
@@ -132,7 +132,7 @@ export default function AdminLayout() {
         {/* SIDEBAR */}
         <aside className="admin-sidebar" aria-label="Admin navigation">
           <Link to="/admin" className="admin-sidebar__brand">
-            <span className="admin-sidebar__logo">Nova</span>
+            <span className="admin-sidebar__logo">Souvenir Handicraft</span>
             <span className="admin-sidebar__logo-dot">.</span>
             <span className="admin-sidebar__logo-sub">Admin</span>
           </Link>

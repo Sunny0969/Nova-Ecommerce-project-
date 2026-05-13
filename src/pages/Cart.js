@@ -104,7 +104,7 @@ const Cart = () => {
       <SEO
         noIndex
         title="Shopping cart"
-        description="Review your Nova Shop basket, apply a coupon, and proceed to secure checkout."
+        description="Review your Souvenir Handicraft Shop basket, apply a coupon, and proceed to secure checkout."
         canonicalUrl="/cart"
       />
       <header className="page-header">

@@ -31,7 +31,7 @@ export default function AccountLayout() {
       <SEO
         noIndex
         title={getAccountSeoTitle(pathname)}
-        description="Your Nova Shop account: orders, profile, addresses, wishlist, and reviews. Private area, not shown in public search results."
+        description="Your Souvenir Handicraft account: orders, profile, addresses, wishlist, and reviews. Private area, not shown in public search results."
         canonicalUrl={pathname}
       />
       <header className="account-layout__header page-header">

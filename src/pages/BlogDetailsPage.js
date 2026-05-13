@@ -163,7 +163,7 @@ export default function BlogDetailsPage() {
 
   useEffect(() => {
     if (blog) {
-      document.title = blog.title ? `${blog.title} | Nova` : 'Nova Blog';
+      document.title = blog.title ? `${blog.title} | Souvenir Handicraft` : 'Souvenir Handicraft Blog';
     }
   }, [blog]);
 
@@ -218,7 +218,7 @@ export default function BlogDetailsPage() {
                     <User size={20} />
                   </div>
                   <div className="blog-detail-meta__info">
-                    <div className="blog-detail-meta__name">Nova Editorial Team</div>
+                    <div className="blog-detail-meta__name">Souvenir Handicraft Editorial Team</div>
                     <div className="blog-detail-meta__details">
                       <span className="blog-detail-meta__date">
                         <Calendar size={14} />
@@ -469,9 +469,9 @@ export default function BlogDetailsPage() {
           <div className="container">
             <div className="blog-detail-about__content">
               <div className="blog-detail-about__text">
-                <h2 className="blog-detail-about__title">About Nova Shop</h2>
+                <h2 className="blog-detail-about__title">About Souvenir Handicraft Shop</h2>
                 <p className="blog-detail-about__description">
-                  Nova Shop is your destination for curated products and expert guides across care, tech, home, fashion,
+                 Souvenir Handicraft Shop is your destination for curated products and expert guides across care, tech, home, fashion,
                   beauty, and sports.
                 </p>
                 <a href="/about" className="blog-detail-about__btn">

@@ -262,7 +262,7 @@ export default function ProductDetail() {
       image: imgs.length ? imgs : undefined,
       description: desc,
       sku: product.sku != null && String(product.sku).trim() ? String(product.sku).trim() : undefined,
-      brand: { '@type': 'Brand', name: 'Nova Shop' },
+      brand: { '@type': 'Brand', name: 'Souvenir Handicraft Shop' },
       offers: {
         '@type': 'Offer',
         priceCurrency: 'PKR',
@@ -332,7 +332,7 @@ export default function ProductDetail() {
       <main className="section container product-detail-skeleton" id="main-content">
         <SEO
           title="Product"
-          description="Loading product details at Nova Shop."
+          description="Loading product details at Souvenir Handicraft Shop."
         />
         <div className="product-detail-grid">
           <Skeleton height={420} style={{ borderRadius: 12 }} />
@@ -357,7 +357,7 @@ export default function ProductDetail() {
     const catNameUn = formatCategoryLabel(catSlugUn, product.categoryName);
     const metaUnavailable =
       stripHtml(product.shortDescription || product.description || '').slice(0, 160) ||
-      `${product.name} is not available at Nova Shop.`;
+      `${product.name} is not available at Souvenir Handicraft Shop.`;
 
     return (
       <>
@@ -472,7 +472,7 @@ export default function ProductDetail() {
 
   const metaDesc =
     stripHtml(product.shortDescription || product.description || '').slice(0, 160) ||
-    `${product.name} at Nova Shop`;
+    `${product.name} at Souvenir Handicraft Shop`;
 
   return (
     <>
