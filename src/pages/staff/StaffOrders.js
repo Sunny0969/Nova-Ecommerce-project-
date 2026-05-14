@@ -14,6 +14,6 @@ export default function StaffOrders() {
     );
   }
   // Reuse admin orders UI; backend disallows destructive actions already.
-  return <AdminOrders />;
+  return <AdminOrders basePath="/staff" />;
 }
 

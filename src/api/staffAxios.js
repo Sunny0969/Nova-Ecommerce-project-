@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { TOKEN_KEY } from './axios';
 
 function normalizeApiOrigin(url) {
   if (url == null || url === '') return '';
@@ -30,9 +31,9 @@ export const staffApi = axios.create({
 });
 
 staffApi.interceptors.request.use((config) => {
-  const staffToken = localStorage.getItem('staffToken');
-  if (staffToken) {
-    config.headers.Authorization = `Bearer ${staffToken}`;
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -43,11 +44,9 @@ staffApi.interceptors.response.use(
     const status = error?.response?.status;
     const msg = String(error?.response?.data?.message || '');
     if (status === 403 && /blocked/i.test(msg)) {
-      localStorage.removeItem('staffToken');
-      localStorage.removeItem('staffPermissions');
-      localStorage.removeItem('staffUser');
+      localStorage.removeItem(TOKEN_KEY);
       if (typeof window !== 'undefined') {
-        window.location.assign('/staff-login');
+        window.location.assign('/login');
       }
     }
     return Promise.reject(error);

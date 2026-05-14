@@ -76,7 +76,7 @@ export default function StaffProducts() {
               </div>
             ) : null}
             <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <Link className="btn btn-outline btn-sm" to={`/admin/products/${encodeURIComponent(p._id)}/edit`}>
+              <Link className="btn btn-outline btn-sm" to={`/staff/products/${encodeURIComponent(p._id)}/edit`}>
                 Edit / Resubmit
               </Link>
             </div>
@@ -96,7 +96,7 @@ export default function StaffProducts() {
           </p>
         </div>
         {can ? (
-          <Link className="btn btn-primary" to="/admin/products/new">
+          <Link className="btn btn-primary" to="/staff/products/new">
             Add New Product
           </Link>
         ) : null}

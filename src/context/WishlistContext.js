@@ -84,7 +84,8 @@ export function useWishlist() {
 }
 
 export function WishlistProvider({ children }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, canAccessCustomerApp, loading: authLoading } = useAuth();
+  const customerUser = canAccessCustomerApp ? user : null;
   const [wishlist, setWishlist] = useState(emptyWishlist);
   const [loading, setLoading] = useState(true);
   const mergedGuestForUser = useRef(null);
@@ -104,7 +105,7 @@ export function WishlistProvider({ children }) {
   }, []);
 
   const fetchWishlist = useCallback(async () => {
-    if (user) {
+    if (customerUser) {
       try {
         const res = await wishlistAPI.get();
         applyWishlist(unwrapWishlist(res));
@@ -114,7 +115,7 @@ export function WishlistProvider({ children }) {
     } else {
       applyWishlist(readGuestWishlist());
     }
-  }, [user, applyWishlist]);
+  }, [customerUser, applyWishlist]);
 
   const mergeGuestIntoServer = useCallback(async () => {
     const raw = localStorage.getItem(GUEST_WISHLIST_KEY);
@@ -174,7 +175,7 @@ export function WishlistProvider({ children }) {
     let cancelled = false;
 
     async function load() {
-      if (!user) {
+      if (!customerUser) {
         mergedGuestForUser.current = null;
         applyWishlist(readGuestWishlist());
         if (!cancelled) setLoading(false);
@@ -182,7 +183,7 @@ export function WishlistProvider({ children }) {
       }
 
       setLoading(true);
-      const uid = String(user.id || user._id || '');
+      const uid = String(customerUser.id || customerUser._id || '');
 
       if (mergedGuestForUser.current !== uid) {
         await mergeGuestIntoServer();
@@ -203,7 +204,7 @@ export function WishlistProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, applyWishlist, mergeGuestIntoServer]);
+  }, [authLoading, customerUser, applyWishlist, mergeGuestIntoServer]);
 
   const products = useMemo(
     () => (Array.isArray(wishlist?.products) ? wishlist.products : []),
@@ -226,7 +227,7 @@ export function WishlistProvider({ children }) {
         return { success: false, error: 'Invalid product' };
       }
 
-      if (!user) {
+      if (!customerUser) {
         let product =
           typeof productOrRef === 'object' && productOrRef?._id
             ? minimalProduct(productOrRef)
@@ -290,7 +291,7 @@ export function WishlistProvider({ children }) {
         return { success: false, error: msg };
       }
     },
-    [user, applyWishlist, fetchWishlist]
+    [customerUser, applyWishlist, fetchWishlist]
   );
 
   const removeFromWishlist = useCallback(
@@ -301,7 +302,7 @@ export function WishlistProvider({ children }) {
         return { success: false, error: 'Invalid product' };
       }
 
-      if (!user) {
+      if (!customerUser) {
         const prev = readGuestWishlist();
         const next = prev.products.filter(
           (p) => String(p._id) !== ref && String(p.slug) !== ref
@@ -328,11 +329,11 @@ export function WishlistProvider({ children }) {
         return { success: false, error: msg };
       }
     },
-    [user, applyWishlist, fetchWishlist]
+    [customerUser, applyWishlist, fetchWishlist]
   );
 
   const clearWishlist = useCallback(async () => {
-    if (!user) {
+    if (!customerUser) {
       localStorage.removeItem(GUEST_WISHLIST_KEY);
       applyWishlist(emptyWishlist());
       toast.success('Wishlist cleared');
@@ -354,7 +355,7 @@ export function WishlistProvider({ children }) {
       toast.error(msg);
       return { success: false, error: msg };
     }
-  }, [user, applyWishlist, fetchWishlist]);
+  }, [customerUser, applyWishlist, fetchWishlist]);
 
   const value = useMemo(
     () => ({

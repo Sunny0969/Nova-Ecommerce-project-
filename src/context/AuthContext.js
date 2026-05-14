@@ -8,8 +8,14 @@ import React, {
 } from 'react';
 import axios from 'axios';
 import { authAPI, TOKEN_KEY } from 'api';
+import {
+  getFirstAllowedStaffPath,
+  normalizeStaffPermissions,
+  permissionListFromMap
+} from '../utils/staffPermissions';
 
 const AuthContext = createContext();
+const LEGACY_STAFF_STORAGE_KEYS = ['staffToken', 'staffPermissions', 'staffUser'];
 
 /** Keeps legacy `axios` calls (cart, wishlist, etc.) authenticated */
 function syncGlobalAxiosAuth(token) {
@@ -21,6 +27,31 @@ function syncGlobalAxiosAuth(token) {
 }
 
 export { TOKEN_KEY };
+
+function clearLegacyStaffStorage() {
+  LEGACY_STAFF_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+}
+
+function normalizeAuthUser(rawUser) {
+  if (!rawUser || typeof rawUser !== 'object') return null;
+
+  const roles = Array.isArray(rawUser.roles)
+    ? rawUser.roles.filter(Boolean)
+    : rawUser.role === 'admin'
+      ? ['customer', 'admin']
+      : rawUser.role
+        ? [rawUser.role]
+        : [];
+  const permissionMap = normalizeStaffPermissions(rawUser.permissionMap || rawUser.permissions || {});
+
+  return {
+    ...rawUser,
+    role: rawUser.role || (roles.includes('admin') ? 'admin' : roles[0] || ''),
+    roles,
+    permissionMap,
+    permissions: permissionListFromMap(permissionMap)
+  };
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -45,6 +76,7 @@ export const AuthProvider = ({ children }) => {
     syncGlobalAxiosAuth(stored);
 
     if (!stored) {
+      clearLegacyStaffStorage();
       setUser(null);
       setLoading(false);
       return;
@@ -52,8 +84,9 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const { data } = await authAPI.getMe();
-      setUser(data.user || null);
+      setUser(normalizeAuthUser(data.user));
     } catch {
+      clearLegacyStaffStorage();
       localStorage.removeItem(TOKEN_KEY);
       setToken(null);
       setUser(null);
@@ -71,8 +104,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await authAPI.login({ email, password });
       const newToken = data.token;
-      const u = data.user;
+      const u = normalizeAuthUser(data.user);
       if (newToken) {
+        clearLegacyStaffStorage();
         localStorage.setItem(TOKEN_KEY, newToken);
         setToken(newToken);
       }
@@ -126,8 +160,9 @@ export const AuthProvider = ({ children }) => {
         phone
       });
       const newToken = data.token;
-      const u = data.user;
+      const u = normalizeAuthUser(data.user);
       if (newToken) {
+        clearLegacyStaffStorage();
         localStorage.setItem(TOKEN_KEY, newToken);
         setToken(newToken);
       }
@@ -150,6 +185,7 @@ export const AuthProvider = ({ children }) => {
     } catch {
       /* ignore */
     }
+    clearLegacyStaffStorage();
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
@@ -163,19 +199,40 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const updateProfile = useCallback((data) => {
-    setUser((prev) => (prev ? { ...prev, ...data } : null));
+    setUser((prev) => normalizeAuthUser(prev ? { ...prev, ...data } : data));
   }, []);
 
   const isAuthenticated = useMemo(() => Boolean(user), [user]);
-  const isAdmin = useMemo(() => user?.role === 'admin', [user]);
+  const roles = useMemo(() => (Array.isArray(user?.roles) ? user.roles : []), [user]);
+  const permissionMap = useMemo(() => normalizeStaffPermissions(user?.permissionMap), [user?.permissionMap]);
+  const permissions = useMemo(() => permissionListFromMap(permissionMap), [permissionMap]);
+  const hasRole = useCallback((roleName) => roles.includes(roleName), [roles]);
+  const hasPermission = useCallback(
+    (permissionName) => permissionMap[permissionName] === true,
+    [permissionMap]
+  );
+  const isAdmin = useMemo(() => hasRole('admin'), [hasRole]);
+  const isStaff = useMemo(() => hasRole('staff'), [hasRole]);
+  const isCustomer = useMemo(() => hasRole('customer'), [hasRole]);
+  const canAccessCustomerApp = useMemo(() => isCustomer, [isCustomer]);
+  const firstStaffPath = useMemo(() => getFirstAllowedStaffPath(permissionMap), [permissionMap]);
 
   const value = useMemo(
     () => ({
       user,
       token,
+      roles,
+      permissions,
+      permissionMap,
       loading,
       isAuthenticated,
       isAdmin,
+      isStaff,
+      isCustomer,
+      canAccessCustomerApp,
+      firstStaffPath,
+      hasRole,
+      hasPermission,
       login,
       register,
       logout,
@@ -185,9 +242,18 @@ export const AuthProvider = ({ children }) => {
     [
       user,
       token,
+      roles,
+      permissions,
+      permissionMap,
       loading,
       isAuthenticated,
       isAdmin,
+      isStaff,
+      isCustomer,
+      canAccessCustomerApp,
+      firstStaffPath,
+      hasRole,
+      hasPermission,
       login,
       register,
       logout,

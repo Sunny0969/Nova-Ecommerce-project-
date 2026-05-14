@@ -48,9 +48,7 @@ export const storeSettingsAPI = {
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('nova_shop_token');
-    const staffToken = localStorage.getItem('staffToken');
     if (token) config.headers.Authorization = `Bearer ${token}`;
-    else if (staffToken) config.headers.Authorization = `Bearer ${staffToken}`;
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       delete config.headers['Content-Type'];
       if (config.headers.common) {
@@ -80,13 +78,7 @@ api.interceptors.response.use(
 
         if (typeof window !== 'undefined') {
           const pathname = window.location.pathname;
-
-          // ✅ Never send staff to public home ("/") on auth failure.
-          // Always route staff API failures to /staff-login.
-          const urlForCheck = String(url || '').toLowerCase();
-          const isStaffAuthFlow = urlForCheck.includes('/api/staff/') || pathname.startsWith('/staff');
-
-          const target = isStaffAuthFlow ? '/staff-login' : '/login';
+          const target = '/login';
 
           // Avoid pointless navigation when already on target.
           if (pathname !== target) {

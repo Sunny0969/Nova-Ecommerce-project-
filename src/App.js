@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AppToaster } from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import StaffRoute from './components/StaffRoute';
 import RouteFallback from './components/RouteFallback';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -52,7 +53,6 @@ const AdminStoreSettings = lazy(() => import('./pages/admin/AdminStoreSettings')
 const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'));
 const AdminFraud = lazy(() => import('./pages/admin/AdminFraud'));
 const StaffManagement = lazy(() => import('./pages/admin/StaffManagement'));
-const StaffLogin = lazy(() => import('./pages/StaffLogin'));
 const StaffLayout = lazy(() => import('./pages/staff/StaffLayout'));
 const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
 const StaffProducts = lazy(() => import('./pages/staff/StaffProducts'));
@@ -65,26 +65,26 @@ const Chatbot = lazy(() => import('./components/Chatbot/Chatbot'));
 function AppShell() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
-  const isStaff = location.pathname.startsWith('/staff');
   return (
     <div className="App">
       <AppToaster />
-      {!isAdmin && !isStaff && (
+      {!isAdmin && (
         <Suspense fallback={<header className="site-chrome-placeholder site-chrome-placeholder--header" aria-hidden />}>
           <Navbar />
         </Suspense>
       )}
-      {!isAdmin && !isStaff && (
+      {!isAdmin && (
         <Suspense fallback={null}>
           <Chatbot />
         </Suspense>
       )}
-      <main className={isAdmin || isStaff ? 'main-content main-content--admin' : 'main-content'}>
+      <main className={isAdmin ? 'main-content main-content--admin' : 'main-content'}>
         <ErrorBoundary>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
 
                       <Route path="/" element={<Home />} />
+                      <Route path="/home" element={<Home />} />
                       <Route path="/shop" element={<Shop />} />
                       <Route path="/shop/:slug" element={<ProductDetail />} />
                       <Route path="/category/:slug" element={<CategoryPage />} />
@@ -92,7 +92,7 @@ function AppShell() {
                       <Route path="/login" element={<Login />} />
                       <Route
                         path="/admin-login"
-                        element={<Navigate to={{ pathname: '/login', search: '?next=/admin' }} replace />}
+                        element={<Navigate to={{ pathname: '/login', search: '?next=/admin/dashboard' }} replace />}
                       />
                       <Route path="/register" element={<Register />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -156,12 +156,104 @@ function AppShell() {
                       <Route path="/blog" element={<Blog />} />
 <Route path="/blog/:slug" element={<BlogDetailsPage />} />
 
-                      <Route path="/staff-login" element={<StaffLogin />} />
-                      <Route path="/staff" element={<StaffLayout />}>
-                        <Route path="dashboard" element={<StaffDashboard />} />
-                        <Route path="products" element={<StaffProducts />} />
-                        <Route path="categories" element={<StaffCategories />} />
-                        <Route path="orders" element={<StaffOrders />} />
+                      <Route path="/staff-login" element={<Navigate to="/login" replace />} />
+                      <Route
+                        path="/staff"
+                        element={
+                          <StaffRoute>
+                            <StaffLayout />
+                          </StaffRoute>
+                        }
+                      >
+                        <Route index element={<Navigate to="dashboard" replace />} />
+                        <Route
+                          path="dashboard"
+                          element={
+                            <StaffRoute permission="viewAnalytics">
+                              <StaffDashboard />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="products"
+                          element={
+                            <StaffRoute permission="manageProducts">
+                              <StaffProducts />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="products/new"
+                          element={
+                            <StaffRoute permission="manageProducts">
+                              <ProductForm />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="products/:id/edit"
+                          element={
+                            <StaffRoute permission="manageProducts">
+                              <ProductForm />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="categories"
+                          element={
+                            <StaffRoute permission="manageCategories">
+                              <StaffCategories />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="orders"
+                          element={
+                            <StaffRoute permission="manageOrders">
+                              <StaffOrders />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="orders/:id"
+                          element={
+                            <StaffRoute permission="manageOrders">
+                              <AdminPlaceholder title="Order detail" />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="customers"
+                          element={
+                            <StaffRoute permission="manageCustomers">
+                              <AdminCustomers />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="analytics"
+                          element={
+                            <StaffRoute permission="viewAnalytics">
+                              <AdminAnalytics />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="coupons"
+                          element={
+                            <StaffRoute permission="manageCoupons">
+                              <AdminCoupons />
+                            </StaffRoute>
+                          }
+                        />
+                        <Route
+                          path="blog"
+                          element={
+                            <StaffRoute permission="manageBlog">
+                              <AdminPlaceholder title="Blog management" description="Connect your staff blog management screen here." />
+                            </StaffRoute>
+                          }
+                        />
                       </Route>
 
                       <Route
@@ -172,15 +264,13 @@ function AppShell() {
                           </AdminRoute>
                         }
                       >
-                        <Route index element={<AdminDashboard />} />
+                        <Route index element={<Navigate to="dashboard" replace />} />
+                        <Route path="dashboard" element={<AdminDashboard />} />
                         <Route path="products" element={<AdminProducts />} />
                         <Route path="products/new" element={<ProductForm />} />
                         <Route path="products/:id/edit" element={<ProductForm />} />
                         <Route path="orders" element={<AdminOrders />} />
-                        <Route
-                          path="orders/:id"
-                          element={<AdminPlaceholder title="Order detail" />}
-                        />
+                        <Route path="orders/:id" element={<AdminPlaceholder title="Order detail" />} />
                         <Route path="categories" element={<AdminCategories />} />
                         <Route path="customers" element={<AdminCustomers />} />
                         <Route path="coupons" element={<AdminCoupons />} />

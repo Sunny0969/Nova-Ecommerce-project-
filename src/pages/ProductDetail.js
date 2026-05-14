@@ -91,7 +91,8 @@ function formatCategoryLabel(slug, name) {
 
 export default function ProductDetail() {
   const { slug } = useParams();
-  const { user } = useAuth();
+  const { user, canAccessCustomerApp } = useAuth();
+  const customerUser = canAccessCustomerApp ? user : null;
   const { addToCart } = useCart();
   const { toggleWishlist, products: wishProducts } = useWishlist();
   const [product, setProduct] = useState(null);
@@ -172,7 +173,7 @@ export default function ProductDetail() {
       .similar(product._id, { limit: 10 })
       .then((r) => setSimilar(r.data?.data?.products || []))
       .catch(() => setSimilar([]));
-  }, [product?._id, product?.unavailable]);
+  }, [product]);
 
   useEffect(() => {
     setQty(1);
@@ -332,7 +333,7 @@ export default function ProductDetail() {
       setGalleryIndex(0);
       return;
     }
-  }, [product?._id, product?.unavailable]);
+  }, [product]);
 
   const handleVariantOptionClick = useCallback(
     (axisKey, flatOptionIndex) => {
@@ -753,7 +754,7 @@ export default function ProductDetail() {
                         <span className="product-detail-attrs__k">{VARIANT_AXIS_LABELS[key]}</span>
                         <span className="product-detail-variant-mode">Choose one</span>
                       </div>
-                      <ul className="product-detail-variant-list" role="list">
+                      <ul className="product-detail-variant-list">
                         {opts.map((o, i) => {
                           const sel = variantPick[key];
                           const cur = Array.isArray(sel) && sel.length ? sel : [0];
@@ -1001,7 +1002,7 @@ export default function ProductDetail() {
                 ) : null}
 
                 <div className="product-review-form-wrap">
-                  {user && product.reviewEligible ? (
+                  {customerUser && product.reviewEligible ? (
                     <form className="product-review-form" onSubmit={handleSubmitReview}>
                       <h3 className="product-review-form__title">Write a review</h3>
                       <label className="form-label" htmlFor="review-rating">
@@ -1035,9 +1036,9 @@ export default function ProductDetail() {
                         {reviewSubmitting ? 'Submitting…' : 'Submit review'}
                       </button>
                     </form>
-                  ) : user && product.userHasReview ? (
+                  ) : customerUser && product.userHasReview ? (
                     <p className="product-review-note">You have already reviewed this product.</p>
-                  ) : user && !product.reviewEligible ? (
+                  ) : customerUser && !product.reviewEligible ? (
                     <p className="product-review-note">
                       Reviews can be submitted only by customers who bought this item and received a delivered order.
                     </p>

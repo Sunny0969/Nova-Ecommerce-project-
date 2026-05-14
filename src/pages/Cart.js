@@ -20,7 +20,8 @@ function round2(n) {
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, canAccessCustomerApp } = useAuth();
+  const customerUser = canAccessCustomerApp ? user : null;
   const {
     cart,
     cartState,
@@ -67,13 +68,13 @@ const Cart = () => {
     return Number(cartState.discountAmount) || 0;
   }, [totals, cartState.discountAmount]);
 
-  const settings = user ? cartState.storeSettings : publicSettings;
+  const settings = customerUser ? cartState.storeSettings : publicSettings;
 
   const preview = useMemo(() => {
     if (!cart.length || !settings) return null;
-    if (user && cartState.pricingPreview) return cartState.pricingPreview;
+    if (customerUser && cartState.pricingPreview) return cartState.pricingPreview;
     return computeTotalsPreview(subtotal, discountAmount, 'standard', settings);
-  }, [cart.length, user, cartState.pricingPreview, subtotal, discountAmount, settings]);
+  }, [cart.length, customerUser, cartState.pricingPreview, subtotal, discountAmount, settings]);
 
   const freeThreshold = useMemo(() => {
     const t = Number(settings?.freeShippingMin);

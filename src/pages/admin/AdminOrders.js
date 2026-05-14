@@ -31,7 +31,7 @@ function orderIdLabel(id) {
   return `…${s.slice(-8)}`;
 }
 
-export default function AdminOrders() {
+export default function AdminOrders({ basePath = '/admin' }) {
   const [orders, setOrders] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -181,7 +181,7 @@ export default function AdminOrders() {
                   <tr key={String(id)}>
                     <td>
                       <Link
-                        to={`/admin/orders/${id}`}
+                        to={`${basePath}/orders/${id}`}
                         className="admin-table__link"
                         title={String(id)}
                       >

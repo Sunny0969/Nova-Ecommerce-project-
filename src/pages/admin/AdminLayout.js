@@ -14,26 +14,24 @@ import {
   SlidersHorizontal,
   Shield,
   UserCog,
-  Bell,
   LogOut,
   ChevronRight
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
-import { useStaffAuth } from '../../context/StaffAuthContext';
 import { adminAPI } from 'api';
 
 const NAV_LINKS = [
-  { to: '/admin', end: true, label: 'Dashboard', icon: LayoutDashboard, permission: 'viewAnalytics' },
-  { to: '/admin/products', label: 'Products', icon: Package, permission: 'manageProducts' },
-  { to: '/admin/orders', label: 'Orders', icon: ShoppingCart, permission: 'manageOrders' },
-  { to: '/admin/categories', label: 'Categories', icon: LayoutGrid, permission: 'manageCategories' },
-  { to: '/admin/customers', label: 'Customers', icon: Users, permission: 'manageCustomers' },
-  { to: '/admin/coupons', label: 'Coupons', icon: TicketPercent, permission: 'manageCoupons' },
-  { to: '/admin/fraud', label: 'Fraud', icon: Shield, permission: 'viewAnalytics' },
-  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3, permission: 'viewAnalytics' },
-  { to: '/admin/store-settings', label: 'Shipping & tax', icon: SlidersHorizontal, permission: 'viewAnalytics' },
-  { to: '/admin/staff', label: 'Staff', icon: UserCog, permission: 'viewAnalytics' }
+  { to: '/admin/dashboard', end: true, label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+  { to: '/admin/categories', label: 'Categories', icon: LayoutGrid },
+  { to: '/admin/customers', label: 'Customers', icon: Users },
+  { to: '/admin/coupons', label: 'Coupons', icon: TicketPercent },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/fraud', label: 'Fraud', icon: Shield },
+  { to: '/admin/store-settings', label: 'Shipping & tax', icon: SlidersHorizontal },
+  { to: '/admin/staff', label: 'Staff', icon: UserCog }
 ];
 
 function navLinkClass({ isActive }) {
@@ -58,9 +56,9 @@ function useAdminBreadcrumbs() {
   const { pathname } = useLocation();
   return useMemo(() => {
     const normalized = pathname.replace(/\/$/, '') || '/admin';
-    if (normalized === '/admin') {
+    if (normalized === '/admin' || normalized === '/admin/dashboard') {
       return [
-        { label: 'Admin', to: '/admin' },
+        { label: 'Admin', to: '/admin/dashboard' },
         { label: 'Dashboard' }
       ];
     }
@@ -86,20 +84,14 @@ function useAdminBreadcrumbs() {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
-  const { staffUser, permissions } = useStaffAuth();
   const { pathname } = useLocation();
   const crumbs = useAdminBreadcrumbs();
   const [pendingCount, setPendingCount] = React.useState(0);
 
-  const isAdmin = user?.role === 'admin';
-  const isStaff = staffUser && !isAdmin;
-
-  const displayName =
-    user?.name ||
-    user?.email ||
-    staffUser?.name ||
-    staffUser?.email ||
-    'Admin';
+  const displayName = user?.name || user?.email || 'Admin';
+  const handleLogout = React.useCallback(() => {
+    logout();
+  }, [logout]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -131,7 +123,7 @@ export default function AdminLayout() {
 
         {/* SIDEBAR */}
         <aside className="admin-sidebar" aria-label="Admin navigation">
-          <Link to="/admin" className="admin-sidebar__brand">
+          <Link to="/admin/dashboard" className="admin-sidebar__brand">
             <span className="admin-sidebar__logo">Souvenir Handicraft</span>
             <span className="admin-sidebar__logo-dot">.</span>
             <span className="admin-sidebar__logo-sub">Admin</span>
@@ -140,18 +132,7 @@ export default function AdminLayout() {
           <nav className="admin-sidebar__nav">
             <ul className="admin-sidebar__list">
 
-              {NAV_LINKS.map(({ to, end, label, icon: Icon, permission }) => {
-
-                let show = false;
-
-                if (isAdmin) {
-                  show = true;
-                } else if (isStaff && permission) {
-                  show = permissions?.[permission] === true;
-                }
-
-                if (!show) return null;
-
+              {NAV_LINKS.map(({ to, end, label, icon: Icon }) => {
                 return (
                   <li key={to}>
                     <NavLink to={to} end={end} className={navLinkClass} title={label}>
@@ -184,7 +165,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   className="admin-sidebar__link"
-                  onClick={logout}
+                  onClick={handleLogout}
                 >
                   Logout
                 </button>
@@ -215,7 +196,7 @@ export default function AdminLayout() {
               <button
                 type="button"
                 className="admin-topbar__logout"
-                onClick={logout}
+                onClick={handleLogout}
               >
                 <LogOut size={18} />
                 <span>Logout</span>

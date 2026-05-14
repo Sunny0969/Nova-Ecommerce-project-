@@ -154,7 +154,8 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, canAccessCustomerApp, loading: authLoading } = useAuth();
+  const customerUser = canAccessCustomerApp ? user : null;
   const [cartState, setCartState] = useState(emptyNormalized);
   const [loading, setLoading] = useState(true);
   const mergedGuestForUser = useRef(null);
@@ -164,7 +165,7 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const fetchCart = useCallback(async () => {
-    if (user) {
+    if (customerUser) {
       try {
         const response = await cartAPI.get();
         applyNormalized(unwrapCartPayload(response));
@@ -175,7 +176,7 @@ export const CartProvider = ({ children }) => {
     } else {
       applyNormalized(readGuestFromStorage());
     }
-  }, [user, applyNormalized]);
+  }, [customerUser, applyNormalized]);
 
   const mergeGuestIntoServer = useCallback(async () => {
     const raw = localStorage.getItem(GUEST_CART_KEY);
@@ -213,7 +214,7 @@ export const CartProvider = ({ children }) => {
     let cancelled = false;
 
     async function load() {
-      if (!user) {
+      if (!customerUser) {
         mergedGuestForUser.current = null;
         applyNormalized(readGuestFromStorage());
         if (!cancelled) setLoading(false);
@@ -221,7 +222,7 @@ export const CartProvider = ({ children }) => {
       }
 
       setLoading(true);
-      const uid = String(user.id || user._id || '');
+      const uid = String(customerUser.id || customerUser._id || '');
       if (mergedGuestForUser.current !== uid) {
         await mergeGuestIntoServer();
         mergedGuestForUser.current = uid;
@@ -245,7 +246,7 @@ export const CartProvider = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, applyNormalized, mergeGuestIntoServer]);
+  }, [authLoading, customerUser, applyNormalized, mergeGuestIntoServer]);
 
   const items = cartState.items;
   const coupon = cartState.coupon;
@@ -287,7 +288,7 @@ export const CartProvider = ({ children }) => {
       const qty = Math.max(1, Number(quantity) || 1);
       const name = product?.name || 'Item';
 
-      if (!user) {
+      if (!customerUser) {
         const prev = readGuestFromStorage();
         const lines = [...prev.items];
         const pid = String(product._id || ref);
@@ -343,14 +344,14 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: msg };
       }
     },
-    [user, applyNormalized, fetchCart]
+    [customerUser, applyNormalized, fetchCart]
   );
 
   const updateQuantity = useCallback(
     async (productRef, quantity) => {
       const q = Number(quantity);
 
-      if (!user) {
+      if (!customerUser) {
         const prev = readGuestFromStorage();
         const lines = prev.items
           .map((line) => {
@@ -395,12 +396,12 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: msg };
       }
     },
-    [user, applyNormalized, fetchCart]
+    [customerUser, applyNormalized, fetchCart]
   );
 
   const removeFromCart = useCallback(
     async (productRef) => {
-      if (!user) {
+      if (!customerUser) {
         const prev = readGuestFromStorage();
         const filtered = prev.items.filter((line) => {
           const lineRef = String(line.product?.cartLineKey || line.product?._id || '');
@@ -428,11 +429,11 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: msg };
       }
     },
-    [user, applyNormalized, fetchCart]
+    [customerUser, applyNormalized, fetchCart]
   );
 
   const clearCart = useCallback(async () => {
-    if (!user) {
+    if (!customerUser) {
       localStorage.removeItem(GUEST_CART_KEY);
       applyNormalized(emptyNormalized());
       toast.success('Cart cleared');
@@ -449,7 +450,7 @@ export const CartProvider = ({ children }) => {
       toast.error(msg);
       return { success: false, error: msg };
     }
-  }, [user, applyNormalized, fetchCart]);
+  }, [customerUser, applyNormalized, fetchCart]);
 
   const applyCoupon = useCallback(
     async (code) => {
@@ -459,7 +460,7 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: 'Enter a coupon code' };
       }
 
-      if (!user) {
+      if (!customerUser) {
         toast.error('Sign in to apply coupon codes');
         return { success: false, error: 'Sign in to apply coupon codes' };
       }
@@ -475,11 +476,11 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: msg };
       }
     },
-    [user, fetchCart]
+    [customerUser, fetchCart]
   );
 
   const removeCoupon = useCallback(async () => {
-    if (!user) {
+    if (!customerUser) {
       toast.info('Sign in to use coupons');
       return { success: false, error: 'Sign in to use coupons' };
     }
@@ -494,7 +495,7 @@ export const CartProvider = ({ children }) => {
       toast.error(msg);
       return { success: false, error: msg };
     }
-  }, [user, fetchCart]);
+  }, [customerUser, fetchCart]);
 
   const getCartCount = useCallback(() => itemCount, [itemCount]);
 

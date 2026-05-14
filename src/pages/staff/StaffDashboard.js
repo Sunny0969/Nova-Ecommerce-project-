@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import staffApi from '../../api/staffAxios';
 import { apiMessage } from '../../lib/api';
 import { useStaffAuth } from '../../context/StaffAuthContext';
@@ -95,34 +96,34 @@ export default function StaffDashboard() {
         <h2 style={{ marginTop: 0, marginBottom: 10 }}>Quick actions</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {hasPermission('manageProducts') ? (
-            <a className="btn btn-outline btn-sm" href="/staff/products">
+            <Link className="btn btn-outline btn-sm" to="/staff/products">
               Products
-            </a>
+            </Link>
           ) : null}
           {hasPermission('manageCategories') ? (
-            <a className="btn btn-outline btn-sm" href="/staff/categories">
+            <Link className="btn btn-outline btn-sm" to="/staff/categories">
               Categories
-            </a>
+            </Link>
           ) : null}
           {hasPermission('manageOrders') ? (
-            <a className="btn btn-outline btn-sm" href="/staff/orders">
+            <Link className="btn btn-outline btn-sm" to="/staff/orders">
               Orders
-            </a>
+            </Link>
           ) : null}
           {hasPermission('manageCustomers') ? (
-            <a className="btn btn-outline btn-sm" href="/staff/customers">
+            <Link className="btn btn-outline btn-sm" to="/staff/customers">
               Customers
-            </a>
+            </Link>
           ) : null}
           {hasPermission('viewAnalytics') ? (
-            <a className="btn btn-outline btn-sm" href="/staff/analytics">
+            <Link className="btn btn-outline btn-sm" to="/staff/analytics">
               Analytics
-            </a>
+            </Link>
           ) : null}
           {hasPermission('manageCoupons') ? (
-            <a className="btn btn-outline btn-sm" href="/staff/coupons">
+            <Link className="btn btn-outline btn-sm" to="/staff/coupons">
               Coupons
-            </a>
+            </Link>
           ) : null}
         </div>
         {!Object.values(permissions || {}).some(Boolean) ? (

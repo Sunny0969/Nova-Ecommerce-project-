@@ -7,7 +7,8 @@ import ProductCard from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
 
 export default function WishlistPage({ embedded }) {
-  const { user } = useAuth();
+  const { user, canAccessCustomerApp } = useAuth();
+  const customerUser = canAccessCustomerApp ? user : null;
   const { products, loading } = useWishlist();
   const { addToCart } = useCart();
 
@@ -29,7 +30,7 @@ export default function WishlistPage({ embedded }) {
     stockQuantity: p.stock
   });
 
-  if (!user) {
+  if (!customerUser) {
     return (
       <>
         <SEO

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
@@ -15,21 +15,10 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import { getGrantedStaffSections } from '../utils/staffPermissions';
 import SmartSearchBar from './SmartSearchBar';
 
-// ✅ Logo import karein
 import logo from '../assets/images/logo.png';
-
-function useDebouncedCallback(fn, delay) {
-  const t = useRef(null);
-  return useCallback(
-    (...args) => {
-      if (t.current) clearTimeout(t.current);
-      t.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay]
-  );
-}
 
 function getInitials(name) {
   if (!name || typeof name !== 'string') return '?';
@@ -42,7 +31,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { itemCount } = useCart();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin, isStaff, canAccessCustomerApp, permissionMap } = useAuth();
   const { count: wishCount } = useWishlist();
 
   const [scrolled, setScrolled] = useState(false);
@@ -124,13 +113,15 @@ export default function Navbar() {
     setAccountOpen(false);
     setDrawerOpen(false);
     await logout();
-    navigate('/');
+    navigate('/home');
   };
 
+  const isHomeActive = location.pathname === '/' || location.pathname === '/home';
   const isActive = (path) => location.pathname === path;
   const isShopActive =
     location.pathname === '/shop' || location.pathname.startsWith('/shop/');
   const isBlogActive = location.pathname.startsWith('/blog');
+  const staffSections = isStaff ? getGrantedStaffSections(permissionMap) : [];
 
   const openSearch = () => {
     setSearchOpen(true);
@@ -141,7 +132,7 @@ export default function Navbar() {
 
   const renderNavLinks = (onNavigate) => (
     <>
-      <Link to="/" className={navLinkClass(isActive('/'))} onClick={onNavigate}>
+      <Link to="/home" className={navLinkClass(isHomeActive)} onClick={onNavigate}>
         Home
       </Link>
       <Link to="/shop" className={navLinkClass(isShopActive)} onClick={onNavigate}>
@@ -150,14 +141,42 @@ export default function Navbar() {
       <Link to="/blog" className={navLinkClass(isBlogActive)} onClick={onNavigate}>
         Blog
       </Link>
-      <Link to="/cart" className={navLinkClass(isActive('/cart'))} onClick={onNavigate}>
-        Cart
-      </Link>
+      {canAccessCustomerApp ? (
+        <Link to="/cart" className={navLinkClass(isActive('/cart'))} onClick={onNavigate}>
+          Cart
+        </Link>
+      ) : null}
+    </>
+  );
+
+  const renderRoleLinks = (onNavigate) => (
+    <>
+      {isAdmin ? (
+        <Link
+          to="/admin/dashboard"
+          className={navLinkClass(location.pathname.startsWith('/admin'))}
+          onClick={onNavigate}
+        >
+          Admin Panel
+        </Link>
+      ) : null}
+      {staffSections.map((section) => (
+        <Link
+          key={section.permission}
+          to={section.path}
+          className={navLinkClass(location.pathname.startsWith(section.path))}
+          onClick={onNavigate}
+        >
+          {section.label}
+        </Link>
+      ))}
     </>
   );
 
   const renderIconButtons = (onNavigate) => (
     <>
+      {canAccessCustomerApp ? (
+        <>
       <Link
         to={user ? '/account/wishlist' : '/login'}
         className={`nav-icon-btn ${location.pathname.includes('wishlist') ? 'nav-icon-btn--active' : ''}`}
@@ -187,6 +206,8 @@ export default function Navbar() {
           </span>
         )}
       </Link>
+        </>
+      ) : null}
     </>
   );
 
@@ -200,10 +221,12 @@ export default function Navbar() {
         <div className="nav-inner">
           <div className="nav-brand">
             <Link to="/" className="nav-logo" aria-label="Souvenir Handicraft Home" onClick={() => setDrawerOpen(false)}>
-              {/* ✅ Logo image yahan lagaya */}
               <img src={logo} alt="Souvenir Handicraft" className="nav-logo__img" />
             </Link>
-            <div className="nav-main nav-main--desktop">{renderNavLinks(() => {})}</div>
+            <div className="nav-main nav-main--desktop">
+              {renderNavLinks(() => {})}
+              {renderRoleLinks(() => {})}
+            </div>
           </div>
 
           <div className="nav-tools">
@@ -262,21 +285,25 @@ export default function Navbar() {
                 </button>
                 {accountOpen && (
                   <ul className="nav-dropdown" role="menu">
-                    <li>
-                      <Link to="/account" role="menuitem" onClick={() => setAccountOpen(false)}>
-                        <User size={16} /> My Account
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/account/orders" role="menuitem" onClick={() => setAccountOpen(false)}>
-                        <Package size={16} /> My Orders
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/account/reviews" role="menuitem" onClick={() => setAccountOpen(false)}>
-                        <Star size={16} /> My Reviews
-                      </Link>
-                    </li>
+                    {canAccessCustomerApp ? (
+                      <>
+                        <li>
+                          <Link to="/account" role="menuitem" onClick={() => setAccountOpen(false)}>
+                            <User size={16} /> My Account
+                          </Link>
+                        </li>
+                        <li>
+                          <Link to="/account/orders" role="menuitem" onClick={() => setAccountOpen(false)}>
+                            <Package size={16} /> My Orders
+                          </Link>
+                        </li>
+                        <li>
+                          <Link to="/account/reviews" role="menuitem" onClick={() => setAccountOpen(false)}>
+                            <Star size={16} /> My Reviews
+                          </Link>
+                        </li>
+                      </>
+                    ) : null}
                     <li>
                       <button type="button" role="menuitem" className="nav-dropdown__logout" onClick={handleLogout}>
                         <LogOut size={16} /> Logout
@@ -315,7 +342,6 @@ export default function Navbar() {
         aria-label="Mobile menu"
       >
         <div className="nav-drawer__head">
-          {/* ✅ Mobile drawer mein bhi logo */}
           <img src={logo} alt="Souvenir Handicraft" className="nav-drawer__logo" />
           <button
             type="button"
@@ -326,7 +352,10 @@ export default function Navbar() {
             <X size={22} />
           </button>
         </div>
-        <div className="nav-drawer__links">{renderNavLinks(() => setDrawerOpen(false))}</div>
+        <div className="nav-drawer__links">
+          {renderNavLinks(() => setDrawerOpen(false))}
+          {renderRoleLinks(() => setDrawerOpen(false))}
+        </div>
         <div className="nav-drawer__icons">{renderIconButtons(() => setDrawerOpen(false))}</div>
         {isAuthenticated ? (
           <div className="nav-drawer__auth">

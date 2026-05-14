@@ -92,7 +92,7 @@ export default function StaffLayout() {
   }, [token, permissions]);
 
   if (!token) {
-    return <Navigate to="/staff-login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (checking) {
@@ -227,7 +227,7 @@ export default function StaffLayout() {
 
               {hasPermission('manageBlog') && (
                 <li>
-                  <NavLink to="/blog" className={navLinkClass}>
+                  <NavLink to="/staff/blog" className={navLinkClass}>
                     Blog
                   </NavLink>
                 </li>

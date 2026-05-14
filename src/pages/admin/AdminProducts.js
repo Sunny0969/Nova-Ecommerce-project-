@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Trash2, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminAPI } from 'api';
+import { useAuth } from '../../context/AuthContext';
 import { apiMessage, unwrapCategoriesResponse } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Modal from '../../components/Modal';
@@ -16,6 +17,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminProducts() {
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -32,6 +34,7 @@ export default function AdminProducts() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteBulk, setDeleteBulk] = useState(false);
   const headerCheckRef = useRef(null);
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -232,7 +235,7 @@ export default function AdminProducts() {
         </select>
       </div>
 
-      {selected.size > 0 && (
+      {isAdmin && selected.size > 0 && (
         <div className="admin-products__bulk" role="region" aria-label="Bulk actions">
           <span className="admin-products__bulk-count">
             {selected.size} selected
@@ -272,14 +275,16 @@ export default function AdminProducts() {
             <thead>
               <tr>
                 <th className="admin-products__th-check">
-                  <input
-                    ref={headerCheckRef}
-                    type="checkbox"
-                    checked={allOnPage}
-                    onChange={toggleSelectAll}
-                    disabled={!pageIds.length}
-                    aria-label="Select all on this page"
-                  />
+                  {isAdmin ? (
+                    <input
+                      ref={headerCheckRef}
+                      type="checkbox"
+                      checked={allOnPage}
+                      onChange={toggleSelectAll}
+                      disabled={!pageIds.length}
+                      aria-label="Select all on this page"
+                    />
+                  ) : null}
                 </th>
                 <th>Image</th>
                 <th>Name</th>
@@ -302,12 +307,14 @@ export default function AdminProducts() {
                 products.map((p) => (
                   <tr key={p._id}>
                     <td>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(String(p._id))}
-                        onChange={() => toggleRow(p._id)}
-                        aria-label={`Select ${p.name}`}
-                      />
+                      {isAdmin ? (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(String(p._id))}
+                          onChange={() => toggleRow(p._id)}
+                          aria-label={`Select ${p.name}`}
+                        />
+                      ) : null}
                     </td>
                     <td>
                       <div className="admin-product-cell__img admin-product-cell__img--sm">
@@ -332,7 +339,7 @@ export default function AdminProducts() {
                     <td>{p.category?.name || '—'}</td>
                     <td>{formatPKR(Number(p.price || 0))}</td>
                     <td>{p.stock}</td>
-                    <td>
+                    <td>{isAdmin ? (
                       <label className="admin-toggle">
                         <input
                           type="checkbox"
@@ -343,7 +350,9 @@ export default function AdminProducts() {
                         />
                         <span className="admin-toggle__ui" />
                       </label>
-                    </td>
+                    ) : (
+                      <span>{p.approvalStatus === 'pending_approval' ? 'Pending approval' : p.isPublished ? 'Published' : 'Unpublished'}</span>
+                    )}</td>
                     <td>
                       {p.createdAt
                         ? new Date(p.createdAt).toLocaleDateString('en-GB')
@@ -357,13 +366,15 @@ export default function AdminProducts() {
                         >
                           Edit
                         </Link>
-                        <button
-                          type="button"
-                          className="btn admin-products__btn-del btn-sm"
-                          onClick={() => setDeleteTarget(p)}
-                        >
-                          Delete
-                        </button>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            className="btn admin-products__btn-del btn-sm"
+                            onClick={() => setDeleteTarget(p)}
+                          >
+                            Delete
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -406,35 +417,39 @@ export default function AdminProducts() {
         </p>
       )}
 
-      <Modal
-        isOpen={Boolean(deleteTarget)}
-        onClose={() => !savingId && setDeleteTarget(null)}
-        title="Unpublish product?"
-        danger
-        confirmLabel={savingId ? 'Working…' : 'Unpublish from shop'}
-        onConfirm={() => {
-          if (!savingId) confirmSingleDelete();
-        }}
-      >
-        <p>
-          <strong>{deleteTarget?.name}</strong> will be removed from the storefront
-          (soft delete). You can publish it again from this list or the edit page.
-        </p>
-      </Modal>
+      {isAdmin ? (
+        <>
+          <Modal
+            isOpen={Boolean(deleteTarget)}
+            onClose={() => !savingId && setDeleteTarget(null)}
+            title="Unpublish product?"
+            danger
+            confirmLabel={savingId ? 'Working…' : 'Unpublish from shop'}
+            onConfirm={() => {
+              if (!savingId) confirmSingleDelete();
+            }}
+          >
+            <p>
+              <strong>{deleteTarget?.name}</strong> will be removed from the storefront
+              (soft delete). You can publish it again from this list or the edit page.
+            </p>
+          </Modal>
 
-      <Modal
-        isOpen={deleteBulk}
-        onClose={() => !bulkBusy && setDeleteBulk(false)}
-        title={`Unpublish ${selected.size} product(s)?`}
-        danger
-        confirmLabel={bulkBusy ? 'Working…' : 'Unpublish selected'}
-        onConfirm={() => {
-          if (!bulkBusy) runBulk('delete');
-        }}
-      >
-        <p>Selected products will be removed from the shop (unpublished). This matches the
-          single-product delete action.</p>
-      </Modal>
+          <Modal
+            isOpen={deleteBulk}
+            onClose={() => !bulkBusy && setDeleteBulk(false)}
+            title={`Unpublish ${selected.size} product(s)?`}
+            danger
+            confirmLabel={bulkBusy ? 'Working…' : 'Unpublish selected'}
+            onConfirm={() => {
+              if (!bulkBusy) runBulk('delete');
+            }}
+          >
+            <p>Selected products will be removed from the shop (unpublished). This matches the
+              single-product delete action.</p>
+          </Modal>
+        </>
+      ) : null}
     </div>
   );
 }

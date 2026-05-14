@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import SEO from '../components/SEO';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Lock, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -45,6 +45,55 @@ const shippingSchema = yup.object({
   deliveryOption: yup.string().oneOf(['standard', 'express', 'nextday']).required(),
   saveAddress: yup.boolean().default(false)
 });
+
+const DEFAULT_SHIPPING_VALUES = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  street: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: '',
+  deliveryOption: 'standard',
+  saveAddress: false
+};
+
+function splitName(name) {
+  const parts = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' ')
+  };
+}
+
+function defaultsFromUser(user) {
+  if (!user) return DEFAULT_SHIPPING_VALUES;
+
+  const saved =
+    user.savedShippingAddress ||
+    (Array.isArray(user.savedAddresses) ? user.savedAddresses.find((addr) => addr?.isDefault) : null) ||
+    {};
+  const fromName = splitName(user.name);
+
+  return {
+    ...DEFAULT_SHIPPING_VALUES,
+    firstName: saved.firstName || fromName.firstName,
+    lastName: saved.lastName || fromName.lastName,
+    email: saved.email || user.email || '',
+    phone: saved.phone || user.phone || '',
+    street: saved.street || '',
+    city: saved.city || '',
+    state: saved.state || '',
+    zipCode: saved.zipCode || '',
+    country: saved.country || ''
+  };
+}
 
 function countryToStripeCode(country) {
   return 'GB';
@@ -246,33 +295,68 @@ function CheckoutStripeSteps({
 }
 
 export default function Checkout() {
-  const navigate = useNavigate();
   const { cart, cartState, loading, fetchCart, getSubtotal } = useCart();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [clientSecret, setClientSecret] = useState(null);
   const [lockedShipping, setLockedShipping] = useState(null);
+  const [publicSettings, setPublicSettings] = useState(null);
+  const [creatingPi, setCreatingPi] = useState(false);
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+  const [cardComplete, setCardComplete] = useState(false);
 
   const {
     register,
     handleSubmit,
+    control,
+    reset,
     formState: { errors }
   } = useForm({
-    resolver: yupResolver(shippingSchema)
+    resolver: yupResolver(shippingSchema),
+    defaultValues: defaultsFromUser(user)
   });
 
   const deliveryOption = useWatch({ control, name: 'deliveryOption', defaultValue: 'standard' });
+  const totals = cartState.totals;
 
-  const linePreview = useMemo(() => {
+  const discountAmount = useMemo(() => {
+    if (totals && Number.isFinite(Number(totals.discountAmount))) {
+      return Number(totals.discountAmount);
+    }
+    return Number(cartState.discountAmount) || 0;
+  }, [totals, cartState.discountAmount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    storeSettingsAPI
+      .get()
+      .then((res) => {
+        if (!cancelled) {
+          setPublicSettings(res.data?.data || null);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const storeSettings = user ? cartState.storeSettings || publicSettings : publicSettings;
+
+  const checkoutSummary = useMemo(() => {
+    if (user && cartState.pricingPreview) {
+      return cartState.pricingPreview;
+    }
     if (!storeSettings || !cart.length) return null;
     return computeTotalsPreview(
       getSubtotal(),
-      Number(totals?.discountAmount || 0),
+      discountAmount,
       deliveryOption || 'standard',
       storeSettings
     );
-  }, [storeSettings, cart, totals, deliveryOption, getSubtotal]);
-
-  const amountSummary = checkoutSummary || linePreview;
+  }, [user, cartState.pricingPreview, storeSettings, cart.length, getSubtotal, discountAmount, deliveryOption]);
 
   useEffect(() => {
     reset(defaultsFromUser(user));
@@ -292,20 +376,43 @@ export default function Checkout() {
       return;
     }
 
-    const res = await ordersAPI.create({
-      deliveryOption: data.deliveryOption,
-      shippingAddress: toShippingPayload(data)
-    });
+    const shippingAddress = toShippingPayload(data);
 
-    const secret = res.data?.data?.clientSecret;
-    if (!secret) {
-      toast.error('Payment setup failed');
-      return;
+    setCreatingPi(true);
+
+    try {
+      const res = await ordersAPI.create({
+        deliveryOption: data.deliveryOption,
+        shippingAddress
+      });
+
+      const secret = res.data?.data?.clientSecret;
+      if (!secret) {
+        toast.error('Payment setup failed');
+        return;
+      }
+
+      if (user && data.saveAddress) {
+        try {
+          await authAPI.saveShippingAddress(shippingAddress);
+        } catch (err) {
+          toast.error(apiMessage(err, 'Could not save address to your account'));
+        }
+      }
+
+      setLockedShipping({
+        ...shippingAddress,
+        deliveryOption: data.deliveryOption
+      });
+      setClientSecret(secret);
+      setBillingSameAsShipping(true);
+      setCardComplete(false);
+      setStep(2);
+    } catch (err) {
+      toast.error(apiMessage(err, 'Could not prepare checkout'));
+    } finally {
+      setCreatingPi(false);
     }
-
-    setLockedShipping(toShippingPayload(data));
-    setClientSecret(secret);
-    setStep(2);
   };
 
   if (loading) {
@@ -321,18 +428,6 @@ export default function Checkout() {
       <SEO noIndex title="Checkout" />
 
       <main className="section checkout-page">
-        <div className="container">
-
-          {step === 1 && (
-            <form onSubmit={handleSubmit(onSubmitShipping)}>
-              {/* Shipping form inputs same as your original */}
-              <button type="submit" className="btn btn-primary">
-                Continue to payment
-              </button>
-            </form>
-          )}
-          </div>
-
         {!pk ? (
           <div className="api-error-banner checkout-stripe-banner" role="alert">
             <p>
@@ -482,6 +577,13 @@ export default function Checkout() {
                   setStep={setStep}
                   clientSecret={clientSecret}
                   shippingAddress={lockedShipping}
+                  billingSameAsShipping={billingSameAsShipping}
+                  setBillingSameAsShipping={setBillingSameAsShipping}
+                  cardComplete={cardComplete}
+                  setCardComplete={setCardComplete}
+                  totals={totals}
+                  getSubtotal={getSubtotal}
+                  checkoutSummary={checkoutSummary}
                   onSuccess={() => fetchCart()}
                 />
               </Elements>

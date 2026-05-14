@@ -46,10 +46,6 @@ function sortBlogs(list, sort) {
 export default function Blog() {
   const [searchValue, setSearchValue] = useState('');
   const [category, setCategory] = useState('All');
-
-  // Quick robustness: ensure we can always show posts even if category filter is mismatched
-  // (some backends store category casing differently).
-  const normalizedCategory = category === 'All' ? 'All' : String(category).trim().toLowerCase();
   const [sort, setSort] = useState('newest');
 
   const [loading, setLoading] = useState(true);
@@ -97,7 +93,10 @@ export default function Blog() {
     let list = Array.isArray(posts) ? posts : [];
 
 
-    if (category !== 'All') list = list.filter((b) => String(b?.category) === category);
+    if (category !== 'All') {
+      const normalizedCategory = String(category).trim().toLowerCase();
+      list = list.filter((b) => String(b?.category || '').trim().toLowerCase() === normalizedCategory);
+    }
 
     if (q) {
       list = list.filter((b) => {
@@ -107,7 +106,7 @@ export default function Blog() {
     }
 
     return sortBlogs(list, sort);
-  }, [searchValue, category, sort]);
+  }, [posts, searchValue, category, sort]);
 
   const visibleBlogs = filtered.slice(0, 9);
   const secondaryBlogs = filtered.slice(0, 8).slice(0, 4);
@@ -151,8 +150,6 @@ export default function Blog() {
     setLoading(true);
     window.setTimeout(() => setLoading(false), 600);
   };
-
-  const heroIllustrationImage = 'https://images.unsplash.com/photo-1520975693415-35a9e6b0be0a?w=1200&auto=format&fit=crop&q=80';
 
   return (
     <>

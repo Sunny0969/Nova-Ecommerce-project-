@@ -137,7 +137,7 @@ export default function StaffManagement() {
     loadPending();
   }, [loadStaff, loadPending]);
 
-  const loginUrl = useMemo(() => `${window.location.origin}/staff-login`, []);
+  const loginUrl = useMemo(() => `${window.location.origin}/login`, []);
 
   const togglePerm = (setter) => (key) => {
     setter((prev) => ({ ...(prev || {}), [key]: !prev?.[key] }));

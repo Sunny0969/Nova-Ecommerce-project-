@@ -63,18 +63,27 @@ const Login = ({ defaultTab = 'login' }) => {
     const result = await login(loginData.email, loginData.password);
     if (result.success) {
       const u = result.user;
-      if (u?.role === 'admin') {
+      const roles = Array.isArray(u?.roles) ? u.roles : [];
+      if (roles.includes('admin')) {
         toast.success('Welcome — redirecting to admin');
-        navigate(nextPath && nextPath.startsWith('/admin') ? nextPath : '/admin');
+        navigate(nextPath && nextPath.startsWith('/admin') ? nextPath : '/admin/dashboard');
         return;
       }
-      if (nextPath?.startsWith('/admin')) {
-        toast.error('This account is not an administrator.');
-        navigate('/', { replace: true });
+
+      if (roles.includes('staff')) {
+        toast.success('Welcome back');
+        navigate('/home', { replace: true });
         return;
       }
+
+      if (nextPath?.startsWith('/admin') || nextPath?.startsWith('/staff')) {
+        toast.error('This account cannot access that panel.');
+        navigate('/home', { replace: true });
+        return;
+      }
+
       toast.success('Welcome back to Souvenir Handicraft Shop');
-      navigate(nextPath || '/');
+      navigate(nextPath || '/home');
     } else {
       if (result.code === 'USER_NOT_FOUND' || result.status === 404) {
         toast.error(result.error || 'Please register first.');
@@ -93,7 +102,7 @@ const Login = ({ defaultTab = 'login' }) => {
     const result = await register(registerData);
     if (result.success) {
       toast.success('Account created — welcome toSouvenir Handicraft Shop');
-      navigate(nextPath && !nextPath.startsWith('/admin') ? nextPath : '/');
+      navigate(nextPath && !nextPath.startsWith('/admin') ? nextPath : '/home');
     } else {
       toast.error(result.error || 'Registration failed');
     }
@@ -118,9 +127,9 @@ const Login = ({ defaultTab = 'login' }) => {
         <div className="auth-page__shell">
           <div className="auth-page__panel">
             <div className="auth-page__brand">
-              <a href="/" className="nav-logo" style={{ fontSize: '2rem', display: 'inline-block', marginBottom: '0.5rem' }}>
+              <Link to="/home" className="nav-logo" style={{ fontSize: '2rem', display: 'inline-block', marginBottom: '0.5rem' }}>
                Souvenir Handicraft<span>.</span>
-              </a>
+              </Link>
               <p className="auth-page__tagline">Your premium shopping destination</p>
             </div>
 
