@@ -50,8 +50,8 @@ export default function Modal({
   if (!isOpen || typeof document === 'undefined') return null;
 
   const confirmClasses = danger
-    ? 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600'
-    : 'bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:ring-neutral-900';
+    ? 'bg-rozana-orange-dark text-white hover:bg-rozana-orange focus-visible:ring-rozana-orange'
+    : 'bg-rozana-navy text-white hover:bg-rozana-navy-deep focus-visible:ring-rozana-navy';
 
   const node = (
     <div

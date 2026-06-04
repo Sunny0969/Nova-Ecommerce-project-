@@ -1,0 +1,110 @@
+.home-deals-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.35rem 1.25rem;
+  border-radius: 16px;
+  background-color: var(--brand-orange);
+  color: var(--white);
+  border: 2px solid var(--brand-orange-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.home-deals-banner--soon {
+  background-color: var(--navy);
+  border-color: rgba(255, 247, 240, 0.2);
+}
+
+.home-deals-banner__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: var(--white);
+}
+
+.home-deals-banner--soon .home-deals-banner__icon {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: var(--brand-orange);
+}
+
+.home-deals-banner__eyebrow {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.home-deals-banner--soon .home-deals-banner__eyebrow {
+  color: var(--brand-orange);
+}
+
+.home-deals-banner__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--white);
+}
+
+.home-deals-banner--soon .home-deals-banner__title {
+  color: var(--cream);
+}
+
+.home-deals-banner__sub {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.home-deals-banner--soon .home-deals-banner__sub {
+  color: rgba(255, 247, 240, 0.75);
+}
+
+.home-deals-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--white);
+  color: var(--brand-orange-dark);
+  border: 2px solid var(--white);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.home-deals-banner__cta:hover {
+  background-color: var(--cream);
+  color: var(--navy);
+}
+
+.home-deals-banner--soon .home-deals-banner__cta {
+  background-color: var(--brand-orange);
+  color: var(--white);
+  border-color: var(--brand-orange);
+}
+
+.home-deals-banner--soon .home-deals-banner__cta:hover {
+  background-color: var(--brand-orange-dark);
+  border-color: var(--brand-orange-dark);
+}
+
+@media (min-width: 901px) {
+  .home-deals-banner {
+    position: sticky;
+    top: calc(var(--site-header-height, 4.25rem) + 1.25rem);
+  }
+}

@@ -1,0 +1,216 @@
+.home-flash-sale {
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
+  background: var(--white);
+}
+
+.home-flash-sale__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.home-flash-sale__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-orange);
+}
+
+.home-flash-sale__title {
+  margin: 0;
+}
+
+.home-flash-sale__view-all {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-decoration: none;
+}
+
+.home-flash-sale__view-all:hover {
+  color: var(--brand-orange);
+}
+
+.home-flash-sale__body {
+  position: relative;
+}
+
+.home-flash-sale__body--slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.home-flash-sale__viewport {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.home-flash-sale__track {
+  display: flex;
+  transition: transform 0.35s ease;
+  will-change: transform;
+}
+
+.flash-sale-page {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.flash-sale-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--flash-sale-cols, 8), minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
+  gap: 0.85rem 0.75rem;
+  align-content: start;
+}
+
+.flash-sale-grid--loading .flash-sale-card--skeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-flash-sale__nav {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--gray-light);
+  background: var(--white);
+  color: var(--navy);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.home-flash-sale__nav:hover:not(:disabled) {
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
+}
+
+.home-flash-sale__nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.home-flash-sale__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.home-flash-sale__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--gray-light);
+  cursor: pointer;
+}
+
+.home-flash-sale__dot--active {
+  background: var(--brand-orange);
+  transform: scale(1.15);
+}
+
+.flash-sale-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.flash-sale-card:hover .flash-sale-card__title {
+  color: var(--brand-orange);
+}
+
+.flash-sale-card__image-wrap {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: var(--cream);
+  border: 1px solid var(--gray-light);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flash-sale-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.flash-sale-card__placeholder {
+  font-size: 2rem;
+}
+
+.flash-sale-card__title {
+  margin: 0.5rem 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--navy);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.15s ease;
+}
+
+.flash-sale-card__prices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+}
+
+.flash-sale-card__price--sale {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--brand-orange);
+}
+
+.flash-sale-card__price--was {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--gray);
+  text-decoration: line-through;
+}
+
+@media (max-width: 1023px) {
+  .home-flash-sale__body--slider {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .home-flash-sale__nav {
+    display: none;
+  }
+
+  .home-flash-sale__viewport {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .home-flash-sale__body--slider .home-flash-sale__track {
+    transform: none !important;
+  }
+
+  .flash-sale-page {
+    scroll-snap-align: start;
+  }
+}

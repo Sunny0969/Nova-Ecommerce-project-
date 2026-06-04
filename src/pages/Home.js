@@ -5,31 +5,21 @@ import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
 import { unwrapFeaturedResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
+import HomeCategoryStrip from '../components/HomeCategoryStrip';
+import HomeBannerSlider from '../components/HomeBannerSlider';
+import HomeHero from '../components/HomeHero';
+import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
+import HomeFlashSale from '../components/HomeFlashSale';
+import HomePopularBrands from '../components/HomePopularBrands';
 import {
   buildWebSiteWithSearchActionSchema,
   getSiteUrl,
-  homeHeroImageUrl,
   promoBannerBgUrl
 } from '../utils/seo';
 import { formatPKR } from '../utils/currency';
 import RecommendationRow from '../components/RecommendationRow';
 import api, { recommendationsAPI, productsAPI } from 'api';
 import { getSessionId } from '../lib/sessionId';
-
-/** Emoji icon by category slug (API-driven names; slug is stable). */
-function iconForCategorySlug(slug) {
-  const s = String(slug || '').toLowerCase();
-  if (s.includes('electronic')) return '📱';
-  if (s.includes('fashion')) return '👗';
-  if (s.includes('home')) return '🏡';
-  if (s.includes('beaut')) return '💄';
-  if (s.includes('sport')) return '⚽';
-  if (s.includes('book')) return '📚';
-  if (s.includes('toy')) return '🧸';
-  return '🛍️';
-}
-
-const HOME_CATEGORY_LIMIT = 5;
 
 /** Featured strip: show up to 4 items from GET /api/products/featured (typically 3–4). */
 const FEATURED_PRODUCT_LIMIT = 4;
@@ -63,7 +53,7 @@ const Home = () => {
     try {
       const res = await api.get('/api/categories');
       const list = unwrapCategoriesResponse(res);
-      setCategories(list.slice(0, HOME_CATEGORY_LIMIT));
+      setCategories(list);
     } catch (error) {
       console.error('Categories fetch error:', error);
       setCategoriesError(String(apiMessage(error, 'Failed to load categories') || 'Failed to load categories'));
@@ -90,7 +80,7 @@ const Home = () => {
         error.code === 'ERR_NETWORK' || error.message?.includes('Network Error');
       const msg = isNet
         ? process.env.NODE_ENV === 'development'
-          ? 'Cannot reach the API. Start the backend (port 5000) — from the project folder run npm run dev, or cd backend && npm start.'
+          ? 'Cannot reach the API. Start the backend (port 5001) — from the project folder run npm run dev, or cd backend && npm start.'
           : 'Cannot load products. Set REACT_APP_API_URL to your Render API URL in .env.production, then run npm run build and upload the new build folder. Check browser DevTools → Network if it still fails.'
         : apiMessage(error, 'Failed to load products');
       setFeaturedError(String(msg || 'Failed to load products'));
@@ -119,132 +109,33 @@ const Home = () => {
   return (
     <>
       <SEO
-        title="Premium Online Shopping"
-        description="Shop premium products with fast delivery and secure checkout. Souvenir Handicraft Shop offers curated style across electronics, fashion, home, beauty, and sports. Find your next favorite online."
+        title="Rozana — Online Shopping Pakistan"
+        description="Rozana — sab kuch ghar pe, sasti qeemat pe. Shop fashion, grocery, electronics and more with fast delivery across Pakistan."
         schema={buildWebSiteWithSearchActionSchema(getSiteUrl() || undefined)}
-        preload={[{ href: homeHeroImageUrl, as: 'image', crossOrigin: 'anonymous' }]}
       />
 
-      {/* Hero — split: copy + lifestyle image (Souvenir Handicraft Shop) */}
-      <section className="hero hero--home" aria-label="Hero banner">
-        <div className="hero__copy">
-          <div className="hero__copy-inner container">
-            <p className="hero-badge">New season collection</p>
-            <h1 className="hero-title">
-              Discover <em>Premium</em> Style &amp; Living
-            </h1>
-            <p className="hero-lead">
-              Curated collections of the world&apos;s finest products — delivered to your door with
-              next-day shipping.
-            </p>
-            <div className="hero-actions">
-              <Link to="/shop" className="btn btn-primary btn-hero-primary">
-                Shop now →
-              </Link>
-              <a href="#featured" className="btn btn-outline btn-hero-outline">
-                View collections
-              </a>
-            </div>
-            <div className="hero-stats" role="group" aria-label="Store highlights">
-              <div className="hero-stat">
-                <span className="hero-stat__value">10K+</span>
-                <span className="hero-stat__label">Products</span>
-              </div>
-              <span className="hero-stats__divider" aria-hidden="true" />
-              <div className="hero-stat">
-                <span className="hero-stat__value">50K+</span>
-                <span className="hero-stat__label">Customers</span>
-              </div>
-              <span className="hero-stats__divider" aria-hidden="true" />
-              <div className="hero-stat">
-                <span className="hero-stat__value">4.9★</span>
-                <span className="hero-stat__label">Rating</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="hero__media">
-          <img
-            className="hero__media-img"
-            src={homeHeroImageUrl}
-            alt=""
-            width={1200}
-            height={1800}
-            decoding="async"
+      <HomeCategoryStrip />
 
-            loading="eager"
-          />
-          <div className="hero__media-scrim" aria-hidden="true" />
-        </div>
-      </section>
+      <div className="home-top-stack">
+        <HomeBannerSlider />
+        <HomeHero />
+      </div>
 
-      <section className="section bg-cream home-categories" id="categories" aria-label="Shop categories">
+      <section className="section bg-cream home-categories-browse" id="categories" aria-label="Shop categories">
         <div className="container">
-          <div className="section-header text-center home-categories__header">
-            <p className="home-categories__label">Browse by category</p>
-            <h2 className="home-categories__title">What Are You Looking For?</h2>
-          </div>
-
-          {categoriesLoading ? (
-            <div className="categories-grid home-categories-grid home-categories-grid--loading" aria-busy="true">
-              {Array.from({ length: HOME_CATEGORY_LIMIT }).map((_, i) => (
-                <div key={i} className="home-category-card home-category-card--skeleton" aria-hidden="true">
-                  <span className="home-category-card__icon-skel" />
-                  <span className="home-category-card__name-skel" />
-                </div>
-              ))}
-            </div>
-          ) : categoriesError ? (
-            <div className="home-categories__error" role="alert">
-              <p>{categoriesError}</p>
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => fetchCategories()}>
-                Retry
-              </button>
-            </div>
-          ) : categories.length === 0 ? (
-            <p className="empty-products-hint empty-products-hint--muted home-categories__empty">
-              No categories available yet.
-            </p>
-          ) : (
-            <div className="categories-grid home-categories-grid">
-              {categories.map((cat) => {
-                const slug = cat.slug || '';
-                const name = cat.name || slug;
-                const icon = cat.image?.url ? null : iconForCategorySlug(slug);
-                return (
-                  <Link
-                    key={cat._id || slug}
-                    to={`/category/${encodeURIComponent(slug)}`}
-                    className="home-category-card"
-                  >
-                    {cat.image?.url ? (
-                      <span className="home-category-card__thumb-wrap">
-                        <img
-                          src={cat.image.url}
-                          alt=""
-                          className="home-category-card__thumb"
-                          width={480}
-                          height={480}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </span>
-                    ) : (
-                      <span className="home-category-card__icon" aria-hidden>
-                        {icon}
-                      </span>
-                    )}
-                    <span className="home-category-card__name">{name}</span>
-                    {typeof cat.productCount === 'number' && cat.productCount > 0 && (
-                      <span className="home-category-card__count">{cat.productCount} items</span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+          <h2 className="home-categories-browse__title">Categories</h2>
+          <HomeCategoriesGrid
+            categories={categories}
+            loading={categoriesLoading}
+            error={categoriesError}
+            onRetry={fetchCategories}
+          />
         </div>
       </section>
+
+      <HomePopularBrands />
+
+      <HomeFlashSale />
 
       <section className="section home-featured" id="featured" aria-label="Featured products">
         <div className="container">
@@ -274,8 +165,7 @@ const Home = () => {
             </div>
           ) : featuredProducts.length === 0 ? (
             <p className="empty-products-hint empty-products-hint--muted home-featured__empty">
-              No products yet. Restart the backend to auto-seed demos, or run{' '}
-              <code>node scripts/seedDatabase.js</code> in <code>backend</code>, then refresh.
+              Coming Soon — featured products will appear here when they are added to the store.
             </p>
           ) : (
             <div className="products-grid home-featured__grid">

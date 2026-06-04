@@ -13,7 +13,7 @@ function normalizeApiOrigin(url) {
 /**
  * Production API (Render) — hardcoded so Hostinger builds never miss env vars.
  * Optional override: `public/api-config.js` sets `window.__REACT_APP_API_URL__` (e.g. to test another API).
- * Local `npm start`: uses http://localhost:5000 (your machine’s backend).
+ * Local `npm start`: uses http://localhost:5001 (your machine’s backend).
  */
 const HARDCODED_PRODUCTION_API = 'https://nova-ecommerce-project-backend.onrender.com';
 
@@ -24,12 +24,12 @@ function readRuntimeApiOrigin() {
   return String(window.__REACT_APP_API_URL__);
 }
 
-// In development, ignore `public/api-config.js` so requests hit the local backend (port 5000).
+// In development, ignore `public/api-config.js` so requests hit the local backend (port 5001).
 // In production, Hostinger can override the API via `window.__REACT_APP_API_URL__`.
 const baseURL = normalizeApiOrigin(
   process.env.NODE_ENV === 'production'
     ? readRuntimeApiOrigin() || HARDCODED_PRODUCTION_API
-    : 'http://localhost:5000'
+    : 'http://localhost:5001'
 );
 
 export const api = axios.create({
@@ -43,6 +43,11 @@ export const api = axios.create({
 /** Public store pricing (shipping thresholds, tax rate) — no auth required */
 export const storeSettingsAPI = {
   get: () => api.get('/api/store-settings')
+};
+
+/** Public homepage metrics — no auth required */
+export const publicAPI = {
+  homeStats: () => api.get('/api/public/home-stats')
 };
 
 api.interceptors.request.use(
@@ -146,6 +151,8 @@ export const productsAPI = {
   getOne: (slug) => api.get(`/api/products/${encodeURIComponent(slug)}`),
 
   getFeatured: () => api.get('/api/products/featured'),
+
+  getFlashSale: (params) => api.get('/api/products/flash-sale', { params }),
 
   search: (params) =>
     api.get('/api/products/search', {

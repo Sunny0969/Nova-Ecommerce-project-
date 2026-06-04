@@ -177,9 +177,9 @@ export default function Chatbot() {
       >
         {isOpen && (
           <>
-            <header className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-[#fafaf8] px-3 py-2.5">
+            <header className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-rozana-cream px-3 py-2.5">
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold text-[#0a0a0a]">Souvenir Handicraft  Support</h2>
+                <h2 className="truncate text-sm font-semibold text-rozana-navy">Rozana Support</h2>
                 <p className="text-xs text-gray-500">Roman Urdu & English — instant replies</p>
               </div>
               <div className="flex items-center gap-0.5">
@@ -240,8 +240,8 @@ export default function Chatbot() {
                         title={formatMessageTime(m.timestamp)}
                         className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
                           m.type === 'user'
-                            ? 'bg-[#0a0a0a] text-[#fafaf8]'
-                            : 'bg-[#F3F4F6] text-[#0a0a0a]'
+                            ? 'bg-rozana-navy text-white'
+                            : 'bg-[#F3F4F6] text-rozana-navy'
                         }`}
                       >
                         <p className="whitespace-pre-wrap break-words">{m.text}</p>
@@ -254,7 +254,7 @@ export default function Chatbot() {
                           <div className="mt-2 flex items-center gap-1 border-t border-gray-200/60 pt-2 opacity-0 transition group-hover:opacity-100 max-md:opacity-100">
                             <button
                               type="button"
-                              className={`rounded p-1 hover:bg-white/80 ${reactions[m.id] === 'up' ? 'text-emerald-600' : 'text-gray-500'}`}
+                              className={`rounded p-1 hover:bg-white/80 ${reactions[m.id] === 'up' ? 'text-rozana-success' : 'text-gray-500'}`}
                               aria-label="Helpful"
                               onClick={() => setReaction(m.id, 'up')}
                             >
@@ -262,7 +262,7 @@ export default function Chatbot() {
                             </button>
                             <button
                               type="button"
-                              className={`rounded p-1 hover:bg-white/80 ${reactions[m.id] === 'down' ? 'text-red-600' : 'text-gray-500'}`}
+                              className={`rounded p-1 hover:bg-white/80 ${reactions[m.id] === 'down' ? 'text-rozana-orange' : 'text-gray-500'}`}
                               aria-label="Not helpful"
                               onClick={() => setReaction(m.id, 'down')}
                             >
@@ -299,7 +299,7 @@ export default function Chatbot() {
                           type="button"
                           onClick={() => sendMessage(label)}
                           disabled={isTyping}
-                          className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-[#0a0a0a] transition hover:border-[#0a0a0a] hover:bg-white disabled:opacity-50"
+                          className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-rozana-navy transition hover:border-rozana-navy hover:bg-white disabled:opacity-50"
                         >
                           {label}
                         </button>
@@ -309,7 +309,7 @@ export default function Chatbot() {
                 )}
 
                 {!isTyping && lastBotWithFollowups && (
-                  <div className="shrink-0 border-t border-dashed border-gray-200 bg-[#fafaf8] px-3 py-2">
+                  <div className="shrink-0 border-t border-dashed border-gray-200 bg-rozana-cream px-3 py-2">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Related</p>
                     <div className="flex flex-wrap gap-1.5">
                       {lastBotWithFollowups.followups.map((label) => (
@@ -317,7 +317,7 @@ export default function Chatbot() {
                           key={label}
                           type="button"
                           onClick={() => sendMessage(label)}
-                          className="rounded-full border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-[#0a0a0a] transition hover:border-[#0a0a0a]"
+                          className="rounded-full border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-rozana-navy transition hover:border-rozana-navy"
                         >
                           {label}
                         </button>
@@ -328,7 +328,7 @@ export default function Chatbot() {
 
                 <form
                   onSubmit={handleSubmit}
-                  className="relative flex shrink-0 gap-2 border-t border-gray-100 bg-[#fafaf8] p-2"
+                  className="relative flex shrink-0 gap-2 border-t border-gray-100 bg-rozana-cream p-2"
                 >
                   {typeahead.length > 0 && (
                     <ul
@@ -356,14 +356,14 @@ export default function Chatbot() {
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Urdu / English likhein…"
                     disabled={isTyping}
-                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-[#0a0a0a] outline-none ring-0 placeholder:text-gray-400 focus:border-[#0a0a0a]"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-rozana-navy outline-none ring-0 placeholder:text-gray-400 focus:border-rozana-orange"
                     aria-label="Message"
                     autoComplete="off"
                   />
                   <button
                     type="submit"
                     disabled={isTyping || !input.trim()}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#0a0a0a] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#1a1a2e] disabled:opacity-40"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-rozana-orange px-3 py-2 text-sm font-medium text-white transition hover:bg-rozana-orange-dark disabled:opacity-40"
                   >
                     <Send size={16} aria-hidden />
                     <span className="hidden sm:inline">Send</span>
@@ -382,12 +382,12 @@ export default function Chatbot() {
             openChat();
             setMinimized(false);
           }}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#0a0a0a] text-[#fafaf8] shadow-lg transition hover:bg-[#1a1a2e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a84b] focus-visible:ring-offset-2"
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-rozana-orange text-white shadow-lg transition hover:bg-rozana-orange-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-rozana-orange focus-visible:ring-offset-2"
           aria-label="Open Nova Shop support chat"
         >
           <MessageCircle size={24} aria-hidden />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#c8a84b] px-1 text-[11px] font-bold text-[#0a0a0a]">
+            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rozana-success px-1 text-[11px] font-bold text-white">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}

@@ -516,7 +516,7 @@ export default function ProductDetail() {
           description={metaUnavailable}
           canonicalUrl={productPath}
         />
-        <header className="page-header">
+        <header className="page-header page-header--product-detail">
           <div className="container">
             <ol className="breadcrumb" aria-label="Breadcrumb">
               <li>
@@ -636,7 +636,7 @@ export default function ProductDetail() {
         schema={structuredData}
       />
 
-      <header className="page-header">
+      <header className="page-header page-header--product-detail">
         <div className="container">
           <ol className="breadcrumb" aria-label="Breadcrumb">
             <li>

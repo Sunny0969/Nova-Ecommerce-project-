@@ -1,21 +1,21 @@
-/* Blog page styles (created to fix missing import ./Blog.css) */
+/* Blog listing — Rozana palette */
 
 .page-header {
   padding: 2rem 0;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--cream, #FFF7F0);
+  border-bottom: 1px solid var(--gray-light, #e8e2d8);
 }
 
 .page-header__title {
   margin: 0 0 0.5rem;
   font-size: 2rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--navy, #1A1A2E);
 }
 
 .page-header__subtitle {
   margin: 0;
-  color: #666;
+  color: var(--gray, #5c5c6e);
   font-size: 1rem;
 }
 
@@ -24,7 +24,7 @@
 }
 
 .section--blog {
-  background: #ffffff;
+  background: var(--white, #ffffff);
 }
 
 .blog-listing {
@@ -44,9 +44,9 @@
 .section-tag {
   display: inline-block;
   font-size: 0.875rem;
-  color: #333;
-  background: #fff3cd;
-  border: 1px solid #ffe082;
+  color: var(--navy, #1A1A2E);
+  background: var(--cream, #FFF7F0);
+  border: 1px solid var(--brand-orange-light, #fb923c);
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   margin-bottom: 0.75rem;
@@ -57,7 +57,7 @@
   margin: 0;
   font-size: 1.75rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--navy, #1A1A2E);
 }
 
 .blog-filters {
@@ -76,37 +76,20 @@
 .api-error-banner,
 .blog-empty {
   padding: 1.5rem;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--gray-light, #e8e2d8);
   border-radius: 12px;
-  background: #fafafa;
-  text-align: center;
-  margin: 1rem 0;
+  background: var(--cream, #FFF7F0);
+  color: var(--gray, #5c5c6e);
 }
 
-.blog-empty__title {
-  font-weight: 800;
-  margin: 0 0 0.5rem;
-  color: #1a1a1a;
-}
-
-.blog-empty__sub {
-  margin: 0 0 1rem;
-  color: #666;
-}
-
-.blog-carousel__item {
-  padding: 0 0.25rem;
-}
-
-@media (max-width: 992px) {
+@media (max-width: 900px) {
   .blog-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 600px) {
   .blog-grid {
     grid-template-columns: 1fr;
   }
 }
-

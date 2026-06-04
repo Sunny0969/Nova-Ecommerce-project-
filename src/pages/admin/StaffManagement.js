@@ -58,7 +58,7 @@ function permBadges(perms) {
         <span
           key={g.key}
           className="admin-dash-badge"
-          style={{ background: '#1a1a2e', color: '#c8a84b' }}
+          style={{ background: '#1A1A2E', color: '#F97316' }}
           title={g.note || g.label}
         >
           {g.label}

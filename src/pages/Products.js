@@ -4,12 +4,13 @@ import { LayoutGrid, List, SlidersHorizontal, Search, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 import Pagination from '../components/Pagination';
+import CategoryShopSeo from '../components/CategoryShopSeo';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
 import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import api from 'api';
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 50;
 const VIEW_STORAGE_KEY = 'Souvenir Handicraft-shop-products-view';
 
 function categoriesFromSearchParams(searchParams) {
@@ -51,6 +52,8 @@ const Products = () => {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState(null);
+  const [categoryTags, setCategoryTags] = useState([]);
+  const [categoryTagsLoading, setCategoryTagsLoading] = useState(false);
 
   const [viewMode, setViewMode] = useState(() => {
     try {
@@ -68,6 +71,8 @@ const Products = () => {
   const maxPriceUrl = searchParams.get('maxPrice') || '';
   const ratingUrl = searchParams.get('rating') || '';
   const inStock = searchParams.get('inStock') === 'true';
+  const onSale = searchParams.get('onSale') === 'true';
+  const selectedTag = (searchParams.get('tag') || '').trim();
   const selectedCategories = useMemo(
     () => categoriesFromSearchParams(searchParams),
     [searchParams]
@@ -134,6 +139,7 @@ const Products = () => {
       const mx = sp.get('maxPrice') || '';
       const r = sp.get('rating') || '';
       const stock = sp.get('inStock') === 'true';
+      const sale = sp.get('onSale') === 'true';
       const cats = categoriesFromSearchParams(sp);
 
       const params = new URLSearchParams();
@@ -146,6 +152,9 @@ const Products = () => {
       if (mx) params.set('maxPrice', mx);
       if (r) params.set('rating', r);
       if (stock) params.set('inStock', 'true');
+      if (sale) params.set('onSale', 'true');
+      const tag = (sp.get('tag') || '').trim();
+      if (tag) params.set('tag', tag);
 
       try {
         const response = await api.get(`/api/products?${params.toString()}`);
@@ -159,7 +168,7 @@ const Products = () => {
         if (cancelled) return;
       const msg =
         error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')
-            ? 'Cannot reach the API. Is the backend running on port 5000?'
+            ? 'Cannot reach the API. Is the backend running on port 5001?'
             : apiMessage(error, 'Failed to load products');
       setFetchError(String(msg || 'Failed to load products'));
         setItems([]);
@@ -230,11 +239,21 @@ const Products = () => {
     if (!s) return;
     updateParams((next) => {
       next.delete('cat');
+      next.delete('tag');
       const set = new Set(next.getAll('category').map((x) => String(x).trim()).filter(Boolean));
       if (set.has(s)) set.delete(s);
       else set.add(s);
       next.delete('category');
       Array.from(set).forEach((c) => next.append('category', c));
+      next.set('page', '1');
+    });
+  };
+
+  const setSubcategoryTag = (tag) => {
+    updateParams((next) => {
+      const t = String(tag || '').trim();
+      if (t) next.set('tag', t);
+      else next.delete('tag');
       next.set('page', '1');
     });
   };
@@ -454,10 +473,81 @@ const Products = () => {
       }
       return 'Shop (filtered)';
     }
+    if (onSale) return 'On sale – Shop';
     if (inStock) return 'In stock only – Shop';
     if (minPriceUrl || maxPriceUrl || ratingUrl) return 'Shop (filtered)';
     return 'Shop';
-  }, [searchUrl, selectedCategories, categories, inStock, minPriceUrl, maxPriceUrl, ratingUrl]);
+  }, [searchUrl, selectedCategories, categories, onSale, inStock, minPriceUrl, maxPriceUrl, ratingUrl]);
+
+  const activeCategory = useMemo(() => {
+    if (selectedCategories.length !== 1) return null;
+    const slug = String(selectedCategories[0] || '').toLowerCase();
+    return categories.find((c) => String(c.slug || '').toLowerCase() === slug) || null;
+  }, [selectedCategories, categories]);
+
+  const activeCategorySlug = activeCategory?.slug
+    ? String(activeCategory.slug).toLowerCase()
+    : '';
+
+  useEffect(() => {
+    if (!activeCategorySlug) {
+      setCategoryTags([]);
+      return;
+    }
+    let cancelled = false;
+    const loadTags = async () => {
+      setCategoryTagsLoading(true);
+      try {
+        const res = await api.get(
+          `/api/products/category-tags?category=${encodeURIComponent(activeCategorySlug)}`
+        );
+        const list = res?.data?.data;
+        if (cancelled) return;
+        setCategoryTags(
+          Array.isArray(list)
+            ? list.filter((row) => row && row.tag).map((row) => ({
+                tag: String(row.tag),
+                count: typeof row.count === 'number' ? row.count : 0
+              }))
+            : []
+        );
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setCategoryTags([]);
+      } finally {
+        if (!cancelled) setCategoryTagsLoading(false);
+      }
+    };
+    loadTags();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategorySlug]);
+
+  useEffect(() => {
+    if (!selectedTag) return;
+    if (!activeCategorySlug) {
+      updateParams((next) => {
+        next.delete('tag');
+        next.set('page', '1');
+      });
+      return;
+    }
+    if (categoryTagsLoading) return;
+    if (categoryTags.length === 0) return;
+    const valid = categoryTags.some((row) => row.tag === selectedTag);
+    if (!valid) {
+      updateParams((next) => {
+        next.delete('tag');
+        next.set('page', '1');
+      });
+    }
+  }, [selectedTag, activeCategorySlug, categoryTags, categoryTagsLoading, setSearchParams]);
+
+  const headerTitle = activeCategory?.name ? String(activeCategory.name) : 'Shop';
+  const headerSubtitle = activeCategory?.description
+    ? String(activeCategory.description)
+    : 'Browse the full catalog — refine with filters or search by name.';
 
   const { listingCanonicalUrl, listingBreadcrumbJsonLd } = useMemo(() => {
     const sp = searchParams.toString();
@@ -495,17 +585,19 @@ const Products = () => {
   return (
     <>
       <SEO
-        title="Shop All Products"
-        description="Shop all products at Souvenir Handicraft Shop—filter by category, price, rating, and availability. Secure checkout, fast delivery, and curated quality."
+        title={activeCategory?.name ? `${headerTitle} – Shop` : 'Shop All Products'}
+        description={
+          activeCategory?.description
+            ? String(activeCategory.description)
+            : 'Shop all products at Souvenir Handicraft Shop—filter by category, price, rating, and availability. Secure checkout, fast delivery, and curated quality.'
+        }
         canonicalUrl={listingCanonicalUrl}
         schema={listingBreadcrumbJsonLd}
       />
       <header className="page-header">
         <div className="container">
-          <h1 className="page-header__title">Shop</h1>
-          <p className="page-header__subtitle">
-            Browse the full catalog — refine with filters or search by name.
-          </p>
+          <h1 className="page-header__title">{headerTitle}</h1>
+          <p className="page-header__subtitle">{headerSubtitle}</p>
           <ol className="breadcrumb" aria-label="Breadcrumb">
             <li>
               <Link to="/">Home</Link>
@@ -519,6 +611,36 @@ const Products = () => {
               {shopBreadcrumbLabel}
             </li>
           </ol>
+
+          <form
+            className="shop-search-row shop-search-row--header"
+            role="search"
+            aria-label="Search products"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const next = new URLSearchParams(searchParams);
+              const q = searchInput.trim();
+              if (q) next.set('search', q);
+              else next.delete('search');
+              next.set('page', '1');
+              setSearchParams(next);
+            }}
+          >
+            <div className="shop-search-row__field">
+              <Search className="shop-search-row__icon" size={20} strokeWidth={1.75} aria-hidden />
+              <input
+                type="search"
+                className="form-control shop-search-row__input"
+                placeholder="Search products…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                aria-label="Search products"
+              />
+            </div>
+            <button type="submit" className="btn btn-primary shop-search-row__submit">
+              Search
+            </button>
+          </form>
         </div>
       </header>
 
@@ -576,36 +698,6 @@ const Products = () => {
             ) : null}
 
             <div className="shop-main">
-              <form
-                className="shop-search-row"
-                role="search"
-                aria-label="Search products"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const next = new URLSearchParams(searchParams);
-                  const q = searchInput.trim();
-                  if (q) next.set('search', q);
-                  else next.delete('search');
-                  next.set('page', '1');
-                  setSearchParams(next);
-                }}
-              >
-                <div className="shop-search-row__field">
-                  <Search className="shop-search-row__icon" size={20} strokeWidth={1.75} aria-hidden />
-                  <input
-                    type="search"
-                    className="form-control shop-search-row__input"
-                    placeholder="Search products…"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    aria-label="Search products"
-                  />
-          </div>
-                <button type="submit" className="btn btn-primary shop-search-row__submit">
-                  Search
-                </button>
-              </form>
-
           {fetchError && (
             <div className="api-error-banner" role="alert">
                   <p>
@@ -620,6 +712,41 @@ const Products = () => {
               </button>
             </div>
           )}
+
+              {activeCategory && (categoryTagsLoading || categoryTags.length > 0) ? (
+                <div
+                  className="shop-subcategory-bar"
+                  role="toolbar"
+                  aria-label={`${headerTitle} subcategories`}
+                >
+                  <div className="shop-subcategory-chips">
+                    <button
+                      type="button"
+                      className={`shop-subcategory-chip${
+                        !selectedTag ? ' shop-subcategory-chip--active' : ''
+                      }`}
+                      aria-pressed={!selectedTag}
+                      disabled={categoryTagsLoading}
+                      onClick={() => setSubcategoryTag('')}
+                    >
+                      All
+                    </button>
+                    {categoryTags.map(({ tag }) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className={`shop-subcategory-chip${
+                          selectedTag === tag ? ' shop-subcategory-chip--active' : ''
+                        }`}
+                        aria-pressed={selectedTag === tag}
+                        onClick={() => setSubcategoryTag(tag)}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="shop-toolbar shop-toolbar--Souvenir Handicraft">
                 <p className="results-count" aria-live="polite">
@@ -738,6 +865,14 @@ const Products = () => {
                   </div>
                 </>
               )}
+
+              {activeCategorySlug && activeCategory && !loading ? (
+                <CategoryShopSeo
+                  categorySlug={activeCategorySlug}
+                  categoryName={headerTitle}
+                  products={items}
+                />
+              ) : null}
             </div>
           </div>
         </div>

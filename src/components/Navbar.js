@@ -5,7 +5,6 @@ import {
   X,
   ShoppingCart,
   Heart,
-  Search,
   User,
   ChevronDown,
   Package,
@@ -17,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { getGrantedStaffSections } from '../utils/staffPermissions';
 import SmartSearchBar from './SmartSearchBar';
+import NavDeliveryLocation from './NavDeliveryLocation';
 
 import logo from '../assets/images/logo.png';
 
@@ -36,7 +36,7 @@ export default function Navbar() {
 
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [accountOpen, setAccountOpen] = useState(false);
   const [cartBump, setCartBump] = useState(false);
@@ -66,7 +66,7 @@ export default function Navbar() {
     const onKey = (e) => {
       if (e.key === 'Escape') {
         setDrawerOpen(false);
-        setSearchOpen(false);
+        setSearchFocused(false);
         setAccountOpen(false);
       }
     };
@@ -75,15 +75,15 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (!searchOpen) return;
+    if (!searchFocused) return;
     const onDoc = (e) => {
       if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
-        setSearchOpen(false);
+        setSearchFocused(false);
       }
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, [searchOpen]);
+  }, [searchFocused]);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -105,7 +105,7 @@ export default function Navbar() {
 
   useEffect(() => {
     setAccountOpen(false);
-    setSearchOpen(false);
+    setSearchFocused(false);
     setDrawerOpen(false);
   }, [location.pathname]);
 
@@ -123,16 +123,11 @@ export default function Navbar() {
   const isBlogActive = location.pathname.startsWith('/blog');
   const staffSections = isStaff ? getGrantedStaffSections(permissionMap) : [];
 
-  const openSearch = () => {
-    setSearchOpen(true);
-    setTimeout(() => searchInputRef.current?.focus(), 50);
-  };
-
   const navLinkClass = (active) => `nav-main__link ${active ? 'active' : ''}`;
 
   const renderNavLinks = (onNavigate) => (
     <>
-      <Link to="/home" className={navLinkClass(isHomeActive)} onClick={onNavigate}>
+      {/* <Link to="/home" className={navLinkClass(isHomeActive)} onClick={onNavigate}>
         Home
       </Link>
       <Link to="/shop" className={navLinkClass(isShopActive)} onClick={onNavigate}>
@@ -140,7 +135,7 @@ export default function Navbar() {
       </Link>
       <Link to="/blog" className={navLinkClass(isBlogActive)} onClick={onNavigate}>
         Blog
-      </Link>
+      </Link> */}
       {canAccessCustomerApp ? (
         <Link to="/cart" className={navLinkClass(isActive('/cart'))} onClick={onNavigate}>
           Cart
@@ -175,10 +170,8 @@ export default function Navbar() {
 
   const renderIconButtons = (onNavigate) => (
     <>
-      {canAccessCustomerApp ? (
-        <>
       <Link
-        to={user ? '/account/wishlist' : '/login'}
+        to={user && canAccessCustomerApp ? '/account/wishlist' : '/login'}
         className={`nav-icon-btn ${location.pathname.includes('wishlist') ? 'nav-icon-btn--active' : ''}`}
         aria-label={`Wishlist${wishCount ? `, ${wishCount} items` : ''}`}
         onClick={onNavigate}
@@ -206,10 +199,69 @@ export default function Navbar() {
           </span>
         )}
       </Link>
-        </>
-      ) : null}
     </>
   );
+
+  const renderProfileControl = (onNavigate) => {
+    if (isAuthenticated) {
+      return (
+        <div className="nav-account-wrap" ref={accountRef}>
+          <button
+            type="button"
+            className="nav-avatar-btn"
+            aria-expanded={accountOpen}
+            aria-haspopup="true"
+            aria-label="Account menu"
+            onClick={() => setAccountOpen((o) => !o)}
+          >
+            <span className="nav-avatar" aria-hidden="true">
+              {getInitials(user?.name)}
+            </span>
+            <ChevronDown size={16} className={`nav-avatar-chevron ${accountOpen ? 'open' : ''}`} />
+          </button>
+          {accountOpen && (
+            <ul className="nav-dropdown" role="menu">
+              {canAccessCustomerApp ? (
+                <>
+                  <li>
+                    <Link to="/account" role="menuitem" onClick={() => setAccountOpen(false)}>
+                      <User size={16} /> My Account
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/account/orders" role="menuitem" onClick={() => setAccountOpen(false)}>
+                      <Package size={16} /> My Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/account/reviews" role="menuitem" onClick={() => setAccountOpen(false)}>
+                      <Star size={16} /> My Reviews
+                    </Link>
+                  </li>
+                </>
+              ) : null}
+              <li>
+                <button type="button" role="menuitem" className="nav-dropdown__logout" onClick={handleLogout}>
+                  <LogOut size={16} /> Logout
+                </button>
+              </li>
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        to="/login"
+        className={`nav-icon-btn ${isActive('/login') ? 'nav-icon-btn--active' : ''}`}
+        aria-label="Sign in"
+        onClick={onNavigate}
+      >
+        <User size={22} strokeWidth={1.75} />
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -223,100 +275,40 @@ export default function Navbar() {
             <Link to="/" className="nav-logo" aria-label="Souvenir Handicraft Home" onClick={() => setDrawerOpen(false)}>
               <img src={logo} alt="Souvenir Handicraft" className="nav-logo__img" />
             </Link>
+            <NavDeliveryLocation className="nav-location--desktop" />
             <div className="nav-main nav-main--desktop">
               {renderNavLinks(() => {})}
               {renderRoleLinks(() => {})}
             </div>
           </div>
 
+          <div className="nav-search nav-search--inline" ref={searchWrapRef}>
+            <SmartSearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              isOpen={searchFocused}
+              inputRef={searchInputRef}
+              persistent
+              onFocus={() => setSearchFocused(true)}
+              onPick={(picked) => {
+                if (picked?.type === 'product') {
+                  navigate(`/shop/${encodeURIComponent(picked.slug)}`);
+                } else if (picked?.type === 'basic') {
+                  navigate(`/shop/${encodeURIComponent(picked.slug)}`);
+                } else if (picked?.type === 'blog' && picked.slug) {
+                  navigate(`/blog/${encodeURIComponent(picked.slug)}`);
+                } else if (picked?.type === 'query') {
+                  navigate(`/shop?search=${encodeURIComponent(picked.query)}`);
+                }
+                setSearchFocused(false);
+                setSearchQuery('');
+              }}
+            />
+          </div>
+
           <div className="nav-tools">
-            <div className={`nav-search ${searchOpen ? 'nav-search--open' : ''}`} ref={searchWrapRef}>
-              {!searchOpen ? (
-                <button
-                  type="button"
-                  className="nav-search__trigger"
-                  aria-label="Open search"
-                  aria-expanded={searchOpen}
-                  onClick={openSearch}
-                >
-                  <Search size={20} strokeWidth={1.75} />
-                </button>
-              ) : (
-                <SmartSearchBar
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  isOpen={searchOpen}
-                  inputRef={searchInputRef}
-                  onClose={() => {
-                    setSearchOpen(false);
-                    setSearchQuery('');
-                  }}
-                  onPick={(picked) => {
-                    if (picked?.type === 'product') {
-                      navigate(`/shop/${encodeURIComponent(picked.slug)}`);
-                    } else if (picked?.type === 'basic') {
-                      navigate(`/shop/${encodeURIComponent(picked.slug)}`);
-                    } else if (picked?.type === 'blog' && picked.slug) {
-                      navigate(`/blog/${encodeURIComponent(picked.slug)}`);
-                    } else if (picked?.type === 'query') {
-                      navigate(`/shop?search=${encodeURIComponent(picked.query)}`);
-                    }
-                    setSearchOpen(false);
-                  }}
-                />
-              )}
-            </div>
-
-            <div className="nav-tools__icons nav-tools__icons--desktop">{renderIconButtons(() => {})}</div>
-
-            {isAuthenticated ? (
-              <div className="nav-account-wrap" ref={accountRef}>
-                <button
-                  type="button"
-                  className="nav-avatar-btn"
-                  aria-expanded={accountOpen}
-                  aria-haspopup="true"
-                  onClick={() => setAccountOpen((o) => !o)}
-                >
-                  <span className="nav-avatar" aria-hidden="true">
-                    {getInitials(user?.name)}
-                  </span>
-                  <ChevronDown size={16} className={`nav-avatar-chevron ${accountOpen ? 'open' : ''}`} />
-                </button>
-                {accountOpen && (
-                  <ul className="nav-dropdown" role="menu">
-                    {canAccessCustomerApp ? (
-                      <>
-                        <li>
-                          <Link to="/account" role="menuitem" onClick={() => setAccountOpen(false)}>
-                            <User size={16} /> My Account
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/account/orders" role="menuitem" onClick={() => setAccountOpen(false)}>
-                            <Package size={16} /> My Orders
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/account/reviews" role="menuitem" onClick={() => setAccountOpen(false)}>
-                            <Star size={16} /> My Reviews
-                          </Link>
-                        </li>
-                      </>
-                    ) : null}
-                    <li>
-                      <button type="button" role="menuitem" className="nav-dropdown__logout" onClick={handleLogout}>
-                        <LogOut size={16} /> Logout
-                      </button>
-                    </li>
-                  </ul>
-                )}
-              </div>
-            ) : (
-              <Link to="/login" className="nav-signin-btn">
-                Sign In
-              </Link>
-            )}
+            <div className="nav-tools__icons">{renderIconButtons(() => {})}</div>
+            {renderProfileControl(() => {})}
 
             <button
               type="button"
@@ -356,18 +348,20 @@ export default function Navbar() {
           {renderNavLinks(() => setDrawerOpen(false))}
           {renderRoleLinks(() => setDrawerOpen(false))}
         </div>
-        <div className="nav-drawer__icons">{renderIconButtons(() => setDrawerOpen(false))}</div>
+        <div className="nav-drawer__location">
+          <NavDeliveryLocation />
+        </div>
+        <div className="nav-drawer__icons">
+          {renderIconButtons(() => setDrawerOpen(false))}
+          {renderProfileControl(() => setDrawerOpen(false))}
+        </div>
         {isAuthenticated ? (
           <div className="nav-drawer__auth">
             <button type="button" className="btn btn-outline btn-full" onClick={handleLogout}>
               Logout
             </button>
           </div>
-        ) : (
-          <Link to="/login" className="nav-signin-btn nav-signin-btn--block" onClick={() => setDrawerOpen(false)}>
-            Sign In
-          </Link>
-        )}
+        ) : null}
       </aside>
     </>
   );

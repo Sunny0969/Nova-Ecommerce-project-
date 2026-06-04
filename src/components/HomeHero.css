@@ -1,0 +1,250 @@
+/* Rozana hero — light section (no navy bar) */
+
+.rozana-hero {
+  width: 100%;
+  background-color: transparent;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: clamp(1.5rem, 4vw, 2.75rem) 0;
+  box-sizing: border-box;
+  scroll-margin-top: var(--site-header-height, 3.25rem);
+}
+
+.rozana-hero .container {
+  width: 100%;
+}
+
+.rozana-hero__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+.rozana-hero__copy {
+  max-width: 34rem;
+}
+
+.rozana-hero__eyebrow {
+  margin: 0 0 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand-orange);
+}
+
+.rozana-hero__title {
+  margin: 0 0 1.25rem;
+}
+
+.rozana-hero__accent {
+  color: var(--brand-orange);
+}
+
+.rozana-hero__lead {
+  margin: 0 0 1.75rem;
+  font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+  line-height: 1.65;
+  color: var(--gray);
+  max-width: 32rem;
+}
+
+.rozana-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.rozana-hero__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  border: 2px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.rozana-hero__btn--primary {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+  color: var(--white);
+}
+
+.rozana-hero__btn--primary:hover {
+  background-color: var(--brand-orange-dark);
+  border-color: var(--brand-orange-dark);
+}
+
+.rozana-hero__btn--muted {
+  opacity: 0.92;
+}
+
+.rozana-hero__btn--ghost {
+  background-color: transparent;
+  border-color: var(--navy);
+  color: var(--navy);
+}
+
+.rozana-hero__btn--ghost:hover {
+  background-color: rgba(26, 26, 46, 0.06);
+  border-color: var(--navy);
+}
+
+.rozana-hero__play-icon {
+  fill: var(--white);
+}
+
+.rozana-hero__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+}
+
+.rozana-hero__promo {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: 16px;
+  background-color: var(--brand-orange);
+  color: var(--white);
+  border: 2px solid var(--brand-orange-dark);
+}
+
+.rozana-hero__promo--soon {
+  background-color: var(--white);
+  border-color: var(--gray-light);
+  color: var(--navy);
+}
+
+.rozana-hero__promo-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.rozana-hero__promo--soon .rozana-hero__promo-icon {
+  background-color: rgba(249, 115, 22, 0.12);
+  color: var(--brand-orange);
+}
+
+.rozana-hero__promo-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: inherit;
+}
+
+.rozana-hero__promo-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.rozana-hero__promo--soon .rozana-hero__promo-sub {
+  color: var(--gray);
+}
+
+.rozana-hero__features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.rozana-hero__feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background-color: var(--white);
+  border: 1px solid var(--gray-light);
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.06);
+}
+
+.rozana-hero__feature-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background-color: rgba(249, 115, 22, 0.15);
+  color: var(--brand-orange);
+}
+
+.rozana-hero__feature-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.rozana-hero__feature-sub {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--gray);
+}
+
+@media (max-width: 960px) {
+  .rozana-hero {
+    padding: 1.5rem 0 2rem;
+  }
+
+  .rozana-hero__grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .rozana-hero__copy {
+    max-width: none;
+    text-align: center;
+  }
+
+  .rozana-hero__lead {
+    margin-inline: auto;
+  }
+
+  .rozana-hero__actions {
+    justify-content: center;
+  }
+
+  .rozana-hero__panel {
+    max-width: 28rem;
+    margin-inline: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .rozana-hero__features {
+    grid-template-columns: 1fr;
+  }
+
+  .rozana-hero__btn {
+    width: 100%;
+  }
+
+  .rozana-hero__actions {
+    flex-direction: column;
+  }
+}

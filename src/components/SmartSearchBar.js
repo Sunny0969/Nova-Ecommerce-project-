@@ -88,7 +88,9 @@ export default function SmartSearchBar({
   placeholder = 'Search products, blogs & more…',
   isOpen,
   onClose,
-  inputRef
+  onFocus,
+  inputRef,
+  persistent = false
 }) {
   const [searchRows, setSearchRows] = useState([]);
   const [listProducts, setListProducts] = useState([]);
@@ -242,16 +244,19 @@ export default function SmartSearchBar({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          onFocus={onFocus}
           aria-autocomplete="list"
           aria-controls="nav-search-results"
           autoComplete="off"
         />
         <span className="smart-search__badge" title="Keyword search — no external AI">
-          <Sparkles size={14} aria-hidden="true" /> Smart
+          <Sparkles size={12} aria-hidden="true" /> Smart
         </span>
-        <button type="button" className="nav-search__close" aria-label="Close search" onClick={onClose}>
-          Close
-        </button>
+        {!persistent && onClose ? (
+          <button type="button" className="nav-search__close" aria-label="Close search" onClick={onClose}>
+            Close
+          </button>
+        ) : null}
       </div>
 
       {showDropdown && (

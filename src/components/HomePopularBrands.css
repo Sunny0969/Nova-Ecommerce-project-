@@ -1,0 +1,126 @@
+.home-popular-brands {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+  background: var(--white);
+}
+
+.home-popular-brands__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.home-popular-brands__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.home-popular-brands__title {
+  margin: 0;
+}
+
+.home-popular-brands__view-more {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.home-popular-brands__view-more:hover {
+  text-decoration: underline;
+}
+
+.home-popular-brands__nav {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.home-popular-brands__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.home-popular-brands__arrow:hover:not(:disabled) {
+  color: #1d4ed8;
+}
+
+.home-popular-brands__arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.home-popular-brands__track {
+  display: flex;
+  gap: 0.65rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+}
+
+.home-popular-brands__track::-webkit-scrollbar {
+  display: none;
+}
+
+.brand-tile {
+  flex: 0 0 7.5rem;
+  width: 7.5rem;
+  height: 7.5rem;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem;
+  border-radius: 12px;
+  border: 1px solid #ececec;
+  background: var(--white);
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.brand-tile:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.08);
+}
+
+.brand-tile__img {
+  max-width: 85%;
+  max-height: 85%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.brand-tile__fallback {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--gray);
+  line-height: 1.2;
+}
+
+.brand-tile--skeleton {
+  border: 1px solid var(--gray-light);
+}
+
+@media (max-width: 639px) {
+  .brand-tile {
+    flex: 0 0 6.25rem;
+    width: 6.25rem;
+    height: 6.25rem;
+  }
+}

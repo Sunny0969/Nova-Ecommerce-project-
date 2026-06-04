@@ -21,7 +21,7 @@ function readRuntimeApiOrigin() {
 const baseURL = normalizeApiOrigin(
   process.env.NODE_ENV === 'production'
     ? readRuntimeApiOrigin() || HARDCODED_PRODUCTION_API
-    : 'http://localhost:5000'
+    : 'http://localhost:5001'
 );
 
 export const staffApi = axios.create({

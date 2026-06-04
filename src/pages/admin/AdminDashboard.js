@@ -167,9 +167,9 @@ export default function AdminDashboard() {
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#c8a84b"
+                  stroke="#F97316"
                   strokeWidth={2}
-                  dot={{ fill: '#c8a84b', r: 3 }}
+                  dot={{ fill: '#F97316', r: 3 }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>

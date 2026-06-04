@@ -11,12 +11,14 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { DeliveryLocationProvider } from './context/DeliveryLocationContext';
 import { StaffAuthProvider } from './context/StaffAuthContext';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Products'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
+const BrandsPage = lazy(() => import('./pages/BrandsPage'));
 const LegacyShopRedirect = lazy(() => import('./pages/LegacyShopRedirect'));
 const LegacyProductRedirect = lazy(() => import('./pages/LegacyProductRedirect'));
 const Login = lazy(() => import('./pages/Login'));
@@ -88,6 +90,7 @@ function AppShell() {
                       <Route path="/shop" element={<Shop />} />
                       <Route path="/shop/:slug" element={<ProductDetail />} />
                       <Route path="/category/:slug" element={<CategoryPage />} />
+                      <Route path="/brands" element={<BrandsPage />} />
 
                       <Route path="/login" element={<Login />} />
                       <Route
@@ -302,15 +305,17 @@ function App() {
   return (
     <HelmetProvider>
       <AuthProvider>
-        <WishlistProvider>
-          <CartProvider>
-            <Router>
-              <StaffAuthProvider>
-                <AppShell />
-              </StaffAuthProvider>
-            </Router>
-          </CartProvider>
-        </WishlistProvider>
+        <DeliveryLocationProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <Router>
+                <StaffAuthProvider>
+                  <AppShell />
+                </StaffAuthProvider>
+              </Router>
+            </CartProvider>
+          </WishlistProvider>
+        </DeliveryLocationProvider>
       </AuthProvider>
     </HelmetProvider>
   );

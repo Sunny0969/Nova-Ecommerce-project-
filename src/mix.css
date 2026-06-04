@@ -1,0 +1,165 @@
+/**
+ * mix.css — site-wide theme (loads after index.css)
+ * Edit tokens here: background + heading sizes (mobile → desktop).
+ */
+
+:root {
+  --site-background: #fff;
+  --page-bg: var(--site-background);
+  --cream: var(--site-background);
+
+  /* Heading scale — clamp(min mobile, fluid, max desktop) */
+  --h1-size: clamp(1.75rem, 2.8vw + 1rem, 2.5rem);
+  --h2-size: clamp(1.375rem, 1.8vw + 0.85rem, 2rem);
+  --h3-size: clamp(1.125rem, 0.8vw + 0.95rem, 1.375rem);
+  --h4-size: clamp(1rem, 0.4vw + 0.9rem, 1.125rem);
+  --heading-line: 1.2;
+  --heading-color: var(--navy, #1a1a2e);
+}
+
+/* Global headings (storefront) */
+h1,
+h2,
+h3,
+h4,
+.h1,
+.h2,
+.h3,
+.h4 {
+  font-family: var(--font-display);
+  line-height: var(--heading-line);
+  color: var(--heading-color);
+}
+
+h1,
+.h1 {
+  font-size: var(--h1-size);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h2,
+.h2 {
+  font-size: var(--h2-size);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+h3,
+.h3 {
+  font-size: var(--h3-size);
+  font-weight: 600;
+}
+
+h4,
+.h4 {
+  font-size: var(--h4-size);
+  font-weight: 600;
+}
+
+/* Storefront main — section headings use mix scale (size + weight) */
+.main-content h1 {
+  font-size: var(--h1-size);
+  font-weight: 800;
+}
+.main-content h2:not(.product-name) {
+  font-size: var(--h2-size);
+  font-weight: 700;
+}
+.main-content h3:not(.product-name):not(.flash-sale-card__title) {
+  font-size: var(--h3-size);
+  font-weight: 600;
+}
+.main-content h4 {
+  font-size: var(--h4-size);
+  font-weight: 600;
+}
+
+/* Dark promo strip — h2 size from mix, light text */
+.promo-banner h2 {
+  font-size: var(--h2-size);
+  font-weight: 700;
+  color: var(--white);
+}
+
+html {
+  background-color: var(--site-background);
+}
+
+body,
+#root,
+.App {
+  background-color: var(--site-background);
+}
+
+.main-content {
+  background-color: var(--site-background);
+}
+
+/* Section utilities */
+.section,
+.section--cream,
+.bg-cream,
+.bg-white {
+  background-color: var(--site-background);
+}
+
+/* Home */
+.home-top-stack,
+.home-categories-browse,
+.home-popular-brands,
+.home-flash-sale,
+.home-featured,
+.trust-badges,
+.home-hero,
+.rozana-hero,
+.shop-page,
+.brands-page,
+.product-detail-page,
+.blog-detail-page,
+.checkout-page,
+.cart-page,
+.wishlist-page,
+.account-layout,
+.auth-page {
+  background-color: var(--site-background);
+}
+
+/* Cards / panels keep white tiles on white page — optional subtle border stays in component CSS */
+.home-popular-brands,
+.home-flash-sale {
+  background-color: var(--site-background);
+}
+
+.flash-sale-card__image-wrap,
+.brand-tile {
+  background-color: #fff;
+}
+
+/* Skeleton / loading stripes that used cream */
+.home-categories-grid--loading .home-category-card--skeleton,
+.product-card--skeleton .product-image--skeleton {
+  background: var(--site-background);
+}
+
+/* Admin — dark panel; do not inherit storefront white theme */
+.main-content--admin {
+  --cream: #fff7f0;
+  --page-bg: #12121f;
+  background-color: #12121f;
+}
+
+.main-content--admin h1,
+.main-content--admin h2,
+.main-content--admin h3,
+.main-content--admin h4,
+.main-content--admin .h1,
+.main-content--admin .h2,
+.main-content--admin .h3,
+.main-content--admin .h4 {
+  color: inherit;
+}
+
+.main-content--admin .admin-dashboard__title {
+  color: var(--cream);
+}

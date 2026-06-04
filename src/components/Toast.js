@@ -15,26 +15,26 @@ export function AppToaster() {
       containerClassName="!top-4 !right-4 sm:!top-6 sm:!right-6"
       toastOptions={{
         duration: 4000,
-        className: `${toastBase} !bg-neutral-900 !text-white`,
+        className: `${toastBase} !bg-rozana-navy !text-white`,
         style: {},
         success: {
           duration: 3500,
           iconTheme: {
-            primary: '#22c55e',
+            primary: '#16A34A',
             secondary: '#ffffff',
           },
-          className: `${toastBase} !bg-neutral-900 !text-white`,
+          className: `${toastBase} !bg-rozana-navy !text-white`,
         },
         error: {
           duration: 5000,
           iconTheme: {
-            primary: '#f87171',
+            primary: '#F97316',
             secondary: '#ffffff',
           },
-          className: `${toastBase} !bg-neutral-900 !text-white`,
+          className: `${toastBase} !bg-rozana-navy !text-white`,
         },
         loading: {
-          className: `${toastBase} !bg-neutral-800 !text-neutral-100`,
+          className: `${toastBase} !bg-rozana-navy-deep !text-white`,
         },
       }}
     />

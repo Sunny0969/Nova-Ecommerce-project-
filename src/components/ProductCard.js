@@ -89,8 +89,8 @@ const ProductCard = ({
         <div className="product-image product-image--skeleton">
           <Skeleton
             height="100%"
-            baseColor="#ebe6df"
-            highlightColor="#f7f4ef"
+            baseColor="#e8e2d8"
+            highlightColor="#FFF7F0"
             className="product-card__skeleton-img"
           />
         </div>

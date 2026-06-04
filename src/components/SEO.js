@@ -89,7 +89,7 @@ export default function SEO({ title, description, canonicalUrl, ogImage, ogType,
       <meta name="description" content={desc} />
       <link rel="canonical" href={absoluteCanonical} />
       <meta name="robots" content={robots} />
-      <meta name="theme-color" content="#0f0f1a" />
+      <meta name="theme-color" content="#1A1A2E" />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content={defaultOgLocale} />
       <meta property="og:type" content={type} />

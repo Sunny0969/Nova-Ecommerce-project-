@@ -48,7 +48,7 @@ export default function StarRating({
               disabled={disabled}
               aria-pressed={active}
               aria-label={`${starValue} out of ${safeMax} stars`}
-              className="rounded p-0.5 text-amber-400 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded p-0.5 text-rozana-orange transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-rozana-navy focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => onChange?.(starValue)}
             >
               <Star
@@ -87,7 +87,7 @@ export default function StarRating({
                   aria-hidden
                 />
                 <Star
-                  className="absolute inset-0 h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem] fill-amber-400 text-amber-400"
+                  className="absolute inset-0 h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem] fill-rozana-orange text-rozana-orange"
                   strokeWidth={1.5}
                   style={{ clipPath: 'inset(0 50% 0 0)' }}
                   aria-hidden
@@ -100,7 +100,7 @@ export default function StarRating({
             <Star
               key={starValue}
               className={`h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem] ${
-                activeFull ? 'fill-amber-400 text-amber-400' : 'fill-none text-neutral-300'
+                activeFull ? 'fill-rozana-orange text-rozana-orange' : 'fill-none text-neutral-300'
               }`}
               strokeWidth={1.5}
               aria-hidden
