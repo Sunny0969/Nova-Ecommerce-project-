@@ -15,7 +15,7 @@
 
 .home-flash-sale__eyebrow {
   margin: 0 0 0.35rem;
-  font-size: 0.7rem;
+  font-size: var(--text-size-small, 0.7rem);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -137,6 +137,7 @@
 }
 
 .flash-sale-card__image-wrap {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 12px;
   background: var(--cream);
@@ -146,6 +147,8 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Sale ribbon — see mix.css (.sale-ribbon) */
 
 .flash-sale-card__img {
   width: 100%;
@@ -159,7 +162,7 @@
 
 .flash-sale-card__title {
   margin: 0.5rem 0 0.35rem;
-  font-size: 0.78rem;
+  font-size: var(--text-size-base, 0.78rem);
   font-weight: 600;
   line-height: 1.35;
   color: var(--navy);
@@ -184,7 +187,7 @@
 }
 
 .flash-sale-card__price--was {
-  font-size: 0.72rem;
+  font-size: var(--text-size-small, 0.72rem);
   font-weight: 500;
   color: var(--gray);
   text-decoration: line-through;

@@ -4,6 +4,7 @@ import { productImageUrl } from '../lib/productImage';
 import { getProductSalePrices } from '../lib/productSale';
 import ProductImage from './ProductImage';
 import { formatPKR } from '../utils/currency';
+import ProductSaleRibbon from './ProductSaleRibbon';
 
 export default function FlashSaleCard({ product, imagePriority = false }) {
   const sale = getProductSalePrices(product);
@@ -12,9 +13,14 @@ export default function FlashSaleCard({ product, imagePriority = false }) {
   const slug = product.slug || product.productId;
   const imageUrl = productImageUrl(product);
 
+  const discountPct = sale.discountPercent > 0 ? sale.discountPercent : null;
+
   return (
     <Link to={`/shop/${encodeURIComponent(slug || '')}`} className="flash-sale-card">
       <div className="flash-sale-card__image-wrap">
+        {discountPct != null ? (
+          <ProductSaleRibbon discountPercent={discountPct} />
+        ) : null}
         {imageUrl ? (
           <ProductImage
             className="flash-sale-card__img"

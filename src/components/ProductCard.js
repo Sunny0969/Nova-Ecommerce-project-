@@ -8,6 +8,7 @@ import ProductImage from './ProductImage';
 import { formatPKR } from '../utils/currency';
 import StarRating from './StarRating';
 import { buildFakeReviews } from '../lib/fakeReviews';
+import ProductSaleRibbon from './ProductSaleRibbon';
 
 function formatCategoryLabel(product) {
   const raw =
@@ -149,9 +150,11 @@ const ProductCard = ({
             </span>
           )}
         </Link>
-        {badge && (
+        {badge === 'sale' ? (
+          <ProductSaleRibbon discountPercent={discount} />
+        ) : badge ? (
           <span className={`product-badge product-badge--${badge}`}>{badgeLabel(badge)}</span>
-        )}
+        ) : null}
         {showWishlistButton ? (
           <button
             type="button"
@@ -181,10 +184,7 @@ const ProductCard = ({
         <div className="product-price">
           <span className="price-current">{formatPKR(price)}</span>
           {compareAt != null && Number(compareAt) > price && (
-            <>
-              <span className="price-original">{formatPKR(Number(compareAt))}</span>
-              <span className="price-discount">-{discount}%</span>
-            </>
+            <span className="price-original">{formatPKR(Number(compareAt))}</span>
           )}
         </div>
         {showAddToCartButton ? (

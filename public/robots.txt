@@ -1,17 +1,11 @@
-# Nova Shop — adjust when deploying; add a Sitemap line in Google Search Console or here once
-# a sitemap URL is available (e.g. Sitemap: https://yoursite.com/sitemap.xml).
-
 User-agent: *
 Allow: /
-
 Disallow: /admin
+Disallow: /staff
 Disallow: /account
 Disallow: /cart
 Disallow: /checkout
-Disallow: /order-confirmation
 Disallow: /login
 Disallow: /register
-Disallow: /forgot-password
-Disallow: /reset-password
-Disallow: /verify-email
-Disallow: /orders
+
+Sitemap: https://souvenirhandicraft.com/sitemap.xml

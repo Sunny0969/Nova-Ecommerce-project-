@@ -1,12 +1,27 @@
 /**
  * mix.css — site-wide theme (loads after index.css)
- * Edit tokens here: background + heading sizes (mobile → desktop).
+ * Edit tokens here: background, heading sizes, and minimum text size.
  */
 
 :root {
   --site-background: #fff;
   --page-bg: var(--site-background);
   --cream: var(--site-background);
+
+  /* === Normal text — change --text-min-size to update whole site === */
+  --text-min-size: 12px;
+  --paragraph-size: max(var(--text-min-size), 1rem);
+  --text-size-base: var(--paragraph-size);
+  --text-size-small: var(--text-min-size);
+  --text-size-meta: max(var(--text-min-size), 0.8125rem);
+  --text-size-secondary: max(var(--text-min-size), 0.875rem);
+
+  /* === Sale badge / ribbon — edit to change all on-sale product styling === */
+  --sale-ribbon-bg: #ffd400;
+  --sale-ribbon-text: #111111;
+  --sale-ribbon-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  --sale-badge-bg: var(--sale-ribbon-bg);
+  --sale-badge-text: var(--sale-ribbon-text);
 
   /* Heading scale — clamp(min mobile, fluid, max desktop) */
   --h1-size: clamp(1.75rem, 2.8vw + 1rem, 2.5rem);
@@ -15,6 +30,76 @@
   --h4-size: clamp(1rem, 0.4vw + 0.9rem, 1.125rem);
   --heading-line: 1.2;
   --heading-color: var(--navy, #1a1a2e);
+}
+
+/* Storefront body + paragraphs — never below --text-min-size */
+body {
+  font-size: var(--text-size-base);
+}
+
+.main-content:not(.main-content--admin) p,
+.main-content:not(.main-content--admin) li,
+.main-content:not(.main-content--admin) td,
+.main-content:not(.main-content--admin) th,
+.main-content:not(.main-content--admin) label,
+.main-content:not(.main-content--admin) .form-control,
+.main-content:not(.main-content--admin) textarea,
+.main-content:not(.main-content--admin) select {
+  font-size: var(--text-size-base);
+}
+
+/* Product titles & normal product text */
+.main-content:not(.main-content--admin) .product-name,
+.main-content:not(.main-content--admin) .product-card__name,
+.main-content:not(.main-content--admin) .flash-sale-card__title,
+.main-content:not(.main-content--admin) .showcase-name,
+.main-content:not(.main-content--admin) .showcase-card__name,
+.main-content:not(.main-content--admin) .cart-item__name,
+.main-content:not(.main-content--admin) .wishlist-item__name,
+.main-content:not(.main-content--admin) .home-category-tile__name {
+  font-size: var(--text-size-base);
+}
+
+/* Labels / meta — floor at --text-min-size */
+.main-content:not(.main-content--admin) .product-category,
+.main-content:not(.main-content--admin) .product-card__category,
+.main-content:not(.main-content--admin) .rating-count,
+.main-content:not(.main-content--admin) .product-card__rating-count,
+.main-content:not(.main-content--admin) .breadcrumb,
+.main-content:not(.main-content--admin) .shop-brand-bar__label,
+.main-content:not(.main-content--admin) .brand-tile__fallback,
+.main-content:not(.main-content--admin) .home-category-card__label,
+.main-content:not(.main-content--admin) .flash-sale-card__badge,
+.main-content:not(.main-content--admin) .product-card__badge,
+.main-content:not(.main-content--admin) .product-card__stars,
+.main-content:not(.main-content--admin) .stars,
+.main-content:not(.main-content--admin) .filter-section__title,
+.main-content:not(.main-content--admin) .results-count,
+.main-content:not(.main-content--admin) .shop-toolbar__results,
+.main-content:not(.main-content--admin) .footer-col a,
+.main-content:not(.main-content--admin) .footer-links a,
+.main-content:not(.main-content--admin) .footer__links a,
+.main-content:not(.main-content--admin) .footer-brand p,
+.main-content:not(.main-content--admin) .footer__brand p {
+  font-size: var(--text-size-small);
+}
+
+.main-content:not(.main-content--admin) .btn-sm,
+.main-content:not(.main-content--admin) .btn--sm,
+.main-content:not(.main-content--admin) .shop-brand-bar__clear,
+.main-content:not(.main-content--admin) .cart-item__variant,
+.main-content:not(.main-content--admin) .trust-card p,
+.main-content:not(.main-content--admin) .home-why-choose__card-text,
+.main-content:not(.main-content--admin) .auth-header__tagline,
+.main-content:not(.main-content--admin) .auth-panel__subtitle {
+  font-size: var(--text-size-meta);
+}
+
+.main-content:not(.main-content--admin) .shop-sort-label,
+.main-content:not(.main-content--admin) .sort-select,
+.main-content:not(.main-content--admin) .range-display,
+.main-content:not(.main-content--admin) .page-header__subtitle {
+  font-size: var(--text-size-secondary);
 }
 
 /* Global headings (storefront) */
@@ -109,8 +194,8 @@ body,
 .home-categories-browse,
 .home-popular-brands,
 .home-flash-sale,
+.home-category-sales,
 .home-featured,
-.trust-badges,
 .home-hero,
 .rozana-hero,
 .shop-page,
@@ -162,4 +247,94 @@ body,
 
 .main-content--admin .admin-dashboard__title {
   color: var(--cream);
+}
+
+.main-content--admin {
+  font-size: 14px;
+}
+
+/* === Sale ribbon & badges (yellow diagonal — all on-sale products) === */
+.sale-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 5.5rem;
+  height: 5.5rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sale-ribbon__text {
+  position: absolute;
+  top: 1.05rem;
+  left: -1.65rem;
+  width: 7.5rem;
+  padding: 0.28rem 0;
+  transform: rotate(-45deg);
+  background: var(--sale-ribbon-bg);
+  color: var(--sale-ribbon-text);
+  font-size: var(--text-size-small);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: lowercase;
+  box-shadow: var(--sale-ribbon-shadow);
+}
+
+@media (min-width: 640px) {
+  .sale-ribbon__text {
+    top: 1.15rem;
+    left: -1.55rem;
+  }
+}
+
+.sale-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sale-badge-bg);
+  color: var(--sale-badge-text);
+  font-size: var(--text-size-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  pointer-events: none;
+  box-shadow: var(--sale-ribbon-shadow);
+}
+
+.product-badge.sale,
+.product-badge--sale,
+.product-card__badge--sale {
+  background-color: var(--sale-badge-bg);
+  color: var(--sale-badge-text);
+  box-shadow: var(--sale-ribbon-shadow);
+}
+
+.image-gallery__sale-badge,
+.product-detail-discount-pill {
+  background: var(--sale-badge-bg);
+  color: var(--sale-badge-text);
+  box-shadow: var(--sale-ribbon-shadow);
+}
+
+.price-discount {
+  color: var(--sale-ribbon-text);
+  background: var(--sale-ribbon-bg);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* Flash sale cards — reuse shared ribbon tokens */
+.flash-sale-card__ribbon-text {
+  background: var(--sale-ribbon-bg);
+  color: var(--sale-ribbon-text);
+  box-shadow: var(--sale-ribbon-shadow);
+}
+
+.flash-sale-card__image-wrap {
+  overflow: hidden;
 }

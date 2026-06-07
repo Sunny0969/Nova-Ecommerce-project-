@@ -1,20 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Banknote,
-  Leaf,
-  PartyPopper,
-  RefreshCw,
-  Zap
-} from 'lucide-react';
+import { Leaf, PartyPopper, RefreshCw } from 'lucide-react';
 import { publicAPI } from 'api';
 import './HomeHero.css';
 
 const COMING_SOON = 'Coming Soon';
 
 const FEATURES = [
-  { icon: Leaf, title: 'Fresh Grocery', sub: 'Daily fresh items' },
-  { icon: Zap, title: 'Express Delivery', sub: 'Same day available' },
-  { icon: Banknote, title: 'Cash on Delivery', sub: 'Nationwide' },
+  { icon: Leaf, title: 'Fresh & Fast Delivery', sub: 'Daily fresh items • Same day available' },
   { icon: RefreshCw, title: 'Easy Returns', sub: '7-day policy' }
 ];
 
@@ -54,8 +46,7 @@ export default function HomeHero() {
           </h1>
 
           <p className="rozana-hero__lead">
-            Groceries, electronics, fashion aur zyada — ek hi jagah. Fast delivery, best prices,
-            cash on delivery.
+            Groceries, electronics, fashion aur zyada — ek hi jagah. Fast delivery aur best prices.
           </p>
 
         </div>

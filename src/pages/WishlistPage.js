@@ -2,13 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { useWishlist } from '../context/WishlistContext';
-import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
 
 export default function WishlistPage({ embedded }) {
-  const { user, canAccessCustomerApp } = useAuth();
-  const customerUser = canAccessCustomerApp ? user : null;
   const { products, loading } = useWishlist();
   const { addToCart } = useCart();
 
@@ -16,7 +13,7 @@ export default function WishlistPage({ embedded }) {
     await addToCart(product, 1);
   };
 
-  /** Map wishlist API products to ProductCard shape (imageUrl, rating, etc.) */
+  /** Map wishlist products to ProductCard shape (imageUrl, rating, etc.) */
   const shaped = (p) => ({
     ...p,
     productId: p.slug,
@@ -29,40 +26,6 @@ export default function WishlistPage({ embedded }) {
     inStock: (p.stock ?? 0) > 0,
     stockQuantity: p.stock
   });
-
-  if (!customerUser) {
-    return (
-      <>
-        <SEO
-          noIndex
-          title="Wishlist"
-          description="Sign in to view and manage your saved Souvenir Handicraft Shop wishlist."
-          canonicalUrl="/wishlist"
-        />
-        <header className="page-header">
-          <div className="container">
-            <h1 className="page-header__title">Wishlist</h1>
-            <p className="page-header__subtitle">Sign in to view and manage your saved items.</p>
-            <ol className="breadcrumb" aria-label="Breadcrumb">
-              <li>
-                <Link to="/">Home</Link>
-              </li>
-              <li className="active" aria-current="page">
-                Wishlist
-              </li>
-            </ol>
-          </div>
-        </header>
-        <main className="section wishlist-page" id="main-content">
-          <div className="container wishlist-page__guest-cta">
-            <Link to="/login" className="btn btn-primary">
-              Sign in
-            </Link>
-          </div>
-        </main>
-      </>
-    );
-  }
 
   const grid = (
     <>

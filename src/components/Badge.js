@@ -4,7 +4,7 @@ import React from 'react';
 
 const VARIANTS = {
 
-  sale: 'bg-rozana-success text-white ring-1 ring-inset ring-rozana-success/40',
+  sale: 'bg-[#ffd400] text-[#111111] ring-1 ring-inset ring-yellow-500/50',
 
   new: 'bg-rozana-orange text-white ring-1 ring-inset ring-rozana-orange-dark/40',
 

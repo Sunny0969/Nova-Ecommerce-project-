@@ -1,8 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { optimizeImageUrl } from '../utils/optimizedImageUrl';
 import './HomeCategoriesGrid.css';
 
 const SKELETON_COUNT = 32;
+
+function categoryImageAlt(name, slug) {
+  const label = String(name || slug || 'category').trim();
+  return `${label} — shop online at Souvenir Handicraft Shop`;
+}
 
 export default function HomeCategoriesGrid({ categories, loading, error, onRetry }) {
   if (loading) {
@@ -44,7 +50,10 @@ export default function HomeCategoriesGrid({ categories, loading, error, onRetry
       {categories.map((cat) => {
         const slug = cat.slug || '';
         const name = cat.name || slug;
-        const imageUrl = cat.image?.url || '';
+        const imageUrl = optimizeImageUrl(cat.image?.url, {
+          width: 600,
+          quality: 60
+        });
 
         return (
           <Link
@@ -56,8 +65,10 @@ export default function HomeCategoriesGrid({ categories, loading, error, onRetry
               {imageUrl ? (
                 <img
                   src={imageUrl}
-                  alt=""
+                  alt={categoryImageAlt(name, slug)}
                   className="home-category-tile__img"
+                  width={600}
+                  height={600}
                   loading="lazy"
                   decoding="async"
                 />

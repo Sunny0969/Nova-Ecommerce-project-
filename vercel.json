@@ -1,3 +1,24 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "redirects": [
+    { "source": "/products", "destination": "/shop", "permanent": true },
+    { "source": "/products/:path*", "destination": "/shop", "permanent": true },
+    { "source": "/product/:slug", "destination": "/shop/:slug", "permanent": true },
+    { "source": "/category/:slug", "destination": "/shop?category=:slug", "permanent": true },
+    { "source": "/home", "destination": "/", "permanent": true }
+  ],
+  "headers": [
+    {
+      "source": "/static/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/(.*)\\.(js|css|woff2|webp|png|jpg|jpeg|svg|ico)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    }
+  ],
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
 }

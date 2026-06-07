@@ -15,6 +15,8 @@ import {
   Linkedin,
 } from 'lucide-react';
 import SEO from '../components/SEO';
+import { getCanonicalUrl } from '../utils/seo';
+import { buildBlogDetailSchemas } from '../utils/jsonLd';
 import BlogCard from '../components/BlogCard';
 import toast from 'react-hot-toast';
 import { blogAPI } from '../api';
@@ -175,6 +177,21 @@ export default function BlogDetailsPage() {
       })
     : '';
 
+  const blogCanonicalUrl = useMemo(() => {
+    if (!blog?.slug) return getCanonicalUrl('/blog');
+    return getCanonicalUrl(`/blog/${encodeURIComponent(String(blog.slug))}`);
+  }, [blog]);
+
+  const blogJsonLd = useMemo(() => {
+    if (!blog) return null;
+    return buildBlogDetailSchemas({
+      blog,
+      canonicalUrl: blogCanonicalUrl,
+      articleSections,
+      faqItems
+    });
+  }, [blog, blogCanonicalUrl, articleSections, faqItems]);
+
   if (loading) return null;
   if (!blog) return null;
 
@@ -184,7 +201,9 @@ export default function BlogDetailsPage() {
         title={blog.title}
         description={blog.description}
         canonicalUrl={`/blog/${blog.slug}`}
-        image={blog.featuredImage}
+        ogImage={blog.featuredImage}
+        ogType="article"
+        schema={blogJsonLd}
       />
 
       <div className="blog-detail-page">

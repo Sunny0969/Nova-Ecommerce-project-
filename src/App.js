@@ -7,6 +7,7 @@ import AdminRoute from './components/AdminRoute';
 import StaffRoute from './components/StaffRoute';
 import RouteFallback from './components/RouteFallback';
 import ErrorBoundary from './components/ErrorBoundary';
+import GlobalJsonLd from './components/GlobalJsonLd';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -48,6 +49,7 @@ const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminPlaceholder = lazy(() => import('./pages/admin/AdminPlaceholder'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminOrderDetail = lazy(() => import('./pages/admin/AdminOrderDetail'));
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
 const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
@@ -61,6 +63,7 @@ const StaffProducts = lazy(() => import('./pages/staff/StaffProducts'));
 const StaffCategories = lazy(() => import('./pages/staff/StaffCategories'));
 const StaffOrders = lazy(() => import('./pages/staff/StaffOrders'));
 const Navbar = lazy(() => import('./components/Navbar'));
+const HomeCategoryStrip = lazy(() => import('./components/HomeCategoryStrip'));
 const Footer = lazy(() => import('./components/Footer'));
 const Chatbot = lazy(() => import('./components/Chatbot/Chatbot'));
 
@@ -69,10 +72,16 @@ function AppShell() {
   const isAdmin = location.pathname.startsWith('/admin');
   return (
     <div className="App">
+      {!isAdmin && <GlobalJsonLd />}
       <AppToaster />
       {!isAdmin && (
         <Suspense fallback={<header className="site-chrome-placeholder site-chrome-placeholder--header" aria-hidden />}>
           <Navbar />
+        </Suspense>
+      )}
+      {!isAdmin && (
+        <Suspense fallback={<div className="site-chrome-placeholder site-chrome-placeholder--category-strip" aria-hidden />}>
+          <HomeCategoryStrip />
         </Suspense>
       )}
       {!isAdmin && (
@@ -105,14 +114,7 @@ function AppShell() {
                       <Route path="/products" element={<LegacyShopRedirect />} />
                       <Route path="/product/:slug" element={<LegacyProductRedirect />} />
 
-                      <Route
-                        path="/cart"
-                        element={
-                          <ProtectedRoute>
-                            <Cart />
-                          </ProtectedRoute>
-                        }
-                      />
+                      <Route path="/cart" element={<Cart />} />
                       <Route
                         path="/checkout"
                         element={
@@ -221,7 +223,7 @@ function AppShell() {
                           path="orders/:id"
                           element={
                             <StaffRoute permission="manageOrders">
-                              <AdminPlaceholder title="Order detail" />
+                              <AdminOrderDetail basePath="/staff" />
                             </StaffRoute>
                           }
                         />
@@ -273,7 +275,7 @@ function AppShell() {
                         <Route path="products/new" element={<ProductForm />} />
                         <Route path="products/:id/edit" element={<ProductForm />} />
                         <Route path="orders" element={<AdminOrders />} />
-                        <Route path="orders/:id" element={<AdminPlaceholder title="Order detail" />} />
+                        <Route path="orders/:id" element={<AdminOrderDetail />} />
                         <Route path="categories" element={<AdminCategories />} />
                         <Route path="customers" element={<AdminCustomers />} />
                         <Route path="coupons" element={<AdminCoupons />} />

@@ -3,11 +3,13 @@ import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
 import 'react-lazy-load-image-component/src/effects/opacity.css';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import ProductSaleRibbon from './ProductSaleRibbon';
 
 /**
  * @param {{ url: string }[]} props.images
  * @param {string} props.productName
  * @param {boolean} [props.showSaleBadge]
+ * @param {number} [props.discountPercent]
  * @param {number} [props.activeIndex] — controlled slide index (use with onActiveIndexChange)
  * @param {(index: number) => void} [props.onActiveIndexChange] — when set, gallery index is controlled by parent
  */
@@ -15,6 +17,7 @@ export default function ImageGallery({
   images,
   productName,
   showSaleBadge,
+  discountPercent,
   activeIndex: activeIndexProp,
   onActiveIndexChange
 }) {
@@ -89,9 +92,10 @@ export default function ImageGallery({
   return (
     <div className="image-gallery">
       {showSaleBadge ? (
-        <span className="image-gallery__sale-badge" aria-hidden>
-          Sale
-        </span>
+        <ProductSaleRibbon
+          discountPercent={discountPercent}
+          className="image-gallery__sale-ribbon"
+        />
       ) : null}
       <button
         type="button"

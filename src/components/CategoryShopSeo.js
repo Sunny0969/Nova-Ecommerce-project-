@@ -1,6 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getCategorySeoContent } from '../data/categorySeoContent';
+import { getClusterLinksForCategory } from '../data/seoInternalLinks';
+import { getPillarGuideSections } from '../data/pillarGuideContent';
+import { filterValidFaqs } from '../utils/jsonLd';
 
 function formatRs(amount) {
   const n = Number(amount);
@@ -21,25 +25,16 @@ function buildPriceRows(seo, products) {
     }));
 }
 
-function validFaqs(faqs) {
-  return (faqs || []).filter(
-    (f) =>
-      f?.question &&
-      f?.answer &&
-      f.answer.length > 20 &&
-      !f.answer.includes('role=') &&
-      !f.answer.includes('radix-')
-  );
-}
-
 export default function CategoryShopSeo({ categorySlug, categoryName, products = [] }) {
   const seo = useMemo(() => getCategorySeoContent(categorySlug), [categorySlug]);
   const [openFaq, setOpenFaq] = useState(null);
 
   const priceRows = useMemo(() => buildPriceRows(seo, products), [seo, products]);
-  const faqs = useMemo(() => validFaqs(seo?.faqs), [seo]);
+  const faqs = useMemo(() => filterValidFaqs(seo?.faqs), [seo]);
+  const clusterLinks = useMemo(() => getClusterLinksForCategory(categorySlug), [categorySlug]);
+  const pillarSections = useMemo(() => getPillarGuideSections(categorySlug), [categorySlug]);
 
-  if (!seo && priceRows.length === 0) return null;
+  if (!seo && priceRows.length === 0 && !pillarSections.length) return null;
 
   const title = seo?.introTitle || `Shop ${categoryName || 'Products'} Online`;
   const introParas =
@@ -78,7 +73,11 @@ export default function CategoryShopSeo({ categorySlug, categoryName, products =
           {title}
         </h2>
         {introParas.map((para, i) => (
-          <p key={i} className="category-shop-seo__text">
+          <p
+            key={i}
+            id={i === 0 ? 'category-seo-summary' : undefined}
+            className="category-shop-seo__text"
+          >
             {para}
           </p>
         ))}
@@ -97,6 +96,30 @@ export default function CategoryShopSeo({ categorySlug, categoryName, products =
             </li>
           ))}
         </ul>
+
+        {clusterLinks.length > 0 ? (
+          <nav className="category-shop-seo__related" aria-label="Related categories">
+            <h3 className="category-shop-seo__subtitle">Related departments</h3>
+            <ul className="category-shop-seo__related-list">
+              {clusterLinks.map((link) => (
+                <li key={link.slug}>
+                  <Link to={`/shop?category=${encodeURIComponent(link.slug)}`}>{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+
+        {pillarSections.map((section) => (
+          <div key={section.id} className="category-shop-seo__pillar-block">
+            <h3 className="category-shop-seo__pillar-heading">{section.heading}</h3>
+            {section.paragraphs.map((para, i) => (
+              <p key={i} className="category-shop-seo__text">
+                {para}
+              </p>
+            ))}
+          </div>
+        ))}
       </div>
 
       {hasBottom ? (

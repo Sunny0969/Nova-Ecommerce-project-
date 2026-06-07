@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { LazyLoadImage } from 'react-lazy-load-image-component';
+import 'react-lazy-load-image-component/src/effects/blur.css';
 import { useForm, useWatch } from 'react-hook-form';
 import SEO from '../components/SEO';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Banknote, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -15,22 +15,26 @@ import { authAPI, storeSettingsAPI, ordersAPI } from 'api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
 import { computeTotalsPreview } from '../utils/pricing';
+import { EASYPAISA_NUMBER, PAYMENT_OPTIONS } from '../config/payments';
+import { productImageUrl } from '../lib/productImage';
+import BankTransferProofModal from '../components/BankTransferProofModal';
 
+function round2(n) {
+  return Math.round(Number(n) * 100) / 100;
+}
+
+function shippingSummaryLabel(option) {
+  if (option === 'express') return 'Shipping (express)';
+  if (option === 'nextday') return 'Shipping (next day)';
+  return 'Shipping (standard)';
+}
+
+/* Stripe disabled — use COD / Easypaisa bank transfer only.
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 const pk = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = pk ? loadStripe(pk) : null;
-
-const CARD_OPTIONS = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#1a1a1a',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
-      '::placeholder': { color: '#8a8a8a' }
-    },
-    invalid: { color: '#b91c1c' }
-  },
-  hidePostalCode: true
-};
+*/
 
 const shippingSchema = yup.object({
   firstName: yup.string().trim().required().max(80),
@@ -55,7 +59,7 @@ const DEFAULT_SHIPPING_VALUES = {
   city: '',
   state: '',
   zipCode: '',
-  country: '',
+  country: 'Pakistan',
   deliveryOption: 'standard',
   saveAddress: false
 };
@@ -65,22 +69,16 @@ function splitName(name) {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-
-  return {
-    firstName: parts[0] || '',
-    lastName: parts.slice(1).join(' ')
-  };
+  return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
 }
 
 function defaultsFromUser(user) {
   if (!user) return DEFAULT_SHIPPING_VALUES;
-
   const saved =
     user.savedShippingAddress ||
     (Array.isArray(user.savedAddresses) ? user.savedAddresses.find((addr) => addr?.isDefault) : null) ||
     {};
   const fromName = splitName(user.name);
-
   return {
     ...DEFAULT_SHIPPING_VALUES,
     firstName: saved.firstName || fromName.firstName,
@@ -91,12 +89,8 @@ function defaultsFromUser(user) {
     city: saved.city || '',
     state: saved.state || '',
     zipCode: saved.zipCode || '',
-    country: saved.country || ''
+    country: saved.country || 'Pakistan'
   };
-}
-
-function countryToStripeCode(country) {
-  return 'GB';
 }
 
 function toShippingPayload(data) {
@@ -113,197 +107,22 @@ function toShippingPayload(data) {
   };
 }
 
-function billingDetailsForStripe(shipping) {
-  return {
-    email: shipping.email,
-    name: `${shipping.firstName} ${shipping.lastName}`,
-    phone: shipping.phone,
-    address: {
-      line1: shipping.street,
-      city: shipping.city,
-      state: shipping.state,
-      postal_code: shipping.zipCode,
-      country: countryToStripeCode(shipping.country)
-    }
-  };
-}
-
-function PlaceOrderButton({ clientSecret, shippingAddress, onSuccess }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
-
-  const handleClick = async () => {
-    if (!stripe || !elements) return;
-
-    const card = elements.getElement(CardElement);
-    if (!card) return;
-
-    setBusy(true);
-
-    try {
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card,
-          billing_details: billingDetailsForStripe(shippingAddress)
-        }
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
-        const confirmRes = await ordersAPI.confirm({
-          paymentIntentId: paymentIntent.id,
-          shippingAddress
-        });
-
-        toast.success('Order placed successfully!');
-        onSuccess();
-
-        const orderId = confirmRes?.data?.data?.order?._id;
-        navigate(orderId ? `/order-confirmation/${orderId}` : '/account/orders');
-      }
-    } catch (err) {
-      toast.error(apiMessage(err, 'Payment failed'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      className="btn btn-gold btn-full checkout-place-order"
-      disabled={!stripe || busy}
-      onClick={handleClick}
-    >
-      {busy ? 'Processing…' : 'PLACE ORDER'}
-    </button>
-  );
-}
-
-function CheckoutStripeSteps({
-  step,
-  setStep,
-  clientSecret,
-  shippingAddress,
-  billingSameAsShipping,
-  setBillingSameAsShipping,
-  cardComplete,
-  setCardComplete,
-  totals,
-  getSubtotal,
-  checkoutSummary,
-  onPaidSuccess
-}) {
-  const s = shippingAddress || {};
-  return (
-    <>
-      <div
-        id="checkout-step-payment"
-        className={step === 2 ? 'checkout-panel' : 'checkout-panel checkout-panel--hidden'}
-      >
-        <h2 className="checkout-card-title">Payment</h2>
-        <p className="checkout-panel__lead">
-          Enter your card. You will confirm the full total on the next step before we charge your card.
-        </p>
-        <div className="checkout-card-element-wrap">
-          <label className="form-label" htmlFor="checkout-card-element">
-            Card details
-          </label>
-          <div id="checkout-card-element" className="checkout-card-element">
-            <CardElement options={CARD_OPTIONS} onChange={(e) => setCardComplete(e.complete)} />
-          </div>
-        </div>
-        <label className="checkout-checkbox">
-          <input
-            type="checkbox"
-            checked={billingSameAsShipping}
-            onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-          />
-          <span>Billing address same as shipping</span>
-        </label>
-        <button
-          type="button"
-          className="btn btn-primary btn-full checkout-step2-next"
-          disabled={!cardComplete}
-          onClick={() => {
-            if (!cardComplete) {
-              toast.error('Complete your card details');
-              return;
-            }
-            setStep(3);
-          }}
-        >
-          Continue to review
-        </button>
-      </div>
-
-      <div
-        id="checkout-step-review"
-        className={step === 3 ? 'checkout-panel' : 'checkout-panel checkout-panel--hidden'}
-      >
-        <h2 className="checkout-card-title">Confirm order</h2>
-        <p className="checkout-panel__lead">Review your details and place your order. Your card will be charged now.</p>
-
-        <div className="checkout-review-block">
-          <h3 className="checkout-review-title">Delivery</h3>
-          <p className="checkout-review-text">
-            {s.deliveryOption === 'express' && 'Express (1–2 days)'}
-            {s.deliveryOption === 'nextday' && 'Next day'}
-            {s.deliveryOption === 'standard' && 'Standard (3–5 days)'}
-          </p>
-        </div>
-        <div className="checkout-review-block">
-          <h3 className="checkout-review-title">Ship to</h3>
-          <p className="checkout-review-text">
-            {s.firstName} {s.lastName}
-            <br />
-            {s.email}
-            <br />
-            {s.phone}
-            <br />
-            {s.street}, {s.city}
-            {s.state ? `, ${s.state}` : ''} {s.zipCode}
-            <br />
-            {s.country}
-          </p>
-        </div>
-        <div className="checkout-review-block">
-          <h3 className="checkout-review-title">Order total</h3>
-          <p className="checkout-review-total">
-            {formatPKR(Number(checkoutSummary?.totalPrice ?? totals?.total ?? getSubtotal()))}
-          </p>
-          <p className="checkout-review-note">
-            Includes shipping, tax, and discounts from your delivery choice and store settings.
-          </p>
-        </div>
-
-        <PlaceOrderButton
-          clientSecret={clientSecret}
-          shippingAddress={s}
-          billingSameAsShipping={billingSameAsShipping}
-          onSuccess={onPaidSuccess}
-        />
-      </div>
-    </>
-  );
+function deliveryLabel(option) {
+  if (option === 'express') return 'Express (1–2 days)';
+  if (option === 'nextday') return 'Next day';
+  return 'Standard (3–5 days)';
 }
 
 export default function Checkout() {
+  const navigate = useNavigate();
   const { cart, cartState, loading, fetchCart, getSubtotal } = useCart();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
-  const [clientSecret, setClientSecret] = useState(null);
   const [lockedShipping, setLockedShipping] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [placing, setPlacing] = useState(false);
+  const [proofModalOpen, setProofModalOpen] = useState(false);
   const [publicSettings, setPublicSettings] = useState(null);
-  const [creatingPi, setCreatingPi] = useState(false);
-  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [cardComplete, setCardComplete] = useState(false);
 
   const {
     register,
@@ -317,7 +136,9 @@ export default function Checkout() {
   });
 
   const deliveryOption = useWatch({ control, name: 'deliveryOption', defaultValue: 'standard' });
+  const activeDelivery = lockedShipping?.deliveryOption ?? deliveryOption ?? 'standard';
   const totals = cartState.totals;
+  const subtotal = getSubtotal();
 
   const discountAmount = useMemo(() => {
     if (totals && Number.isFinite(Number(totals.discountAmount))) {
@@ -328,16 +149,12 @@ export default function Checkout() {
 
   useEffect(() => {
     let cancelled = false;
-
     storeSettingsAPI
       .get()
       .then((res) => {
-        if (!cancelled) {
-          setPublicSettings(res.data?.data || null);
-        }
+        if (!cancelled) setPublicSettings(res.data?.data || null);
       })
       .catch(() => {});
-
     return () => {
       cancelled = true;
     };
@@ -346,17 +163,12 @@ export default function Checkout() {
   const storeSettings = user ? cartState.storeSettings || publicSettings : publicSettings;
 
   const checkoutSummary = useMemo(() => {
-    if (user && cartState.pricingPreview) {
-      return cartState.pricingPreview;
-    }
     if (!storeSettings || !cart.length) return null;
-    return computeTotalsPreview(
-      getSubtotal(),
-      discountAmount,
-      deliveryOption || 'standard',
-      storeSettings
-    );
-  }, [user, cartState.pricingPreview, storeSettings, cart.length, getSubtotal, discountAmount, deliveryOption]);
+    return computeTotalsPreview(subtotal, discountAmount, activeDelivery, storeSettings);
+  }, [storeSettings, cart.length, subtotal, discountAmount, activeDelivery]);
+
+  const orderTotal = Number(checkoutSummary?.totalPrice ?? totals?.total ?? subtotal);
+  const itemCount = cart.reduce((n, line) => n + (Number(line.quantity) || 0), 0);
 
   useEffect(() => {
     reset(defaultsFromUser(user));
@@ -378,41 +190,106 @@ export default function Checkout() {
 
     const shippingAddress = toShippingPayload(data);
 
-    setCreatingPi(true);
-
-    try {
-      const res = await ordersAPI.create({
-        deliveryOption: data.deliveryOption,
-        shippingAddress
-      });
-
-      const secret = res.data?.data?.clientSecret;
-      if (!secret) {
-        toast.error('Payment setup failed');
-        return;
+    if (user && data.saveAddress) {
+      try {
+        await authAPI.saveShippingAddress(shippingAddress);
+      } catch (err) {
+        toast.error(apiMessage(err, 'Could not save address to your account'));
       }
+    }
 
-      if (user && data.saveAddress) {
+    setLockedShipping({
+      ...shippingAddress,
+      deliveryOption: data.deliveryOption
+    });
+    setStep(2);
+  };
+
+  const placeOrderPayload = (extra = {}) => ({
+    deliveryOption: lockedShipping.deliveryOption,
+    shippingAddress: {
+      firstName: lockedShipping.firstName,
+      lastName: lockedShipping.lastName,
+      email: lockedShipping.email,
+      phone: lockedShipping.phone,
+      street: lockedShipping.street,
+      city: lockedShipping.city,
+      state: lockedShipping.state,
+      zipCode: lockedShipping.zipCode,
+      country: lockedShipping.country
+    },
+    paymentMethod,
+    ...extra
+  });
+
+  const finalizePlacement = async (res) => {
+    toast.success('Order placed successfully!');
+    await fetchCart();
+    const orderId = res.data?.data?.order?._id;
+    navigate(orderId ? `/order-confirmation/${orderId}` : '/account/orders');
+  };
+
+  const submitBankTransferOrder = async ({ transactionId, file }) => {
+    if (!lockedShipping) return;
+    const tid = String(transactionId || '').trim();
+    if (!tid && !file) {
+      toast.error('Enter transaction ID or upload a payment screenshot');
+      return;
+    }
+
+    setPlacing(true);
+    try {
+      const res = await ordersAPI.place(
+        placeOrderPayload(tid ? { transactionId: tid } : {})
+      );
+      const orderId = res.data?.data?.order?._id;
+
+      if (file && orderId) {
+        const fd = new FormData();
+        if (tid) fd.append('transactionId', tid);
+        fd.append('proof', file);
         try {
-          await authAPI.saveShippingAddress(shippingAddress);
-        } catch (err) {
-          toast.error(apiMessage(err, 'Could not save address to your account'));
+          await ordersAPI.uploadPaymentProof(orderId, fd);
+        } catch (upErr) {
+          toast.error(
+            apiMessage(
+              upErr,
+              'Order placed but screenshot could not be uploaded. Add proof from your order page or contact support.'
+            )
+          );
+          await fetchCart();
+          navigate(`/order-confirmation/${orderId}`);
+          return;
         }
       }
 
-      setLockedShipping({
-        ...shippingAddress,
-        deliveryOption: data.deliveryOption
-      });
-      setClientSecret(secret);
-      setBillingSameAsShipping(true);
-      setCardComplete(false);
-      setStep(2);
+      setProofModalOpen(false);
+      await finalizePlacement(res);
     } catch (err) {
-      toast.error(apiMessage(err, 'Could not prepare checkout'));
+      toast.error(apiMessage(err, 'Could not place order'));
     } finally {
-      setCreatingPi(false);
+      setPlacing(false);
     }
+  };
+
+  const handlePlaceOrder = () => {
+    if (!lockedShipping) return;
+    if (!paymentMethod) {
+      toast.error('Choose a payment method');
+      return;
+    }
+
+    if (paymentMethod === 'bank_transfer') {
+      setProofModalOpen(true);
+      return;
+    }
+
+    setPlacing(true);
+    ordersAPI
+      .place(placeOrderPayload())
+      .then(finalizePlacement)
+      .catch((err) => toast.error(apiMessage(err, 'Could not place order')))
+      .finally(() => setPlacing(false));
   };
 
   if (loading) {
@@ -423,34 +300,29 @@ export default function Checkout() {
     );
   }
 
+  const s = lockedShipping || {};
+
   return (
     <>
+      <BankTransferProofModal
+        isOpen={proofModalOpen}
+        onClose={() => !placing && setProofModalOpen(false)}
+        orderTotal={orderTotal}
+        onSubmit={submitBankTransferOrder}
+        submitting={placing}
+      />
+
       <SEO noIndex title="Checkout" />
 
-      <main className="section checkout-page">
-        {!pk ? (
-          <div className="api-error-banner checkout-stripe-banner" role="alert">
-            <p>
-              <strong>Stripe publishable key missing.</strong> Add{' '}
-              <code>REACT_APP_STRIPE_PUBLISHABLE_KEY</code> to <code>frontend/.env</code> and restart the dev server.
-              Until then, payment cannot start after this step.
-            </p>
-          </div>
-        ) : null}
-
-        <div className="checkout-layout checkout-layout--wizard">
-          <div className="checkout-main-col">
+      <main className="section checkout-page" id="main-content">
+        <div className="container">
+          <div className="checkout-layout checkout-layout--wizard">
+            <div className="checkout-main-col">
             {step === 1 && (
               <form
                 className="checkout-shipping card-like"
                 onSubmit={handleSubmit(onSubmitShipping, () => {
                   toast.error('Please fix the highlighted fields');
-                  window.requestAnimationFrame(() => {
-                    document.querySelector('.checkout-shipping .form-error')?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'center'
-                    });
-                  });
                 })}
                 noValidate
               >
@@ -528,10 +400,9 @@ export default function Checkout() {
                   </div>
                   <div className="form-group">
                     <label className="form-label" htmlFor="ship-state">
-                      State / County
+                      State / Province
                     </label>
                     <input id="ship-state" className="form-control" {...register('state')} />
-                    {errors.state && <p className="form-error">{errors.state.message}</p>}
                   </div>
                 </div>
 
@@ -559,34 +430,234 @@ export default function Checkout() {
                   </label>
                 ) : null}
 
-                <button type="submit" className="btn btn-primary btn-full checkout-continue-btn" disabled={creatingPi}>
-                  {creatingPi ? 'Preparing checkout…' : 'Continue to payment'}
+                <button type="submit" className="btn btn-primary btn-full checkout-continue-btn">
+                  Continue to payment
                 </button>
 
                 <p className="checkout-trust">
                   <ShieldCheck size={16} strokeWidth={1.75} className="checkout-trust__icon" aria-hidden />
-                  Payments are processed by Stripe. We never store your full card number.
+                  Secure checkout — cash on delivery or Easypaisa bank transfer.
                 </p>
               </form>
             )}
 
-            {clientSecret && stripePromise && lockedShipping ? (
-              <Elements stripe={stripePromise} options={{ clientSecret }} key={clientSecret}>
-                <CheckoutStripeSteps
-                  step={step}
-                  setStep={setStep}
-                  clientSecret={clientSecret}
-                  shippingAddress={lockedShipping}
-                  billingSameAsShipping={billingSameAsShipping}
-                  setBillingSameAsShipping={setBillingSameAsShipping}
-                  cardComplete={cardComplete}
-                  setCardComplete={setCardComplete}
-                  totals={totals}
-                  getSubtotal={getSubtotal}
-                  checkoutSummary={checkoutSummary}
-                  onSuccess={() => fetchCart()}
-                />
-              </Elements>
+            {step >= 2 && lockedShipping ? (
+              <>
+                <div
+                  id="checkout-step-payment"
+                  className={step === 2 ? 'checkout-panel card-like' : 'checkout-panel card-like checkout-panel--hidden'}
+                >
+                  <h2 className="checkout-card-title">Step 2 — Payment method</h2>
+                  <p className="checkout-panel__lead">Card payments are not available. Choose how you would like to pay.</p>
+
+                  <div className="checkout-payment-methods" role="radiogroup" aria-label="Payment method">
+                    {PAYMENT_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.id}
+                        className={`checkout-payment-option${paymentMethod === opt.id ? ' is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={opt.id}
+                          checked={paymentMethod === opt.id}
+                          onChange={() => setPaymentMethod(opt.id)}
+                        />
+                        <span className="checkout-payment-option__icon" aria-hidden>
+                          {opt.id === 'cod' ? <Banknote size={22} /> : <Smartphone size={22} />}
+                        </span>
+                        <span className="checkout-payment-option__body">
+                          <span className="checkout-payment-option__label">{opt.label}</span>
+                          <span className="checkout-payment-option__desc">{opt.description}</span>
+                          {opt.id === 'bank_transfer' ? (
+                            <span className="checkout-payment-option__account">
+                              Easypaisa: <strong>{EASYPAISA_NUMBER}</strong>
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm checkout-back-btn"
+                    onClick={() => setStep(1)}
+                  >
+                    ← Edit shipping
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-full checkout-step2-next"
+                    onClick={() => setStep(3)}
+                  >
+                    Continue to review
+                  </button>
+                </div>
+
+                <div
+                  id="checkout-step-review"
+                  className={step === 3 ? 'checkout-panel card-like' : 'checkout-panel card-like checkout-panel--hidden'}
+                >
+                  <h2 className="checkout-card-title">Step 3 — Confirm order</h2>
+                  <p className="checkout-panel__lead">Review your details and place your order.</p>
+
+                  <div className="checkout-review-block">
+                    <h3 className="checkout-review-title">Delivery</h3>
+                    <p className="checkout-review-text">{deliveryLabel(s.deliveryOption)}</p>
+                  </div>
+                  <div className="checkout-review-block">
+                    <h3 className="checkout-review-title">Ship to</h3>
+                    <p className="checkout-review-text">
+                      {s.firstName} {s.lastName}
+                      <br />
+                      {s.email}
+                      <br />
+                      {s.phone}
+                      <br />
+                      {s.street}, {s.city}
+                      {s.state ? `, ${s.state}` : ''} {s.zipCode}
+                      <br />
+                      {s.country}
+                    </p>
+                  </div>
+                  <div className="checkout-review-block">
+                    <h3 className="checkout-review-title">Payment</h3>
+                    <p className="checkout-review-text">
+                      {paymentMethod === 'bank_transfer' ? (
+                        <>
+                          Bank transfer (Easypaisa) — send <strong>{formatPKR(orderTotal)}</strong> to{' '}
+                          <strong>{EASYPAISA_NUMBER}</strong>
+                        </>
+                      ) : (
+                        <>Cash on delivery — pay {formatPKR(orderTotal)} when your order arrives.</>
+                      )}
+                    </p>
+                  </div>
+                  <div className="checkout-review-block">
+                    <h3 className="checkout-review-title">Order total</h3>
+                    <p className="checkout-review-total">{formatPKR(orderTotal)}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm checkout-back-btn"
+                    onClick={() => setStep(2)}
+                  >
+                    ← Change payment
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-gold btn-full checkout-place-order"
+                    disabled={placing}
+                    onClick={handlePlaceOrder}
+                  >
+                    {placing ? 'Placing order…' : 'PLACE ORDER'}
+                  </button>
+                </div>
+              </>
+            ) : null}
+            </div>
+
+            {cart.length > 0 ? (
+              <aside className="checkout-summary-col" aria-label="Order summary">
+                <div className="checkout-summary checkout-summary--sticky card-like">
+                  <h2 className="checkout-summary__title">
+                    Order summary
+                    <span className="checkout-summary__count">
+                      {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                    </span>
+                  </h2>
+
+                  <ul className="checkout-summary__items">
+                    {cart.map((line) => {
+                      const p = line.product || {};
+                      const ref = p._id || line.product;
+                      const img = productImageUrl(p);
+                      const unit = Number(line.price) || 0;
+                      const qty = Number(line.quantity) || 0;
+                      const lineTotal = Number(line.lineTotal ?? unit * qty) || 0;
+                      return (
+                        <li key={String(ref)} className="checkout-summary__line">
+                          <div className="checkout-summary__thumb">
+                            {img ? (
+                              <LazyLoadImage src={img} alt="" className="checkout-summary__img" effect="blur" />
+                            ) : (
+                              <span className="checkout-summary__placeholder" aria-hidden>
+                                📦
+                              </span>
+                            )}
+                          </div>
+                          <div className="checkout-summary__meta">
+                            <Link to={`/shop/${p.slug || ''}`} className="checkout-summary__name">
+                              {p.name || 'Product'}
+                            </Link>
+                            {p.cartVariantNote ? (
+                              <span className="checkout-summary__variant">{p.cartVariantNote}</span>
+                            ) : null}
+                            <span className="checkout-summary__qty">
+                              {formatPKR(unit)} × {qty}
+                            </span>
+                          </div>
+                          <span className="checkout-summary__line-total">{formatPKR(lineTotal)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  <div className="checkout-summary__totals">
+                    <div className="summary-row">
+                      <span>Subtotal</span>
+                      <span>{formatPKR(round2(subtotal))}</span>
+                    </div>
+                    {discountAmount > 0 ? (
+                      <div className="summary-row checkout-summary__discount">
+                        <span>Discount</span>
+                        <span>−{formatPKR(discountAmount)}</span>
+                      </div>
+                    ) : null}
+                    {cartState.coupon?.code ? (
+                      <p className="checkout-summary__coupon">
+                        Coupon <strong>{cartState.coupon.code}</strong> applied
+                      </p>
+                    ) : null}
+                    {checkoutSummary ? (
+                      <>
+                        <div className="summary-row">
+                          <span>{shippingSummaryLabel(activeDelivery)}</span>
+                          <span>{formatPKR(checkoutSummary.shippingPrice)}</span>
+                        </div>
+                        {checkoutSummary.taxPrice > 0 ? (
+                          <div className="summary-row">
+                            <span>Tax</span>
+                            <span>{formatPKR(checkoutSummary.taxPrice)}</span>
+                          </div>
+                        ) : null}
+                        <div className="summary-row total">
+                          <span>Total</span>
+                          <span>{formatPKR(checkoutSummary.totalPrice)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="checkout-summary__loading">Calculating totals…</p>
+                    )}
+                  </div>
+
+                  <p className="checkout-summary__delivery-note">
+                    Delivery: <strong>{deliveryLabel(activeDelivery)}</strong>
+                    {step === 1 ? ' — updates when you change speed above' : null}
+                  </p>
+
+                  <Link to="/cart" className="checkout-edit-cart link-btn">
+                    Edit cart
+                  </Link>
+
+                  <p className="checkout-summary__lock">
+                    <ShieldCheck size={14} strokeWidth={1.75} aria-hidden />
+                    COD or Easypaisa — no card required
+                  </p>
+                </div>
+              </aside>
             ) : null}
           </div>
         </div>

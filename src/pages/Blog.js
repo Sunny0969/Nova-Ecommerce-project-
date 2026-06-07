@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
+import { buildMetaDescription, buildPageTitle } from '../utils/pageSeo';
 import BlogHero from '../components/BlogHero';
 import BlogCard from '../components/BlogCard';
 import FilterDropdown from '../components/FilterDropdown';
@@ -153,7 +154,15 @@ export default function Blog() {
 
   return (
     <>
-      <SEO title="Blog" description="Browse articles and guides from Souvenir Handicraft Shop." canonicalUrl="/blog" />
+      <SEO
+        title={buildPageTitle('Shopping Guides & Tips', 'Blog')}
+        description={buildMetaDescription(
+          'shopping guides Pakistan',
+          'Read care, home, fashion, and tech articles with product picks from our shop.',
+          'Expert tips from Souvenir Handicraft Shop editorial.'
+        )}
+        canonicalUrl="/blog"
+      />
 
       {/* Keep existing top header / breadcrumb markup intact style-wise */}
       <header className="page-header">

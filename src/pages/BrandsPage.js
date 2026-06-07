@@ -79,21 +79,30 @@ export default function BrandsPage() {
             <p className="brands-page__empty">No brands available yet.</p>
           ) : (
             <div className="brands-page__grid" role="list">
-              {brands.map((brand) => (
-                <div key={brand._id || brand.slug} className="brand-tile brand-tile--static" role="listitem">
-                  {brand.imageUrl ? (
-                    <img
-                      className="brand-tile__img"
-                      src={brand.imageUrl}
-                      alt={brand.name}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <span className="brand-tile__fallback">{brand.name}</span>
-                  )}
-                </div>
-              ))}
+              {brands.map((brand) => {
+                const slug = brand.slug || '';
+                return (
+                  <Link
+                    key={brand._id || slug}
+                    to={`/shop?brand=${encodeURIComponent(slug)}`}
+                    className="brand-tile brand-tile--link"
+                    role="listitem"
+                    aria-label={`Shop ${brand.name} products`}
+                  >
+                    {brand.imageUrl ? (
+                      <img
+                        className="brand-tile__img"
+                        src={brand.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="brand-tile__fallback">{brand.name}</span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

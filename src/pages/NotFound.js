@@ -1,17 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import SEO from '../components/SEO';
 import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import RecommendationRow from '../components/RecommendationRow';
 import api, { recommendationsAPI } from 'api';
-
-const SUPPORT_MAIL = 'support@Souvenir Handicraftshop.com';
+import { businessDisplayName } from '../utils/businessContact';
 
 export default function NotFound() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [popular, setPopular] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadCategories = useCallback(async () => {
     setCategoriesLoading(true);
@@ -39,12 +41,29 @@ export default function NotFound() {
       .catch(() => setPopular([]));
   }, []);
 
+  useEffect(() => {
+    api
+      .post('/api/seo/not-found', {
+        path: pathname,
+        referrer: typeof document !== 'undefined' ? document.referrer : '',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      })
+      .catch(() => {});
+  }, [pathname]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigate(`/shop?search=${encodeURIComponent(q)}`);
+  };
+
   return (
     <main className="section container not-found-page" id="main-content">
       <SEO
         noIndex
-        title="404 - Page Not Found"
-        description="The page you requested does not exist on Souvenir HandicraftShop. Go home, browse the shop, or contact support for help."
+        title="Page Not Found"
+        description="This page is not on Souvenir Handicraft Shop. Search products, browse categories, or contact us in Hyderabad for order help."
         canonicalUrl={pathname}
       />
 
@@ -52,11 +71,29 @@ export default function NotFound() {
         <p className="not-found-page__code" aria-hidden>
           404
         </p>
-        <h1 className="not-found-page__title">404 — Page Not Found</h1>
+        <h1 className="not-found-page__title">We couldn&apos;t find that page</h1>
         <p className="not-found-page__lede">
-          The link may be broken, or the page may have been removed. Use the shortcuts below to get back to
-          shopping, or reach our team if you need help with an order.
+          The link may be outdated or mistyped. Search our catalog, jump to a popular category, or
+          contact {businessDisplayName} if you need help with an order.
         </p>
+
+        <form className="not-found-page__search" role="search" onSubmit={handleSearch}>
+          <label htmlFor="not-found-search" className="visually-hidden">
+            Search products
+          </label>
+          <Search size={20} className="not-found-page__search-icon" aria-hidden />
+          <input
+            id="not-found-search"
+            type="search"
+            className="form-control not-found-page__search-input"
+            placeholder="Search products…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button type="submit" className="btn btn-primary not-found-page__search-btn">
+            Search shop
+          </button>
+        </form>
 
         <div className="not-found-page__actions">
           <Link to="/" className="btn btn-primary">
@@ -65,13 +102,13 @@ export default function NotFound() {
           <Link to="/shop" className="btn btn-outline">
             Browse Shop
           </Link>
-          <a href={`mailto:${SUPPORT_MAIL}`} className="btn btn-outline">
-            Contact Support
+          <a href="/#footer-contact" className="btn btn-outline">
+            Contact Us
           </a>
         </div>
 
-        <section className="not-found-page__categories" aria-label="Popular categories">
-          <h2 className="not-found-page__section-title">Popular categories</h2>
+        <section className="not-found-page__categories" aria-label="Top categories">
+          <h2 className="not-found-page__section-title">Shop by category</h2>
           {categoriesLoading ? (
             <p className="empty-products-hint empty-products-hint--muted">Loading categories…</p>
           ) : categories.length === 0 ? (
@@ -97,7 +134,7 @@ export default function NotFound() {
           )}
         </section>
 
-        <RecommendationRow title="Popular products" products={popular} />
+        <RecommendationRow title="Bestsellers you may like" products={popular} />
       </div>
     </main>
   );

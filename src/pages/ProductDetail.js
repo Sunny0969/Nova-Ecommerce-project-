@@ -7,6 +7,14 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
+import { buildMetaDescription, buildPageTitle } from '../utils/pageSeo';
+import {
+  buildProductSchema,
+  buildProductReviewSchemas,
+  buildSpeakableSpecificationSchema,
+  getProductPageReviews,
+  getProductRatingForSchema
+} from '../utils/jsonLd';
 import { productImageUrl } from '../lib/productImage';
 import { apiMessage } from '../lib/api';
 import { formatPKR } from '../utils/currency';
@@ -398,38 +406,20 @@ export default function ProductDetail() {
     const short = stripHtml(product.shortDescription || '');
     const long = stripHtml(product.description || '');
     const desc = (short || long || String(product.name || '')).trim().slice(0, 8000);
-    const numReviews = Number(product.numReviews ?? product.ratingCount) || 0;
-    const ratingValue = Number(product.ratings ?? product.rating) || 0;
     const stockN =
       product.stockQuantity != null && product.stockQuantity !== '' ? Number(product.stockQuantity) : null;
     const inStock = Boolean(product.inStock) || (stockN != null && !Number.isNaN(stockN) && stockN > 0);
-    const withRating = numReviews > 0 && ratingValue > 0;
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: product.name,
-      image: imgs.length ? imgs : undefined,
-      description: desc,
-      sku: product.sku != null && String(product.sku).trim() ? String(product.sku).trim() : undefined,
-      brand: { '@type': 'Brand', name: 'Souvenir Handicraft Shop' },
-      offers: {
-        '@type': 'Offer',
-        priceCurrency: 'PKR',
-        price: String(price.toFixed(2)),
-        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        url: canonicalUrl
-      },
-      ...(withRating
-        ? {
-            aggregateRating: {
-              '@type': 'AggregateRating',
-              ratingValue: String(ratingValue.toFixed(1)),
-              reviewCount: String(numReviews)
-            }
-          }
-        : {})
-    };
-  }, [product, images, price, canonicalUrl]);
+    const { ratingValue, reviewCount } = getProductRatingForSchema(product, fake);
+    return buildProductSchema(product, {
+      canonicalUrl,
+      images: imgs,
+      price,
+      inStock,
+      ratingValue,
+      reviewCount,
+      description: desc
+    });
+  }, [product, images, price, canonicalUrl, fake]);
 
   const breadcrumbJsonLd = useMemo(() => {
     if (!product || product.unavailable) return null;
@@ -455,8 +445,19 @@ export default function ProductDetail() {
 
   const structuredData = useMemo(() => {
     if (!productJsonLd || !breadcrumbJsonLd) return null;
-    return [breadcrumbJsonLd, productJsonLd];
-  }, [productJsonLd, breadcrumbJsonLd]);
+    const schemas = [breadcrumbJsonLd, productJsonLd];
+    const pageReviews = getProductPageReviews(product, fake);
+    const reviewSchemas = buildProductReviewSchemas(pageReviews, product.name);
+    if (reviewSchemas.length) schemas.push(...reviewSchemas);
+
+    const speakable = buildSpeakableSpecificationSchema(canonicalUrl, [
+      '.product-detail-title',
+      '.product-detail-short'
+    ]);
+    if (speakable) schemas.push(speakable);
+
+    return schemas;
+  }, [productJsonLd, breadcrumbJsonLd, product, fake, canonicalUrl]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -545,6 +546,7 @@ export default function ProductDetail() {
                   images={galleryImagesForUi}
                   productName={product.name}
                   showSaleBadge={Boolean(hasSale)}
+                  discountPercent={discountPct ?? undefined}
                   activeIndex={galleryIndex}
                   onActiveIndexChange={setGalleryIndex}
                 />
@@ -621,14 +623,16 @@ export default function ProductDetail() {
   const reviewCount = fake.count;
   const ratingValue = fake.rating;
 
-  const metaDesc =
-    stripHtml(product.shortDescription || product.description || '').slice(0, 160) ||
-    `${product.name} at Souvenir Handicraft Shop`;
+  const metaDesc = buildMetaDescription(
+    product.name,
+    product.inStock ? 'Buy now with secure checkout and fast delivery.' : 'View details and get notified when back in stock.',
+    stripHtml(product.shortDescription || product.description || '').slice(0, 120)
+  );
 
   return (
     <>
       <SEO
-        title={product.name}
+        title={buildPageTitle(product.name, categoryName)}
         description={metaDesc}
         canonicalUrl={productPath}
         ogType="product"
@@ -666,6 +670,7 @@ export default function ProductDetail() {
               images={galleryImagesForUi}
               productName={product.name}
               showSaleBadge={Boolean(hasSale)}
+              discountPercent={discountPct ?? undefined}
               activeIndex={galleryIndex}
               onActiveIndexChange={setGalleryIndex}
             />

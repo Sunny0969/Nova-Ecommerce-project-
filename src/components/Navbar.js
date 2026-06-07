@@ -136,11 +136,9 @@ export default function Navbar() {
       <Link to="/blog" className={navLinkClass(isBlogActive)} onClick={onNavigate}>
         Blog
       </Link> */}
-      {canAccessCustomerApp ? (
-        <Link to="/cart" className={navLinkClass(isActive('/cart'))} onClick={onNavigate}>
+        {/* <Link to="/cart" className={navLinkClass(isActive('/cart'))} onClick={onNavigate}>
           Cart
-        </Link>
-      ) : null}
+        </Link> */}
     </>
   );
 
@@ -171,7 +169,7 @@ export default function Navbar() {
   const renderIconButtons = (onNavigate) => (
     <>
       <Link
-        to={user && canAccessCustomerApp ? '/account/wishlist' : '/login'}
+        to="/wishlist"
         className={`nav-icon-btn ${location.pathname.includes('wishlist') ? 'nav-icon-btn--active' : ''}`}
         aria-label={`Wishlist${wishCount ? `, ${wishCount} items` : ''}`}
         onClick={onNavigate}

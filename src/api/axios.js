@@ -154,6 +154,8 @@ export const productsAPI = {
 
   getFlashSale: (params) => api.get('/api/products/flash-sale', { params }),
 
+  getHomeCategorySales: (params) => api.get('/api/products/home-category-sales', { params }),
+
   search: (params) =>
     api.get('/api/products/search', {
       params: typeof params === 'string' ? { q: params } : params
@@ -217,23 +219,26 @@ export const cartAPI = {
 };
 
 /**
- * Orders — `/api/orders/*` (JWT) + Stripe checkout step
+ * Orders — `/api/orders/*` (JWT). Checkout uses manual payment (COD / Easypaisa).
  */
 export const ordersAPI = {
-  /**
-   * Starts checkout: creates Stripe PaymentIntent from server-side cart totals.
-   * POST `/api/stripe/create-payment-intent`
-   */
-  create: (body) => api.post('/api/stripe/create-payment-intent', body),
+  /** Place order: COD or bank_transfer (Easypaisa) */
+  place: (body) => api.post('/api/orders/place', body),
 
-  /** Finalizes order after successful payment */
+  /** @deprecated Stripe disabled — use `place` */
+  create: (body) => api.post('/api/orders/place', body),
+
+  /** @deprecated Stripe disabled */
   confirm: (body) => api.post('/api/orders/confirm', body),
 
   getMyOrders: (params) => api.get('/api/orders/my-orders', { params }),
 
   getOne: (id) => api.get(`/api/orders/${id}`),
 
-  cancel: (id, body) => api.post(`/api/orders/cancel/${id}`, body || {})
+  cancel: (id, body) => api.post(`/api/orders/cancel/${id}`, body || {}),
+
+  uploadPaymentProof: (id, formData) =>
+    api.post(`/api/orders/${id}/payment-proof`, formData)
 };
 
 /**
@@ -337,7 +342,11 @@ export const adminAPI = {
       api.put(`/api/admin/orders/${id}/status`, body),
 
     updateTracking: (id, body) =>
-      api.put(`/api/admin/orders/${id}/tracking`, body)
+      api.put(`/api/admin/orders/${id}/tracking`, body),
+
+    markPaid: (id, body) => api.put(`/api/admin/orders/${id}/paid`, body),
+
+    updatePaymentProof: (id, body) => api.put(`/api/admin/orders/${id}/payment-proof`, body)
   },
 
   customers: {

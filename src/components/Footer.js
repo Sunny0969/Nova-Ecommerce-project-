@@ -1,10 +1,60 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Youtube, MapPin, Phone } from 'lucide-react';
+import api from 'api';
+import { unwrapCategoriesResponse } from '../lib/api';
+import {
+  businessDisplayName,
+  businessPhoneDisplay,
+  businessPhoneE164,
+  formatBusinessAddressLine
+} from '../utils/businessContact';
+import './Footer.css';
+
+const ABOUT_LINKS = [
+  { label: 'Home', to: '/' },
+  { label: 'All Categories', to: '/#categories' },
+  { label: 'All Brands', to: '/brands' },
+  { label: 'Blogs', to: '/blog' },
+  { label: 'Privacy Policy', to: '/privacy-policy' },
+  { label: 'Contact Us', to: '/#footer-contact' },
+  { label: 'FAQs', to: '/faqs' },
+  { label: 'About Us', to: '/about-us' }
+];
+
+function splitIntoColumns(items, numCols = 3) {
+  const sorted = [...items].sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })
+  );
+  const cols = Array.from({ length: numCols }, () => []);
+  sorted.forEach((item, i) => {
+    cols[i % numCols].push(item);
+  });
+  return cols;
+}
 
 const Footer = () => {
   const [email, setEmail] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/api/categories');
+        const list = unwrapCategoriesResponse(res);
+        if (!cancelled) setCategories(Array.isArray(list) ? list : []);
+      } catch {
+        if (!cancelled) setCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const categoryColumns = useMemo(() => splitIntoColumns(categories, 3), [categories]);
 
   const handleNewsletter = (e) => {
     e.preventDefault();
@@ -22,16 +72,30 @@ const Footer = () => {
   };
 
   return (
-    <footer className="footer footer--Souvenir Handicraft " role="contentinfo">
+    <footer className="footer footer--Souvenir Handicraft" role="contentinfo">
       <div className="container">
-        <div className="footer-grid footer-grid--Souvenir Handicraft ">
+        <div className="footer-grid footer-grid--store">
           <div className="footer-brand">
             <Link to="/" className="footer-logo">
-             Souvenir Handicraft <span className="footer-logo__dot">.</span>
+              {businessDisplayName}
+              <span className="footer-logo__dot">.</span>
             </Link>
             <p className="footer-tagline">
               Premium lifestyle products curated from around the world. Quality you can feel, delivered with care.
             </p>
+            <address className="footer-contact" id="footer-contact">
+              <p className="footer-contact__name">{businessDisplayName}</p>
+              <p className="footer-contact__line">
+                <MapPin size={16} strokeWidth={1.75} aria-hidden className="footer-contact__icon" />
+                <span>{formatBusinessAddressLine()}</span>
+              </p>
+              <p className="footer-contact__line">
+                <Phone size={16} strokeWidth={1.75} aria-hidden className="footer-contact__icon" />
+                <a href={`tel:${businessPhoneE164}`} className="footer-contact__phone">
+                  {businessPhoneDisplay}
+                </a>
+              </p>
+            </address>
             <div className="footer-socials" aria-label="Social media">
               <a
                 href="https://facebook.com"
@@ -72,67 +136,44 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="footer-col">
-            <h4>Shop</h4>
+          <div className="footer-col footer-col--about">
+            <h4>About Us</h4>
             <ul className="footer-links">
-              <li>
-                <Link to="/shop">All Products</Link>
-              </li>
-              <li>
-                <Link to="/shop?category=electronics">Electronics</Link>
-              </li>
-              <li>
-                <Link to="/shop?category=fashion">Fashion</Link>
-              </li>
-              <li>
-                <Link to="/shop?category=home">Home &amp; Living</Link>
-              </li>
-              <li>
-                <Link to="/shop?category=beauty">Beauty</Link>
-              </li>
+              {ABOUT_LINKS.map((link) => (
+                <li key={link.label}>
+                  {link.to.startsWith('/#') ? (
+                    <a href={link.to}>{link.label}</a>
+                  ) : (
+                    <Link to={link.to}>{link.label}</Link>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
 
-          <div className="footer-col">
-            <h4>Account</h4>
-            <ul className="footer-links">
-              <li>
-                <Link to="/login">Sign In</Link>
-              </li>
-              <li>
-                <Link to="/register">Register</Link>
-              </li>
-              <li>
-                <Link to="/cart">My Cart</Link>
-              </li>
-              <li>
-                <Link to="/account/orders">My Orders</Link>
-              </li>
-              <li>
-                <Link to="/account/wishlist">Wishlist</Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="footer-col">
-            <h4>Help</h4>
-            <ul className="footer-links">
-              <li>
-                <Link to="#">Shipping Info</Link>
-              </li>
-              <li>
-                <Link to="#">Returns Policy</Link>
-              </li>
-              <li>
-                <Link to="#">Track Order</Link>
-              </li>
-              <li>
-                <Link to="#">Contact Us</Link>
-              </li>
-              <li>
-                <Link to="#">Privacy Policy</Link>
-              </li>
-            </ul>
+          <div className="footer-col footer-col--categories">
+            <h4>Categories</h4>
+            {categories.length === 0 ? (
+              <ul className="footer-links">
+                <li>
+                  <Link to="/shop">All Products</Link>
+                </li>
+              </ul>
+            ) : (
+              <div className="footer-categories__grid">
+                {categoryColumns.map((col, colIndex) => (
+                  <ul key={colIndex} className="footer-links footer-categories__col">
+                    {col.map((cat) => (
+                      <li key={cat._id || cat.slug}>
+                        <Link to={`/shop?category=${encodeURIComponent(cat.slug || '')}`}>
+                          {cat.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -141,7 +182,7 @@ const Footer = () => {
             <h4 className="footer-newsletter__title">Newsletter</h4>
             <p>Subscribe for new arrivals, offers, and style inspiration.</p>
           </div>
-          <form className="footer-newsletter__form" onSubmit={handleNewsletter} novalidate>
+          <form className="footer-newsletter__form" onSubmit={handleNewsletter} noValidate>
             <label htmlFor="footer-newsletter-email" className="visually-hidden">
               Email address
             </label>
@@ -161,9 +202,10 @@ const Footer = () => {
           </form>
         </div>
 
-        <div className="footer-bottom footer-bottom--Souvenir Handicraft ">
+        <div className="footer-bottom footer-bottom--Souvenir Handicraft">
           <p className="footer-copyright">
-            © {new Date().getFullYear()} Souvenir Handicraft . All rights reserved. Powered by Rathisoft Innovation.
+            © {new Date().getFullYear()} {businessDisplayName}. All rights reserved. Powered by Rathisoft
+            Innovation.
           </p>
           <div className="footer-payments" aria-label="Accepted payment methods">
             <span className="footer-pay footer-pay--visa" title="Visa">

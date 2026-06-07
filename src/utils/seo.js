@@ -54,7 +54,7 @@ export const defaultTitle = 'Souvenir Handicraft Shop | Premium Products Deliver
  * When using short segment titles, full title = titleTemplate with %s replaced, e.g.
  * `formatPageTitle('My Account')` → "My Account | Souvenir HandicraftShop"
  */
-export const titleTemplate = '%s |Souvenir Handicraft Shop';
+export const titleTemplate = '%s | Souvenir Handicraft Shop';
 
 /**
  * Google typically displays ~150–160 characters; this default is 155.
@@ -212,6 +212,7 @@ export function buildBreadcrumbListSchema(items) {
     }
     return {
       '@type': 'ListItem',
+      '@id': `${item}#breadcrumb`,
       position: i + 1,
       name,
       item

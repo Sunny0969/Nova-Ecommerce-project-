@@ -6,6 +6,8 @@ import { ordersAPI } from 'api';
 import { apiMessage } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
+import { EASYPAISA_NUMBER } from '../config/payments';
+import { resolvePaymentProof } from '../utils/orderPaymentProof';
 
 function formatOrderNo(order) {
   if (!order?._id) return '—';
@@ -103,6 +105,15 @@ export default function OrderConfirmation() {
 
   const orderNo = formatOrderNo(order);
   const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+  const isPaid = Boolean(order.isPaid);
+  const paymentId = order.paymentResult?.id || '';
+  const isBankTransfer =
+    paymentId === 'bank_transfer' ||
+    /easypaisa|bank transfer/i.test(String(order.paymentMethod || '')) ||
+    String(order.notes || '').toLowerCase().includes('easypaisa');
+  const totalLabel = isPaid ? 'Total paid' : 'Order total';
+  const proof = resolvePaymentProof(order);
+  const proofSubmitted = proof.hasProof;
 
   return (
     <main className="section container order-confirm" id="main-content">
@@ -125,6 +136,41 @@ export default function OrderConfirmation() {
       </p>
       <p className="order-confirm__delivery">{deliveryMessage(order.deliveryOption)}</p>
 
+      {!isPaid ? (
+        <div className="order-confirm__payment card-like">
+          <h2 className="order-confirm__payment-title">Payment instructions</h2>
+          {isBankTransfer ? (
+            <>
+              <p className="order-confirm__payment-text">
+                Send <strong>{formatPKR(Number(order.totalPrice || 0))}</strong> via Easypaisa to{' '}
+                <strong>{EASYPAISA_NUMBER}</strong>. We will confirm your order after verifying
+                payment.
+              </p>
+              {proofSubmitted ? (
+                <p className="order-confirm__payment-note order-confirm__payment-note--ok">
+                  {proof.transactionId ? (
+                    <>
+                      Transaction ID received: <strong>{proof.transactionId}</strong>
+                      <br />
+                    </>
+                  ) : null}
+                  {proof.imageUrl ? 'Payment screenshot received. ' : null}
+                  Our team will verify and update your order status.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="order-confirm__payment-text">
+              Pay <strong>{formatPKR(Number(order.totalPrice || 0))}</strong> in cash when your
+              order is delivered.
+            </p>
+          )}
+          {order.notes ? (
+            <p className="order-confirm__payment-note">{order.notes}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="order-confirm__items">
         <div className="order-confirm__items-head">Order items</div>
         {items.map((line, idx) => (
@@ -136,7 +182,7 @@ export default function OrderConfirmation() {
           </div>
         ))}
         <div className="order-confirm__item" style={{ fontWeight: 700, background: 'var(--cream)' }}>
-          <span>Total paid</span>
+          <span>{totalLabel}</span>
           <span>{formatPKR(Number(order.totalPrice || 0))}</span>
         </div>
       </div>

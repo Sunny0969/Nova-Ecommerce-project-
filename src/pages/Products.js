@@ -7,6 +7,13 @@ import Pagination from '../components/Pagination';
 import CategoryShopSeo from '../components/CategoryShopSeo';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
+import { buildMetaDescription, buildPageTitle, getShopListingCanonicalPath } from '../utils/pageSeo';
+import { getCategorySeoContent } from '../data/categorySeoContent';
+import {
+  buildFAQPageSchema,
+  buildSpeakableSpecificationSchema,
+  filterValidFaqs
+} from '../utils/jsonLd';
 import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import api from 'api';
 
@@ -54,6 +61,7 @@ const Products = () => {
   const [categoriesError, setCategoriesError] = useState(null);
   const [categoryTags, setCategoryTags] = useState([]);
   const [categoryTagsLoading, setCategoryTagsLoading] = useState(false);
+  const [brands, setBrands] = useState([]);
 
   const [viewMode, setViewMode] = useState(() => {
     try {
@@ -73,6 +81,7 @@ const Products = () => {
   const inStock = searchParams.get('inStock') === 'true';
   const onSale = searchParams.get('onSale') === 'true';
   const selectedTag = (searchParams.get('tag') || '').trim();
+  const selectedBrandSlug = (searchParams.get('brand') || '').trim().toLowerCase();
   const selectedCategories = useMemo(
     () => categoriesFromSearchParams(searchParams),
     [searchParams]
@@ -98,9 +107,11 @@ const Products = () => {
       else next.delete('search');
       next.set('page', '1');
       setSearchParams(next, { replace: true });
-    }, 400);
+    }, 300);
     return () => window.clearTimeout(t);
   }, [searchInput, searchUrl, setSearchParams]);
+
+  const searchPending = searchInput.trim() !== searchUrl;
 
   const { addToCart } = useCart();
 
@@ -123,6 +134,22 @@ const Products = () => {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/api/brands');
+        const list = res?.data?.data;
+        if (!cancelled) setBrands(Array.isArray(list) ? list : []);
+      } catch {
+        if (!cancelled) setBrands([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const querySignature = searchParams.toString();
 
@@ -155,6 +182,8 @@ const Products = () => {
       if (sale) params.set('onSale', 'true');
       const tag = (sp.get('tag') || '').trim();
       if (tag) params.set('tag', tag);
+      const brand = (sp.get('brand') || '').trim().toLowerCase();
+      if (brand) params.set('brand', brand);
 
       try {
         const response = await api.get(`/api/products?${params.toString()}`);
@@ -462,7 +491,13 @@ const Products = () => {
 
   const skeletonCount = viewMode === 'list' ? 4 : 9;
 
+  const activeBrand = useMemo(() => {
+    if (!selectedBrandSlug) return null;
+    return brands.find((b) => String(b.slug || '').toLowerCase() === selectedBrandSlug) || null;
+  }, [brands, selectedBrandSlug]);
+
   const shopBreadcrumbLabel = useMemo(() => {
+    if (activeBrand?.name) return String(activeBrand.name);
     if (searchUrl) return `“${searchUrl}” – Shop`;
     if (selectedCategories.length > 0) {
       if (selectedCategories.length === 1) {
@@ -477,7 +512,7 @@ const Products = () => {
     if (inStock) return 'In stock only – Shop';
     if (minPriceUrl || maxPriceUrl || ratingUrl) return 'Shop (filtered)';
     return 'Shop';
-  }, [searchUrl, selectedCategories, categories, onSale, inStock, minPriceUrl, maxPriceUrl, ratingUrl]);
+  }, [activeBrand, searchUrl, selectedCategories, categories, onSale, inStock, minPriceUrl, maxPriceUrl, ratingUrl]);
 
   const activeCategory = useMemo(() => {
     if (selectedCategories.length !== 1) return null;
@@ -544,16 +579,61 @@ const Products = () => {
     }
   }, [selectedTag, activeCategorySlug, categoryTags, categoryTagsLoading, setSearchParams]);
 
-  const headerTitle = activeCategory?.name ? String(activeCategory.name) : 'Shop';
-  const headerSubtitle = activeCategory?.description
-    ? String(activeCategory.description)
-    : 'Browse the full catalog — refine with filters or search by name.';
+  const headerTitle = activeBrand?.name
+    ? String(activeBrand.name)
+    : activeCategory?.name
+      ? String(activeCategory.name)
+      : 'Shop';
+  const headerSubtitle = activeBrand?.name
+    ? `Browse all ${activeBrand.name} products — add to cart with secure checkout.`
+    : activeCategory?.description
+      ? String(activeCategory.description)
+      : 'Browse the full catalog — refine with filters or search by name.';
+
+  const listingSeo = useMemo(() => {
+    const canonicalPath = getShopListingCanonicalPath(searchParams);
+    const shopListUrl = getCanonicalUrl(canonicalPath);
+    const catLabel = activeBrand?.name || activeCategory?.name || headerTitle;
+    const title = activeBrand?.name
+      ? buildPageTitle(`Buy ${catLabel} Online`, 'Best Prices PKR')
+      : activeCategory?.name
+        ? buildPageTitle(`Buy ${catLabel} Online`, 'Best Prices PKR')
+        : buildPageTitle('Shop Online Pakistan', 'Groceries & Lifestyle');
+    const description = activeBrand?.name
+      ? buildMetaDescription(
+          `Buy ${catLabel} online`,
+          'Compare prices and get fast delivery. Secure checkout.',
+          `Shop ${catLabel} products at Souvenir Handicraft Shop.`
+        )
+      : activeCategory?.name
+        ? buildMetaDescription(
+            `Buy ${catLabel} online`,
+            'Compare prices, filter by brand, and get fast delivery. Secure checkout.',
+            activeCategory?.description || `Shop ${catLabel} at Souvenir Handicraft Shop.`
+          )
+        : buildMetaDescription(
+            'Online shopping Pakistan',
+            'Browse groceries, homecare, fashion, and electronics with secure payment.',
+            'Souvenir Handicraft Shop — curated products delivered across Pakistan.'
+          );
+    return { shopListUrl, title, description };
+  }, [searchParams, activeBrand, activeCategory, headerTitle]);
 
   const { listingCanonicalUrl, listingBreadcrumbJsonLd } = useMemo(() => {
-    const sp = searchParams.toString();
-    const shopListUrl = sp
-      ? getCanonicalUrl('/shop', { search: `?${sp}` })
-      : getCanonicalUrl('/shop');
+    const shopListUrl = listingSeo.shopListUrl;
+    if (selectedBrandSlug) {
+      const name =
+        activeBrand?.name ||
+        selectedBrandSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+      return {
+        listingCanonicalUrl: shopListUrl,
+        listingBreadcrumbJsonLd: buildBreadcrumbListSchema([
+          { name: 'Home', path: '/' },
+          { name: 'Brands', path: '/brands' },
+          { name, url: shopListUrl }
+        ])
+      };
+    }
     if (selectedCategories.length === 1) {
       const slug = selectedCategories[0];
       const cat = categories.find(
@@ -580,19 +660,34 @@ const Products = () => {
         { name: 'Shop', url: shopListUrl }
       ])
     };
-  }, [searchParams, selectedCategories, categories]);
+  }, [searchParams, selectedBrandSlug, activeBrand, selectedCategories, categories, listingSeo.shopListUrl]);
+
+  const listingJsonLd = useMemo(() => {
+    const schemas = [];
+    if (listingBreadcrumbJsonLd) schemas.push(listingBreadcrumbJsonLd);
+
+    if (activeCategorySlug) {
+      const seoContent = getCategorySeoContent(activeCategorySlug);
+      const faqSchema = buildFAQPageSchema(filterValidFaqs(seoContent?.faqs));
+      if (faqSchema) schemas.push(faqSchema);
+
+      const speakable = buildSpeakableSpecificationSchema(listingCanonicalUrl, [
+        '#category-seo-heading',
+        '#category-seo-summary'
+      ]);
+      if (speakable) schemas.push(speakable);
+    }
+
+    return schemas.length ? schemas : null;
+  }, [listingBreadcrumbJsonLd, activeCategorySlug, listingCanonicalUrl]);
 
   return (
     <>
       <SEO
-        title={activeCategory?.name ? `${headerTitle} – Shop` : 'Shop All Products'}
-        description={
-          activeCategory?.description
-            ? String(activeCategory.description)
-            : 'Shop all products at Souvenir Handicraft Shop—filter by category, price, rating, and availability. Secure checkout, fast delivery, and curated quality.'
-        }
+        title={listingSeo.title}
+        description={listingSeo.description}
         canonicalUrl={listingCanonicalUrl}
-        schema={listingBreadcrumbJsonLd}
+        schema={listingJsonLd}
       />
       <header className="page-header">
         <div className="container">
@@ -602,7 +697,11 @@ const Products = () => {
             <li>
               <Link to="/">Home</Link>
             </li>
-            {selectedCategories.length === 1 ? (
+            {selectedBrandSlug ? (
+              <li>
+                <Link to="/brands">Brands</Link>
+              </li>
+            ) : selectedCategories.length === 1 ? (
               <li>
                 <Link to="/shop">Shop</Link>
               </li>
@@ -658,6 +757,7 @@ const Products = () => {
                 <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden />
                 Filters
                 {selectedCategories.length > 0 ||
+                selectedBrandSlug ||
                 minPriceUrl ||
                 maxPriceUrl ||
                 ratingUrl ||
@@ -698,6 +798,44 @@ const Products = () => {
             ) : null}
 
             <div className="shop-main">
+              {activeBrand ? (
+                <div className="shop-brand-bar" aria-label="Active brand filter">
+                  <div className="shop-brand-bar__identity">
+                    {activeBrand.imageUrl ? (
+                      <img
+                        className="shop-brand-bar__logo"
+                        src={activeBrand.imageUrl}
+                        alt=""
+                        width={48}
+                        height={48}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : null}
+                    <div>
+                      <p className="shop-brand-bar__label">Brand</p>
+                      <p className="shop-brand-bar__name">{activeBrand.name}</p>
+                    </div>
+                  </div>
+                  <div className="shop-brand-bar__actions">
+                    <Link to="/brands" className="btn btn-outline btn-sm">
+                      All brands
+                    </Link>
+                    <button
+                      type="button"
+                      className="shop-brand-bar__clear"
+                      onClick={() =>
+                        updateParams((next) => {
+                          next.delete('brand');
+                          next.set('page', '1');
+                        })
+                      }
+                    >
+                      Clear filter
+                    </button>
+                  </div>
+                </div>
+              ) : null}
           {fetchError && (
             <div className="api-error-banner" role="alert">
                   <p>
@@ -750,8 +888,10 @@ const Products = () => {
 
               <div className="shop-toolbar shop-toolbar--Souvenir Handicraft">
                 <p className="results-count" aria-live="polite">
-                  {loading ? (
-                    <span className="results-count__label">Loading results…</span>
+                  {loading || searchPending ? (
+                    <span className="results-count__label">
+                      {searchPending && !loading ? 'Searching…' : 'Loading results…'}
+                    </span>
                   ) : (
                     <>
                       <span className="results-count__num">{totalCount}</span>
@@ -811,7 +951,23 @@ const Products = () => {
                 <p className="empty-products-hint empty-products-hint--muted">Fix the connection and retry.</p>
               ) : items.length === 0 ? (
                 <div className="shop-empty-state" role="status">
-                  {searchUrl ? (
+                  {activeBrand ? (
+                    <>
+                      <p className="shop-empty-state__title">No products found for {activeBrand.name}</p>
+                      <p className="shop-empty-state__sub">
+                        This brand may not have matching items in our catalog yet. Browse all products or pick another
+                        brand.
+                      </p>
+                      <div className="shop-empty-suggestions">
+                        <Link to="/brands" className="btn btn-outline btn-sm">
+                          All brands
+                        </Link>
+                        <Link to="/shop" className="btn btn-primary btn-sm">
+                          Browse all products
+                        </Link>
+                      </div>
+                    </>
+                  ) : searchUrl ? (
                     <>
                       <p className="shop-empty-state__title">No products found for &ldquo;{searchUrl}&rdquo;</p>
                       <p className="shop-empty-state__sub">

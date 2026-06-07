@@ -5,8 +5,25 @@ import toast from 'react-hot-toast';
 import { adminAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { formatPKR } from '../../utils/currency';
+import { resolvePaymentProof, isBankTransferOrder } from '../../utils/orderPaymentProof';
 
 const LIMIT = 20;
+
+function paymentSummary(order) {
+  const method = order.paymentMethod || '—';
+  const paid = order.isPaid ? 'Paid' : 'Unpaid';
+  if (isBankTransferOrder(order)) {
+    const proof = resolvePaymentProof(order);
+    const proofLabel = proof.transactionId
+      ? `Txn ${proof.transactionId}`
+      : proof.imageUrl
+        ? 'Screenshot'
+        : 'No proof';
+    return `${method} · ${paid} · ${proofLabel}`;
+  }
+  return `${method} · ${paid}`;
+}
 
 const STATUS_TABS = [
   { value: '', label: 'All' },
@@ -166,6 +183,9 @@ export default function AdminOrders({ basePath = '/admin' }) {
               <tr>
                 <th>Order ID</th>
                 <th>Customer</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
                 <th>Items</th>
               </tr>
             </thead>
@@ -195,6 +215,15 @@ export default function AdminOrders({ basePath = '/admin' }) {
                           <span className="admin-orders__customer-email">{email}</span>
                         ) : null}
                       </div>
+                    </td>
+                    <td>{formatPKR(Number(o.totalPrice) || 0)}</td>
+                    <td>
+                      <span className="admin-orders__payment">{paymentSummary(o)}</span>
+                    </td>
+                    <td>
+                      <span className={`admin-order-detail__status admin-order-detail__status--${o.status || 'pending'}`}>
+                        {o.status || 'pending'}
+                      </span>
                     </td>
                     <td>
                       <span

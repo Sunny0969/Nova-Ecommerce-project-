@@ -51,11 +51,13 @@ export default function HomePopularBrands() {
     <section className="section home-popular-brands" aria-label="Popular brands">
       <div className="container">
         <div className="home-popular-brands__header">
-          <div className="home-popular-brands__title-row">
+          <div className="home-popular-brands__title-wrap">
             <h2 className="home-popular-brands__title">Popular Brands</h2>
-            <Link to="/brands" className="home-popular-brands__view-more">
-              View More
-            </Link>
+            {!loading && !error && brands.length > 0 ? (
+              <Link to="/brands" className="home-popular-brands__view-more">
+                View More
+              </Link>
+            ) : null}
           </div>
           <div className="home-popular-brands__nav" aria-hidden={loading || brands.length < 5}>
             <button

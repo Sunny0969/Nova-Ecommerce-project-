@@ -12,7 +12,7 @@ export default function AdminStoreSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    freeShippingMin: 50,
+    freeShippingMin: 2026,
     shippingStandard: 4.99,
     shippingExpress: 5.99,
     shippingNextDay: 9.99,

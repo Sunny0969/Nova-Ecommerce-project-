@@ -10,6 +10,7 @@ import {
   defaultOgLocale,
   defaultTitle
 } from '../utils/seo';
+import { truncateMetaDescription, truncateTitle } from '../utils/pageSeo';
 
 /**
  * Per-route meta + Open Graph + Twitter; always outputs canonical and robots.
@@ -38,14 +39,19 @@ export default function SEO({ title, description, canonicalUrl, ogImage, ogType,
   }, [canonicalUrl, pathname]);
 
   const fullTitle = useMemo(() => {
-    if (title == null || String(title).trim() === '') return defaultTitle;
-    return formatPageTitle(String(title).trim());
+    if (title == null || String(title).trim() === '') return truncateTitle(defaultTitle);
+    const raw = String(title).trim();
+    if (raw.includes('|') || raw.includes('—')) return truncateTitle(raw);
+    return truncateTitle(formatPageTitle(raw));
   }, [title]);
 
-  const desc =
-    description != null && String(description).trim() !== ''
-      ? String(description).trim()
-      : defaultDescription;
+  const desc = useMemo(() => {
+    const raw =
+      description != null && String(description).trim() !== ''
+        ? String(description).trim()
+        : defaultDescription;
+    return truncateMetaDescription(raw);
+  }, [description]);
   const img = ogImage != null && String(ogImage).trim() !== '' ? String(ogImage).trim() : getDefaultOgImageUrl();
   const type = ogType != null && String(ogType).trim() !== '' ? String(ogType).trim() : 'website';
   const robots = noIndex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1';
