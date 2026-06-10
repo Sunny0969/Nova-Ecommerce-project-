@@ -70,6 +70,18 @@ export const AuthProvider = ({ children }) => {
     syncGlobalAxiosAuth(token);
   }, [token]);
 
+  useEffect(() => {
+    const onSessionExpired = () => {
+      clearLegacyStaffStorage();
+      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      setUser(null);
+      syncGlobalAxiosAuth(null);
+    };
+    window.addEventListener('nova-auth-expired', onSessionExpired);
+    return () => window.removeEventListener('nova-auth-expired', onSessionExpired);
+  }, []);
+
   const checkAuth = useCallback(async () => {
     const stored = localStorage.getItem(TOKEN_KEY);
     setToken(stored);
@@ -167,14 +179,15 @@ export const AuthProvider = ({ children }) => {
         setToken(newToken);
       }
       setUser(u || null);
-      return { success: true };
+      return { success: true, code: data.code };
     } catch (error) {
       return {
         success: false,
         error:
           error.response?.data?.message ||
           error.response?.data?.error ||
-          'Registration failed'
+          'Registration failed',
+        code: error.response?.data?.code
       };
     }
   }, []);

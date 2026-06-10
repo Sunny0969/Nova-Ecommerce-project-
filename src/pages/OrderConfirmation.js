@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import SEO from '../components/SEO';
 import { ordersAPI } from 'api';
 import { apiMessage } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
 import { EASYPAISA_NUMBER } from '../config/payments';
@@ -27,6 +28,10 @@ function deliveryMessage(deliveryOption) {
 
 export default function OrderConfirmation() {
   const { id } = useParams();
+  const location = useLocation();
+  const guestOrder = location.state?.guestOrder;
+  const { isAuthenticated, canAccessCustomerApp } = useAuth();
+  const showAccountOrders = Boolean(isAuthenticated && canAccessCustomerApp);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,6 +44,14 @@ export default function OrderConfirmation() {
         setLoading(false);
         return;
       }
+
+      if (guestOrder && String(guestOrder._id) === String(id)) {
+        setOrder(guestOrder);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -53,8 +66,13 @@ export default function OrderConfirmation() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(apiMessage(e, 'Could not load order'));
-          setOrder(null);
+          if (guestOrder) {
+            setOrder(guestOrder);
+            setError(null);
+          } else {
+            setError(apiMessage(e, 'Could not load order'));
+            setOrder(null);
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -64,25 +82,25 @@ export default function OrderConfirmation() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, guestOrder]);
 
   if (loading) {
     return (
-      <main className="section container order-confirm order-confirm--loading" id="main-content">
+      <div className="section container order-confirm order-confirm--loading">
         <SEO
           noIndex
           title="Order confirmation"
-          description="Loading your Souvenir Handicraft Shop order confirmation."
+          description="Loading your Bazaar order confirmation."
           canonicalUrl={id ? `/order-confirmation/${id}` : '/order-confirmation'}
         />
         <LoadingSpinner size="lg" label="Loading order" />
-      </main>
+      </div>
     );
   }
 
   if (error || !order) {
     return (
-      <main className="section container text-center order-confirm" id="main-content">
+      <div className="section container text-center order-confirm">
         <SEO
           noIndex
           title="Order"
@@ -95,11 +113,13 @@ export default function OrderConfirmation() {
           <Link to="/shop" className="btn btn-primary">
             Continue Shopping
           </Link>
-          <Link to="/account/orders" className="btn btn-outline">
-            View My Orders
-          </Link>
+          {showAccountOrders ? (
+            <Link to="/account/orders" className="btn btn-outline">
+              View My Orders
+            </Link>
+          ) : null}
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -114,13 +134,20 @@ export default function OrderConfirmation() {
   const totalLabel = isPaid ? 'Total paid' : 'Order total';
   const proof = resolvePaymentProof(order);
   const proofSubmitted = proof.hasProof;
+  const guestEmail =
+    order?.shippingAddress?.email ||
+    order?.paymentResult?.email_address ||
+    '';
+  const guestRegisterUrl = guestEmail
+    ? `/login?activate=1&email=${encodeURIComponent(String(guestEmail).trim())}&next=${encodeURIComponent('/account/orders')}`
+    : '/login?activate=1&next=%2Faccount%2Forders';
 
   return (
-    <main className="section container order-confirm" id="main-content">
+    <div className="section container order-confirm">
       <SEO
         noIndex
         title={`Order #${orderNo} confirmed`}
-        description={`Your Souvenir Handicraft Shop order #${orderNo} is confirmed. Thank you for your purchase.`}
+        description={`Your Bazaar order #${orderNo} is confirmed. Thank you for your purchase.`}
         canonicalUrl={`/order-confirmation/${id}`}
       />
 
@@ -191,10 +218,16 @@ export default function OrderConfirmation() {
         <Link to="/shop" className="btn btn-primary">
           Continue Shopping
         </Link>
-        <Link to="/account/orders" className="btn btn-outline">
-          View My Orders
-        </Link>
+        {showAccountOrders ? (
+          <Link to="/account/orders" className="btn btn-outline">
+            View My Orders
+          </Link>
+        ) : (
+          <Link to={guestRegisterUrl} className="btn btn-outline">
+            Track orders — set password
+          </Link>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

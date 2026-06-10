@@ -17,8 +17,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { getGrantedStaffSections } from '../utils/staffPermissions';
 import SmartSearchBar from './SmartSearchBar';
 import NavDeliveryLocation from './NavDeliveryLocation';
-
-import logo from '../assets/images/logo.png';
+import { businessDisplayName } from '../utils/businessContact';
 
 function getInitials(name) {
   if (!name || typeof name !== 'string') return '?';
@@ -44,7 +43,16 @@ export default function Navbar() {
 
   const searchWrapRef = useRef(null);
   const searchInputRef = useRef(null);
-  const accountRef = useRef(null);
+  const accountDesktopRef = useRef(null);
+  const accountMobileRef = useRef(null);
+
+  const isInsideAccountMenu = (target) => {
+    if (!(target instanceof Node)) return false;
+    return (
+      accountDesktopRef.current?.contains(target) ||
+      accountMobileRef.current?.contains(target)
+    );
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -88,7 +96,7 @@ export default function Navbar() {
   useEffect(() => {
     if (!accountOpen) return;
     const onDoc = (e) => {
-      if (accountRef.current && !accountRef.current.contains(e.target)) {
+      if (!isInsideAccountMenu(e.target)) {
         setAccountOpen(false);
       }
     };
@@ -119,7 +127,9 @@ export default function Navbar() {
   const isHomeActive = location.pathname === '/' || location.pathname === '/home';
   const isActive = (path) => location.pathname === path;
   const isShopActive =
-    location.pathname === '/shop' || location.pathname.startsWith('/shop/');
+    location.pathname === '/shop' ||
+    location.pathname.startsWith('/shop/') ||
+    location.pathname.startsWith('/brand/');
   const isBlogActive = location.pathname.startsWith('/blog');
   const staffSections = isStaff ? getGrantedStaffSections(permissionMap) : [];
 
@@ -200,15 +210,16 @@ export default function Navbar() {
     </>
   );
 
-  const renderProfileControl = (onNavigate) => {
+  const renderProfileControl = (onNavigate, wrapRef, menuId) => {
     if (isAuthenticated) {
       return (
-        <div className="nav-account-wrap" ref={accountRef}>
+        <div className="nav-account-wrap" ref={wrapRef}>
           <button
             type="button"
             className="nav-avatar-btn"
             aria-expanded={accountOpen}
-            aria-haspopup="true"
+            aria-haspopup="menu"
+            aria-controls={menuId}
             aria-label="Account menu"
             onClick={() => setAccountOpen((o) => !o)}
           >
@@ -218,21 +229,42 @@ export default function Navbar() {
             <ChevronDown size={16} className={`nav-avatar-chevron ${accountOpen ? 'open' : ''}`} />
           </button>
           {accountOpen && (
-            <ul className="nav-dropdown" role="menu">
+            <ul id={menuId} className="nav-dropdown" role="menu">
               {canAccessCustomerApp ? (
                 <>
                   <li>
-                    <Link to="/account" role="menuitem" onClick={() => setAccountOpen(false)}>
+                    <Link
+                      to="/account"
+                      role="menuitem"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        onNavigate?.();
+                      }}
+                    >
                       <User size={16} /> My Account
                     </Link>
                   </li>
                   <li>
-                    <Link to="/account/orders" role="menuitem" onClick={() => setAccountOpen(false)}>
+                    <Link
+                      to="/account/orders"
+                      role="menuitem"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        onNavigate?.();
+                      }}
+                    >
                       <Package size={16} /> My Orders
                     </Link>
                   </li>
                   <li>
-                    <Link to="/account/reviews" role="menuitem" onClick={() => setAccountOpen(false)}>
+                    <Link
+                      to="/account/reviews"
+                      role="menuitem"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        onNavigate?.();
+                      }}
+                    >
                       <Star size={16} /> My Reviews
                     </Link>
                   </li>
@@ -265,13 +297,13 @@ export default function Navbar() {
     <>
       <nav
         className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}
-        role="navigation"
         aria-label="Main navigation"
       >
         <div className="nav-inner">
           <div className="nav-brand">
-            <Link to="/" className="nav-logo" aria-label="Souvenir Handicraft Home" onClick={() => setDrawerOpen(false)}>
-              <img src={logo} alt="Souvenir Handicraft" className="nav-logo__img" />
+            <Link to="/" className="nav-logo" aria-label="Bazaar Home" onClick={() => setDrawerOpen(false)}>
+              {businessDisplayName}
+              <span className="nav-logo__dot">.</span>
             </Link>
             <NavDeliveryLocation className="nav-location--desktop" />
             <div className="nav-main nav-main--desktop">
@@ -306,7 +338,7 @@ export default function Navbar() {
 
           <div className="nav-tools">
             <div className="nav-tools__icons">{renderIconButtons(() => {})}</div>
-            {renderProfileControl(() => {})}
+            {renderProfileControl(() => {}, accountDesktopRef, 'nav-account-menu-desktop')}
 
             <button
               type="button"
@@ -321,18 +353,24 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <div
+      <button
+        type="button"
         className={`nav-drawer-backdrop ${drawerOpen ? 'is-open' : ''}`}
         aria-hidden={!drawerOpen}
+        aria-label="Close menu"
+        tabIndex={drawerOpen ? 0 : -1}
         onClick={() => setDrawerOpen(false)}
       />
-      <aside
+      <nav
         className={`nav-drawer ${drawerOpen ? 'is-open' : ''}`}
         aria-hidden={!drawerOpen}
-        aria-label="Mobile menu"
+        aria-label="Mobile navigation"
       >
         <div className="nav-drawer__head">
-          <img src={logo} alt="Souvenir Handicraft" className="nav-drawer__logo" />
+          <Link to="/" className="nav-logo nav-drawer__brand" onClick={() => setDrawerOpen(false)}>
+            {businessDisplayName}
+            <span className="nav-logo__dot">.</span>
+          </Link>
           <button
             type="button"
             className="nav-drawer__close"
@@ -351,7 +389,7 @@ export default function Navbar() {
         </div>
         <div className="nav-drawer__icons">
           {renderIconButtons(() => setDrawerOpen(false))}
-          {renderProfileControl(() => setDrawerOpen(false))}
+          {renderProfileControl(() => setDrawerOpen(false), accountMobileRef, 'nav-account-menu-mobile')}
         </div>
         {isAuthenticated ? (
           <div className="nav-drawer__auth">
@@ -360,7 +398,7 @@ export default function Navbar() {
             </button>
           </div>
         ) : null}
-      </aside>
+      </nav>
     </>
   );
 }

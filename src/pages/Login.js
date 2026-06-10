@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
+import PasswordInput from '../components/PasswordInput';
 import { authLoginBgUrl } from '../utils/seo';
 
 function safeInternalPath(raw) {
@@ -29,10 +30,23 @@ const Login = ({ defaultTab = 'login' }) => {
   const [errors, setErrors] = useState({});
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const nextPath = safeInternalPath(searchParams.get('next'));
-  const wantsAdmin = Boolean(nextPath?.startsWith('/admin'));
+  const nextFromState = safeInternalPath(location.state?.from?.pathname);
+  const nextPath = nextFromState || safeInternalPath(searchParams.get('next'));
   const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : '';
+  const guestActivate = searchParams.get('activate') === '1';
+
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (!emailParam) return;
+    const email = emailParam.trim();
+    setLoginData((prev) => ({ ...prev, email }));
+    setRegisterData((prev) => ({ ...prev, email }));
+    if (guestActivate) {
+      setActiveTab('register');
+    }
+  }, [searchParams, guestActivate]);
 
   const validateLogin = () => {
     const newErrors = {};
@@ -65,8 +79,10 @@ const Login = ({ defaultTab = 'login' }) => {
       const u = result.user;
       const roles = Array.isArray(u?.roles) ? u.roles : [];
       if (roles.includes('admin')) {
-        toast.success('Welcome — redirecting to admin');
-        navigate(nextPath && nextPath.startsWith('/admin') ? nextPath : '/admin/dashboard');
+        toast.success('Welcome back');
+        const adminDest =
+          nextPath && nextPath.startsWith('/admin') ? nextPath : '/admin/dashboard';
+        navigate(adminDest, { replace: true });
         return;
       }
 
@@ -82,11 +98,20 @@ const Login = ({ defaultTab = 'login' }) => {
         return;
       }
 
-      toast.success('Welcome back to Souvenir Handicraft Shop');
+      toast.success('Welcome back to Bazaar');
       navigate(nextPath || '/home');
     } else {
       if (result.code === 'USER_NOT_FOUND' || result.status === 404) {
         toast.error(result.error || 'Please register first.');
+        setRegisterData((r) => ({ ...r, email: loginData.email.trim() }));
+        setActiveTab('register');
+        return;
+      }
+      if (result.code === 'GUEST_SET_PASSWORD') {
+        toast(result.error || 'Set a password on the Register tab to access your orders.', {
+          icon: 'ℹ️',
+          duration: 6000
+        });
         setRegisterData((r) => ({ ...r, email: loginData.email.trim() }));
         setActiveTab('register');
         return;
@@ -101,8 +126,23 @@ const Login = ({ defaultTab = 'login' }) => {
 
     const result = await register(registerData);
     if (result.success) {
-      toast.success('Account created — welcome toSouvenir Handicraft Shop');
-      navigate(nextPath && !nextPath.startsWith('/admin') ? nextPath : '/home');
+      const activated = result.code === 'GUEST_ACCOUNT_ACTIVATED';
+      toast.success(
+        activated
+          ? 'Account ready — your orders are in My Orders'
+          : 'Account created — welcome to Bazaar'
+      );
+      const dest =
+        nextPath && !nextPath.startsWith('/admin')
+          ? nextPath
+          : activated
+            ? '/account/orders'
+            : '/home';
+      navigate(dest);
+    } else if (result.code === 'EMAIL_EXISTS') {
+      toast.error(result.error || 'This email already has an account. Sign in instead.');
+      setLoginData((l) => ({ ...l, email: registerData.email.trim() }));
+      setActiveTab('login');
     } else {
       toast.error(result.error || 'Registration failed');
     }
@@ -115,25 +155,27 @@ const Login = ({ defaultTab = 'login' }) => {
         title={activeTab === 'register' ? 'Create account' : 'Sign in'}
         description={
           activeTab === 'register'
-            ? 'Create a Souvenir Handicraft Shop account to track orders, save addresses, and checkout faster.'
-            : 'Sign in to your Souvenir Handicraft account to manage orders, profile, and wishlist.'
+            ? 'Create a Bazaar account to track orders, save addresses, and checkout faster.'
+            : 'Sign in to your Bazaar account to manage orders, profile, and wishlist.'
         }
       />
-      <main
+      <div
         className="auth-page auth-page--photo"
-        id="main-content"
         style={{ '--auth-page-bg-image': `url("${authLoginBgUrl}")` }}
       >
         <div className="auth-page__shell">
           <div className="auth-page__panel">
             <div className="auth-page__brand">
               <Link to="/home" className="nav-logo" style={{ fontSize: '2rem', display: 'inline-block', marginBottom: '0.5rem' }}>
-               Souvenir Handicraft<span>.</span>
+               Bazaar<span>.</span>
               </Link>
               <p className="auth-page__tagline">Your premium shopping destination</p>
             </div>
 
             <div className="auth-card auth-card--glass">
+          <h1 className="auth-page__heading">
+            {activeTab === 'register' ? 'Create your Bazaar account' : 'Sign in to Bazaar'}
+          </h1>
           <div className="auth-tabs" role="tablist">
             <button
               className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`}
@@ -153,24 +195,6 @@ const Login = ({ defaultTab = 'login' }) => {
             <div className="auth-panel active">
               <h2 style={{ marginBottom: '0.35rem', fontSize: '1.5rem' }}>Welcome back</h2>
               <p style={{ marginBottom: '1.75rem', fontSize: '0.875rem' }}>Sign in to access your account</p>
-              {wantsAdmin && (
-                <p
-                  style={{
-                    marginBottom: '1rem',
-                    padding: '0.65rem 0.75rem',
-                    fontSize: '0.8rem',
-                    lineHeight: 1.45,
-                    background: 'var(--cream)',
-                    border: '1px solid var(--gray-light)',
-                    borderRadius: '8px',
-                    color: 'var(--navy)'
-                  }}
-                >
-                  <strong>Admin:</strong> use <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> from{' '}
-                  <code>backend/.env</code>. The API creates or updates that user as <code>role: admin</code> on each
-                  server start. Change those values for production.
-                </p>
-              )}
 
               <form onSubmit={handleLogin}>
                 <div className="form-group">
@@ -193,13 +217,12 @@ const Login = ({ defaultTab = 'login' }) => {
                   <label className="form-label" htmlFor="loginPassword">
                     Password <span className="required">*</span>
                   </label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     id="loginPassword"
-                    className="form-control"
                     value={loginData.password}
                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                     placeholder="Enter your password"
+                    autoComplete="current-password"
                     required
                   />
                   {errors.password && <div className="form-error">{errors.password}</div>}
@@ -231,7 +254,14 @@ const Login = ({ defaultTab = 'login' }) => {
           {activeTab === 'register' && (
             <div className="auth-panel active">
               <h2 style={{ marginBottom: '0.35rem', fontSize: '1.5rem' }}>Create your account</h2>
-              <p style={{ marginBottom: '1.75rem', fontSize: '0.875rem' }}>Join thousands of happy shoppers</p>
+              {guestActivate ? (
+                <p className="auth-guest-note" style={{ marginBottom: '1rem', fontSize: '0.875rem' }}>
+                  Use the same email from checkout and set a password to see your orders in{' '}
+                  <strong>My Orders</strong>.
+                </p>
+              ) : (
+                <p style={{ marginBottom: '1.75rem', fontSize: '0.875rem' }}>Join thousands of happy shoppers</p>
+              )}
 
               <form onSubmit={handleRegister}>
                 <div className="form-row">
@@ -303,13 +333,12 @@ const Login = ({ defaultTab = 'login' }) => {
                   <label className="form-label" htmlFor="password">
                     Password <span className="required">*</span>
                   </label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     id="password"
-                    className="form-control"
                     value={registerData.password}
                     onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                     placeholder="Create a strong password"
+                    autoComplete="new-password"
                     required
                   />
                   {errors.password && <div className="form-error">{errors.password}</div>}
@@ -319,13 +348,12 @@ const Login = ({ defaultTab = 'login' }) => {
                   <label className="form-label" htmlFor="confirmPassword">
                     Confirm Password <span className="required">*</span>
                   </label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     id="confirmPassword"
-                    className="form-control"
                     value={registerData.confirmPassword}
                     onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                     placeholder="Repeat your password"
+                    autoComplete="new-password"
                     required
                   />
                   {errors.confirmPassword && <div className="form-error">{errors.confirmPassword}</div>}
@@ -347,7 +375,7 @@ const Login = ({ defaultTab = 'login' }) => {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 };

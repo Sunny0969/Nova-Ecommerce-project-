@@ -1,11 +1,16 @@
 User-agent: *
 Allow: /
-Disallow: /admin
+
 Disallow: /staff
+Disallow: /staff/
 Disallow: /account
-Disallow: /cart
+Disallow: /account/
+Disallow: /orders
 Disallow: /checkout
+Disallow: /cart
 Disallow: /login
 Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
 
-Sitemap: https://souvenirhandicraft.com/sitemap.xml
+Sitemap: https://bazaar-pk.com/sitemap.xml
