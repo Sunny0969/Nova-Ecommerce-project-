@@ -18,8 +18,13 @@ import SEO from '../components/SEO';
 import { getCanonicalUrl } from '../utils/seo';
 import { buildBlogDetailSchemas } from '../utils/jsonLd';
 import BlogCard from '../components/BlogCard';
+import OptimizedImage from '../components/OptimizedImage';
+import { buildBlogImageAlt, buildCategoryImageAlt } from '../utils/imageAlt';
+import { optimizeImageUrl } from '../utils/optimizedImageUrl';
 import toast from 'react-hot-toast';
 import { blogAPI } from '../api';
+import InternalLinksBlock from '../components/InternalLinksBlock';
+import { getBlogRelatedLinks } from '../data/seoInternalLinks';
 
 export default function BlogDetailsPage() {
   const { slug } = useParams();
@@ -68,6 +73,11 @@ export default function BlogDetailsPage() {
     // (UI only needs a few related cards.)
     return [];
   }, [blog]);
+
+  const blogRelatedLinks = useMemo(
+    () => (blog ? getBlogRelatedLinks(blog) : []),
+    [blog]
+  );
 
   const articleSections = useMemo(() => {
     if (!blog) return [];
@@ -165,7 +175,7 @@ export default function BlogDetailsPage() {
 
   useEffect(() => {
     if (blog) {
-      document.title = blog.title ? `${blog.title} | Souvenir Handicraft` : 'Souvenir Handicraft Blog';
+      document.title = blog.title ? `${blog.title} | Bazaar` : 'Bazaar Blog';
     }
   }, [blog]);
 
@@ -237,7 +247,7 @@ export default function BlogDetailsPage() {
                     <User size={20} />
                   </div>
                   <div className="blog-detail-meta__info">
-                    <div className="blog-detail-meta__name">Souvenir Handicraft Editorial Team</div>
+                    <div className="blog-detail-meta__name">Bazaar Editorial Team</div>
                     <div className="blog-detail-meta__details">
                       <span className="blog-detail-meta__date">
                         <Calendar size={14} />
@@ -292,7 +302,14 @@ export default function BlogDetailsPage() {
         <section className="blog-detail-featured">
           <div className="container">
             <div className="blog-detail-featured__image">
-              <img src={blog.featuredImage} alt={blog.imageAlt || blog.title} loading="eager" />
+              <OptimizedImage
+                src={optimizeImageUrl(blog.featuredImage, { width: 1200, quality: 85 })}
+                alt={buildBlogImageAlt(blog)}
+                width={1200}
+                height={675}
+                priority
+                optimize={false}
+              />
             </div>
           </div>
         </section>
@@ -344,7 +361,13 @@ export default function BlogDetailsPage() {
 
                 <div className="blog-detail-shop-card">
                   <div className="blog-detail-shop-card__image">
-                    <img src={blog.featuredImage} alt={blog.destinationLabel} loading="lazy" />
+                    <OptimizedImage
+                      src={optimizeImageUrl(blog.featuredImage, { width: 600, quality: 80 })}
+                      alt={`Shop ${blog.destinationLabel} — ${blog.title}`}
+                      width={600}
+                      height={400}
+                      optimize={false}
+                    />
                   </div>
                   <div className="blog-detail-shop-card__content">
                     <div className="blog-detail-shop-card__tag">{blog.tag}</div>
@@ -352,10 +375,12 @@ export default function BlogDetailsPage() {
                     <p className="blog-detail-shop-card__description">
                       Discover our curated collection of products perfect for this guide
                     </p>
-                    <a href={blog.destinationUrl} className="blog-detail-shop-card__btn">
-                      View Collection
+                    <Link to={blog.destinationUrl} className="blog-detail-shop-card__btn">
+                      {blog.destinationLabel
+                        ? `Shop ${blog.destinationLabel} online at Bazaar`
+                        : 'Shop related products online'}
                       <ChevronRight size={18} />
-                    </a>
+                    </Link>
                   </div>
                 </div>
 
@@ -381,6 +406,11 @@ export default function BlogDetailsPage() {
                     ))}
                   </div>
                 </div>
+
+                <InternalLinksBlock
+                  title="Related shopping guides & categories"
+                  links={blogRelatedLinks}
+                />
               </article>
 
               <aside className="blog-detail-sidebar">
@@ -420,7 +450,13 @@ export default function BlogDetailsPage() {
                       },
                     ].map((cat) => (
                       <a key={cat.name} href={cat.url} className="sidebar-category-card">
-                        <img src={cat.image} alt={cat.name} loading="lazy" />
+                        <OptimizedImage
+                          src={optimizeImageUrl(cat.image, { width: 400, quality: 75 })}
+                          alt={buildCategoryImageAlt(cat.name)}
+                          width={400}
+                          height={300}
+                          optimize={false}
+                        />
                         <div className="sidebar-category-card__overlay">
                           <span className="sidebar-category-card__name">{cat.name}</span>
                         </div>
@@ -442,11 +478,17 @@ export default function BlogDetailsPage() {
                           className="sidebar-blog-item"
                         >
                           <div className="sidebar-blog-item__image">
-                            <img src={latestBlog.featuredImage} alt={latestBlog.title} loading="lazy" />
+                            <OptimizedImage
+                              src={optimizeImageUrl(latestBlog.featuredImage, { width: 120, quality: 70 })}
+                              alt={buildBlogImageAlt(latestBlog)}
+                              width={120}
+                              height={90}
+                              optimize={false}
+                            />
                             {latestBlog.tag && <span className="sidebar-blog-item__tag">{latestBlog.tag}</span>}
                           </div>
                           <div className="sidebar-blog-item__content">
-                            <h4 className="sidebar-blog-item__title">{latestBlog.title}</h4>
+                            <p className="sidebar-blog-item__title">{latestBlog.title}</p>
                             <p className="sidebar-blog-item__meta">
                               <Calendar size={12} />
                               {new Date(latestBlog.dateISO).toLocaleDateString('en-US', {
@@ -470,10 +512,10 @@ export default function BlogDetailsPage() {
             <div className="container">
               <div className="blog-detail-related__header">
                 <h2 className="blog-detail-related__title">Related articles</h2>
-                <a href="/blog" className="blog-detail-related__view-all">
-                  View all
+                <Link to="/blog" className="blog-detail-related__view-all">
+                  Browse all shopping guides
                   <ChevronRight size={18} />
-                </a>
+                </Link>
               </div>
               <div className="blog-detail-related__grid">
                 {relatedBlogs.map((relatedBlog) => (
@@ -488,20 +530,21 @@ export default function BlogDetailsPage() {
           <div className="container">
             <div className="blog-detail-about__content">
               <div className="blog-detail-about__text">
-                <h2 className="blog-detail-about__title">About Souvenir Handicraft Shop</h2>
+                <h2 className="blog-detail-about__title">About Bazaar</h2>
                 <p className="blog-detail-about__description">
-                 Souvenir Handicraft Shop is your destination for curated products and expert guides across care, tech, home, fashion,
+                 Bazaar is your destination for curated products and expert guides across care, tech, home, fashion,
                   beauty, and sports.
                 </p>
-                <a href="/about" className="blog-detail-about__btn">
-                  Learn more
-                </a>
+                <Link to="/about-us" className="blog-detail-about__btn">
+                  About Bazaar online grocery Pakistan
+                </Link>
               </div>
               <div className="blog-detail-about__illustration">
-                <img
+                <OptimizedImage
                   src="https://images.unsplash.com/photo-1522204523234-8729aa6e3d5f?w=600&auto=format&fit=crop&q=80"
-                  alt="Shopping illustration"
-                  loading="lazy"
+                  alt="Online shopping at Bazaar — groceries and essentials"
+                  width={600}
+                  height={400}
                 />
               </div>
             </div>
@@ -510,33 +553,11 @@ export default function BlogDetailsPage() {
 
         <section className="blog-detail-next">
           <div className="container">
-            <h2 className="blog-detail-next__title">Where to Go Next</h2>
-            <div className="blog-detail-next__grid">
-              <a href="/shop?category=home" className="blog-detail-next__btn">Shoe Care</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Laundry Care</a>
-              <a href="/shop?category=electronics" className="blog-detail-next__btn">Device Care</a>
-              <a href="/shop?category=electronics" className="blog-detail-next__btn">Chargers</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Home Lighting</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Storage</a>
-              <a href="/shop?category=beauty" className="blog-detail-next__btn">Skincare</a>
-              <a href="/shop?category=beauty" className="blog-detail-next__btn">Hair Care</a>
-              <a href="/shop?category=sport" className="blog-detail-next__btn">Fitness</a>
-              <a href="/shop?category=sport" className="blog-detail-next__btn">Recovery</a>
-              <a href="/shop?category=fashion" className="blog-detail-next__btn">Style Guide</a>
-              <a href="/shop?category=fashion" className="blog-detail-next__btn">Seasonal</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Cleaning</a>
-              <a href="/shop?category=electronics" className="blog-detail-next__btn">Air Care</a>
-              <a href="/shop?category=electronics" className="blog-detail-next__btn">Desk Setup</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Kitchen</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Coffee Corner</a>
-              <a href="/shop?category=fashion" className="blog-detail-next__btn">Wardrobe</a>
-              <a href="/shop?category=beauty" className="blog-detail-next__btn">Glow Routine</a>
-              <a href="/shop?category=sport" className="blog-detail-next__btn">Essentials</a>
-              <a href="/shop?category=home" className="blog-detail-next__btn">Fresh Storage</a>
-              <a href="/shop?category=electronics" className="blog-detail-next__btn">Tech Tips</a>
-              <a href="/blog" className="blog-detail-next__btn">All Guides</a>
-              <a href="/shop" className="blog-detail-next__btn">Shop All</a>
-            </div>
+            <InternalLinksBlock
+              title="Where to shop next"
+              links={blogRelatedLinks}
+              variant="pills"
+            />
           </div>
         </section>
       </div>

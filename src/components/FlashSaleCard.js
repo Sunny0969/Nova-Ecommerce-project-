@@ -1,22 +1,26 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { productImageUrl } from '../lib/productImage';
+import { buildProductImageAlt } from '../utils/imageAlt';
 import { getProductSalePrices } from '../lib/productSale';
-import ProductImage from './ProductImage';
 import { formatPKR } from '../utils/currency';
+import ProductImage from './ProductImage';
+import { buildProductPath, getProductCategorySlug } from '../utils/urls';
 import ProductSaleRibbon from './ProductSaleRibbon';
+import { useProductPrefetch } from '../hooks/useProductPrefetch';
 
 export default function FlashSaleCard({ product, imagePriority = false }) {
+  const slug = product?.slug || product?.productId || '';
+  const prefetchHandlers = useProductPrefetch(slug);
   const sale = getProductSalePrices(product);
   if (!sale) return null;
-
-  const slug = product.slug || product.productId;
   const imageUrl = productImageUrl(product);
+  const productPath = buildProductPath(slug, getProductCategorySlug(product));
 
   const discountPct = sale.discountPercent > 0 ? sale.discountPercent : null;
 
   return (
-    <Link to={`/shop/${encodeURIComponent(slug || '')}`} className="flash-sale-card">
+    <Link to={productPath} className="flash-sale-card" {...prefetchHandlers}>
       <div className="flash-sale-card__image-wrap">
         {discountPct != null ? (
           <ProductSaleRibbon discountPercent={discountPct} />
@@ -25,7 +29,7 @@ export default function FlashSaleCard({ product, imagePriority = false }) {
           <ProductImage
             className="flash-sale-card__img"
             src={imageUrl}
-            alt={product.name}
+            alt={buildProductImageAlt(product)}
             priority={imagePriority}
           />
         ) : (

@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import { getSiteUrl } from '../utils/seo';
 import { buildOrganizationSchema, buildWebSiteSchema } from '../utils/jsonLd';
 
+const GSC_VERIFICATION = process.env.REACT_APP_GSC_VERIFICATION;
+
 /**
  * Site-wide Organization + WebSite JSON-LD (injected once in the app shell).
  */
@@ -17,5 +19,12 @@ export default function GlobalJsonLd() {
     ));
   }, []);
 
-  return <Helmet>{scripts}</Helmet>;
+  return (
+    <Helmet>
+      {GSC_VERIFICATION ? (
+        <meta name="google-site-verification" content={GSC_VERIFICATION} />
+      ) : null}
+      {scripts}
+    </Helmet>
+  );
 }

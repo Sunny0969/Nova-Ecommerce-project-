@@ -1,10 +1,11 @@
 import React from 'react';
 import { formatPKR } from '../utils/currency';
 import { Link } from 'react-router-dom';
-import { LazyLoadImage } from 'react-lazy-load-image-component';
-import 'react-lazy-load-image-component/src/effects/blur.css';
 import toast from 'react-hot-toast';
 import { productImageUrl } from '../lib/productImage';
+import { buildProductImageAlt } from '../utils/imageAlt';
+import ProductImage from './ProductImage';
+import { buildProductPath, getProductCategorySlug } from '../utils/urls';
 
 /**
  * @param {object} props
@@ -38,7 +39,13 @@ export default function CartItem({ line, animationDelay, onUpdateQuantity, onRem
     <article className="cart-item" style={animationDelay ? { animationDelay } : undefined}>
       <div className="cart-item-img">
         {img ? (
-          <LazyLoadImage src={img} alt={p.name || ''} className="cart-item-img__photo" effect="blur" />
+          <ProductImage
+            src={img}
+            alt={buildProductImageAlt(p)}
+            className="cart-item-img__photo"
+            width={120}
+            height={120}
+          />
         ) : (
           <span className="cart-item-img__emoji" aria-hidden>
             📦
@@ -46,7 +53,7 @@ export default function CartItem({ line, animationDelay, onUpdateQuantity, onRem
         )}
       </div>
       <div className="cart-item-info">
-        <Link to={`/shop/${p.slug || ''}`} className="cart-item-name-link">
+        <Link to={buildProductPath(p.slug || '', getProductCategorySlug(p))} className="cart-item-name-link">
           <h3 className="cart-item-name cart-item__name">{p.name}</h3>
         </Link>
         {p.cartVariantNote ? (

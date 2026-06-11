@@ -8,12 +8,14 @@ import {
   User,
   MapPin,
   Heart,
-  Star
+  Star,
+  Wallet
 } from 'lucide-react';
 
 const links = [
   { to: '/account', end: true, label: 'Dashboard', icon: LayoutDashboard },
   { to: '/account/orders', label: 'My Orders', icon: Package },
+  { to: '/account/wallet', label: 'Wallet', icon: Wallet },
   { to: '/account/profile', label: 'Profile', icon: User },
   { to: '/account/addresses', label: 'Addresses', icon: MapPin },
   { to: '/account/wishlist', label: 'Wishlist', icon: Heart },
@@ -31,14 +33,14 @@ export default function AccountLayout() {
       <SEO
         noIndex
         title={getAccountSeoTitle(pathname)}
-        description="Your Souvenir Handicraft account: orders, profile, addresses, wishlist, and reviews. Private area, not shown in public search results."
+        description="Your Bazaar account: orders, profile, addresses, wishlist, and reviews. Private area, not shown in public search results."
         canonicalUrl={pathname}
       />
       <header className="account-layout__header page-header">
         <div className="container">
           <h1 className="page-header__title">My account</h1>
           <p className="account-layout__subtitle">
-            Manage orders, profile, addresses, and more.
+            Manage orders, wallet, profile, addresses, and more.
           </p>
         </div>
       </header>

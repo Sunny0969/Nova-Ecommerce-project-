@@ -1,6 +1,6 @@
 /**
  * Category bottom SEO blocks (intro, why shop, FAQ, price list).
- * Bazaar references removed; shop name uses Rozana.
+ * Shop name uses Bazaar.
  */
 export const CATEGORY_SEO_CONTENT = {
   "cleaning-homecare": {
@@ -12,7 +12,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Enjoy the convenience of next day delivery, bringing essential cleaning products straight to your door. Trusted brands like Spontex, Dettol, Lemon Max, Mortein, Kingtox, Super Hockey, and more ensure that your home is always clean, fresh, and hygienic.",
       "High-quality cleaning products ensure thorough hygiene, remove tough stains, eliminate odors, and help prevent the spread of bacteria and viruses. Using the right solutions for specific areas (like kitchens, bathrooms, or floors) also help protect surfaces and extend the life of your home environment. Home care products such as air fresheners, pest control sprays, and fabric refreshers contribute to a healthier, more comfortable living space. They reduce allergens, repel insects, and keep your home smelling clean and inviting, all while saving you time and effort with every use."
     ],
-    "whyTitle": "Why Shop with Rozana for Cleaning & Homecare?",
+    "whyTitle": "Why Shop with Bazaar for Cleaning & Homecare?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -86,7 +86,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Cleaning Homecare online in Pakistan?",
-        "answer": "You can buy Cleaning Homecare from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Cleaning Homecare from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -137,7 +137,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Hair Care",
     "introTitle": "Shop Hair Care Essentials Online with the Convenience of Next Day Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Hair Care?",
+    "whyTitle": "Why Shop with Bazaar for Hair Care?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -203,7 +203,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Hair Care online in Pakistan?",
-        "answer": "You can buy Hair Care from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Hair Care from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -258,7 +258,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Featuring trusted brands like Salman's, Arizona Fields, Del Monte, Mitchell's, Polac, and more, enjoy the ease of next day delivery, ensuring you get fresh, high-quality products delivered straight to your door. Stock up on essentials like tomato pastes, mushrooms, purees, corns, and more, all available at your fingertips for seamless shopping and fast delivery.",
       "Canned foods typically contain natural ingredients like vegetables, legumes, fruits, and tomato-based products that are preserved at peak freshness. These items are often packed in water, brine, or syrup, and may include added salt, sugar, or natural preservatives like citric acid to maintain taste, color, and shelf life. Nutritionally, canned foods retain most of their vitamins and minerals, especially fiber, protein, and essential nutrients like iron, potassium, and vitamin C. They offer a convenient and long-lasting way to enjoy healthy, ready-to-use ingredients without the need for refrigeration."
     ],
-    "whyTitle": "Why Shop with Rozana for Jar & Canned Foods?",
+    "whyTitle": "Why Shop with Bazaar for Jar & Canned Foods?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -304,7 +304,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Jar Canned Foods online in Pakistan?",
-        "answer": "You can buy Jar Canned Foods from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Jar Canned Foods from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -359,7 +359,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Enjoy the convenience of next day delivery, bringing your laundry essentials directly to your doorstep. With trusted brands like Bonus, Brite, Tez Clean, Sunlight, Rin, Dettol, and more, you can trust our collection to provide superior cleaning and care for your clothes with every wash.",
       "Detergents and washing powders contain surfactants to lift dirt, builders to soften water, and enzymes to break down stains. They also include optical brighteners, anti-redeposition agents, and added fragrances for freshness. Fabric softeners use cationic surfactants to reduce static and soften clothes, along with fragrance oils, emulsifiers, and preservatives to maintain product quality. Together, these ingredients help clean, freshen, and care for fabrics in every wash."
     ],
-    "whyTitle": "Why Shop with Rozana for Laundry?",
+    "whyTitle": "Why Shop with Bazaar for Laundry?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -413,7 +413,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Laundry online in Pakistan?",
-        "answer": "You can buy Laundry from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Laundry from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -464,7 +464,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Milk & Dairy",
     "introTitle": "Shop Milk &amp; Dairy Products Online with the Convenience of Next Day Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Milk & Dairy?",
+    "whyTitle": "Why Shop with Bazaar for Milk & Dairy?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -494,7 +494,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "What Are the Benefits of Adding Turmeric, Saffron, or Dates to Milk?",
-        "answer": "These natural add-ins are popular for their wellness benefits. Turmeric milk (also called golden milk) supports immunity, saffron milk is known for skin glow, and dates with milk are great for energy. You can find all these ingredients on Rozana too."
+        "answer": "These natural add-ins are popular for their wellness benefits. Turmeric milk (also called golden milk) supports immunity, saffron milk is known for skin glow, and dates with milk are great for energy. You can find all these ingredients on Bazaar too."
       },
       {
         "question": "How Long Does Milk Stay Fresh After Delivery?",
@@ -566,7 +566,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Milk Dairy online in Pakistan?",
-        "answer": "You can buy Milk Dairy from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Milk Dairy from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -621,7 +621,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Forget the hassle of running to the store, just select your preferred oils or ghee, place your order, and enjoy the convenience of next-day delivery. Choose from renowned brands like Dalda, Mezan, Canola, EVA, Kashmir, Soya Supreme, Golden Sun, Olivola, Tullo, Andaaz, and more. Whether you're looking for the richness of ghee or the versatility of healthy oils, we’ve got something for every culinary need.",
       "Olive, coconut, and vegetable oils offer essential fatty acids that support heart health, boost brain function, and nourish skin and hair. Rich in antioxidants and anti-inflammatory properties, these oils can also aid immunity and metabolism. Ghee, particularly desi ghee, contains healthy fats along with vitamins A, D, E, and K, which enhance gut health, support bone density, reduce inflammation, and help maintain balanced cholesterol levels. Incorporating oils and ghee moderately into your diet can contribute significantly to your overall wellness, vitality, and nutritional balance."
     ],
-    "whyTitle": "Why Shop with Rozana for Oil & Ghee?",
+    "whyTitle": "Why Shop with Bazaar for Oil & Ghee?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -671,7 +671,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Oil Ghee online in Pakistan?",
-        "answer": "You can buy Oil Ghee from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Oil Ghee from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -726,7 +726,7 @@ export const CATEGORY_SEO_CONTENT = {
       "No need to run to the store, select your favorites online and enjoy next-day delivery right to your doorstep. Choose from a wide variety of instant noodles, classic spaghetti, flavoured macaroni, and more, perfect for busy weeknights, lunchboxes, or late-night bites. Trusted brands like Knorr, Bake Parlor, Lotte Kolson, Shan, Shoop, and others. Your next delicious meal is just a click away.",
       "Pasta and noodles are primarily sources of carbohydrates, providing a quick and steady energy supply. They also contain small amounts of protein and fiber, especially when made from whole wheat or added grains like quinoa or oats. Enriched varieties offer essential nutrients such as iron and B vitamins (like folic acid). When paired with vegetables, lean proteins, or healthy sauces, they can become part of a balanced and filling meal. Whole grain and high-fiber options help improve digestion and support heart health, making them a versatile staple in many diets."
     ],
-    "whyTitle": "Why Shop with Rozana for Pasta & Noodles?",
+    "whyTitle": "Why Shop with Bazaar for Pasta & Noodles?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -776,7 +776,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Pasta Noodles online in Pakistan?",
-        "answer": "You can buy Pasta Noodles from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Pasta Noodles from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -827,7 +827,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Personal Care",
     "introTitle": "Shop Personal Care Essentials Online with the Convenience of Next Day Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Personal Care?",
+    "whyTitle": "Why Shop with Bazaar for Personal Care?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -945,7 +945,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Personal Care online in Pakistan?",
-        "answer": "You can buy Personal Care from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Personal Care from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -996,7 +996,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Pet Care",
     "introTitle": "Shop Pet Care Online with Fast Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Pet Care?",
+    "whyTitle": "Why Shop with Bazaar for Pet Care?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1038,7 +1038,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Pet Care online in Pakistan?",
-        "answer": "You can buy Pet Care from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Pet Care from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1090,10 +1090,10 @@ export const CATEGORY_SEO_CONTENT = {
     "introTitle": "Shop Pulses Online with the Convenience of Next Day Delivery",
     "introParagraphs": [
       "Transform your cooking experience with our premium selection of pulses, packed with nutrition and versatility for every meal. Whether you're preparing wholesome soups, flavourful curries, or hearty salads, our pulses range offers everything you need to add richness to your meals and boost your health with plant-based protein, fiber, and essential nutrients.",
-      "Enjoy the convenience of next-day delivery from top brands like Rozana Select and other exceptional pulses that meet the highest standards of quality.",
+      "Enjoy the convenience of next-day delivery from top brands like Bazaar Select and other exceptional pulses that meet the highest standards of quality.",
       "Pulses or Daal is low in calories and packed with nutrition, making it a smart choice for healthy eating. On average, 100 grams of cooked daal contains around 110–150 calories, depending on the type. It offers 8–10g of protein, 6–8g of fiber, and minimal fat, helping you stay full longer. Daal is also rich in essential nutrients like iron, folate, magnesium, and potassium which contribute to better energy levels, weight management, improved heart health, and proper nerve function. Naturally gluten-free and easy to digest, daal fits well into vegetarian, vegan, and gluten-sensitive diets, making it a wholesome choice for everyday meals."
     ],
-    "whyTitle": "Why Shop with Rozana for Pulses?",
+    "whyTitle": "Why Shop with Bazaar for Pulses?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1135,7 +1135,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Pulses online in Pakistan?",
-        "answer": "You can buy Pulses from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Pulses from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1186,7 +1186,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Snacks & Confectionary",
     "introTitle": "Shop Snacks Online with the Convenience of Next Day Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Snacks & Confectionary?",
+    "whyTitle": "Why Shop with Bazaar for Snacks & Confectionary?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1220,7 +1220,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Which Chocolate Biscuits Are Best for Snacking?",
-        "answer": "Chocolate biscuits are always a popular choice for personal indulgence. From Prince chocolate biscuits to rich chocolate chip biscuits, Rozana features top picks for all tastes and budgets. Popular options are Oreo, Rio, Bisconni Cocomo, Bisconni Chocolato, and chocolate chip biscuits. For a non-chocolate premium option, Farm House Biscuits are also a great choice."
+        "answer": "Chocolate biscuits are always a popular choice for personal indulgence. From Prince chocolate biscuits to rich chocolate chip biscuits, Bazaar features top picks for all tastes and budgets. Popular options are Oreo, Rio, Bisconni Cocomo, Bisconni Chocolato, and chocolate chip biscuits. For a non-chocolate premium option, Farm House Biscuits are also a great choice."
       },
       {
         "question": "When Is the Best Time to Enjoy Biscuits & Cakes?",
@@ -1252,7 +1252,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Snacks Confectionary online in Pakistan?",
-        "answer": "You can buy Snacks Confectionary from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Snacks Confectionary from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1303,7 +1303,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Soaps & Handwashes",
     "introTitle": "Shop Soaps & Handwashes Online with Fast Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Soaps & Handwashes?",
+    "whyTitle": "Why Shop with Bazaar for Soaps & Handwashes?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1353,7 +1353,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Soaps Handwashes online in Pakistan?",
-        "answer": "You can buy Soaps Handwashes from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Soaps Handwashes from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1408,7 +1408,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Just pick your pantry staples and enjoy the convenience of next-day delivery at your doorstep. From classic masalas and herbs to tangy sauces and savory spreads, we've got everything you need to enhance your cooking effortlessly. Explore trusted names like Falak, National, Shan, Dipitt, Figaro, Knorr, Mitchell's, Shangrila, Young's, and more. From rich gravies to zesty sauces, you’ll find all your go-to flavour boosters in one place.",
       "Sauces and condiments, like ketchup, BBQ sauce, mustard, and mayonnaise, add flavour to dishes but vary in nutritional content. Ketchup is high in sugar and sodium, while BBQ sauces are sweet and smoky, often containing added sugars. Mustard is low in calories and sugar, and hot sauces can boost metabolism with capsaicin, offering low calories. Mayonnaise is calorie-dense due to its fat content, but healthier versions made with olive oil exist. Choosing sauces wisely or opting for low-sodium versions can provide flavour without excess calories or additives."
     ],
-    "whyTitle": "Why Shop with Rozana for Spices & Sauces?",
+    "whyTitle": "Why Shop with Bazaar for Spices & Sauces?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1446,7 +1446,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "What Is the Substitute for Garam Masala?",
-        "answer": "If you don’t have garam masala, you can create a similar flavour by combining ground cumin, coriander, cinnamon, cloves, cardamom, and black pepper. This blend will mimic the warmth and spice of garam masala in your dishes. For a quicker and more convenient option, simply order ready-to-use garam masala from Rozana and elevate your dishes with ease."
+        "answer": "If you don’t have garam masala, you can create a similar flavour by combining ground cumin, coriander, cinnamon, cloves, cardamom, and black pepper. This blend will mimic the warmth and spice of garam masala in your dishes. For a quicker and more convenient option, simply order ready-to-use garam masala from Bazaar and elevate your dishes with ease."
       },
       {
         "question": "Are Pickles Healthy for Daily Consumption, and How Much Is Considered Moderate?",
@@ -1454,7 +1454,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Spices Sauces online in Pakistan?",
-        "answer": "You can buy Spices Sauces from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Spices Sauces from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1505,7 +1505,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Stationery & Party Supplies",
     "introTitle": "Shop Stationery & Party Supplies Online with Fast Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Stationery & Party Supplies?",
+    "whyTitle": "Why Shop with Bazaar for Stationery & Party Supplies?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1551,7 +1551,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Stationery Party Supplies online in Pakistan?",
-        "answer": "You can buy Stationery Party Supplies from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Stationery Party Supplies from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1602,7 +1602,7 @@ export const CATEGORY_SEO_CONTENT = {
     "categoryLabel": "Tea & Coffee",
     "introTitle": "Shop Tea & Coffee Online with Fast Delivery",
     "introParagraphs": [],
-    "whyTitle": "Why Shop with Rozana for Tea & Coffee?",
+    "whyTitle": "Why Shop with Bazaar for Tea & Coffee?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1644,7 +1644,7 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Where can I buy Tea Coffee online in Pakistan?",
-        "answer": "You can buy Tea Coffee from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Tea Coffee from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1696,9 +1696,9 @@ export const CATEGORY_SEO_CONTENT = {
     "introTitle": "Shop Tissues Online with the Convenience of Next Day Delivery",
     "introParagraphs": [
       "Find the perfect tissues for your daily needs with our collection, designed for comfort and convenience. Whether you need something soft or a reliable option for everyday use, we have a variety of tissues to meet your preferences.",
-      "Enjoy the ease of next-day delivery directly to your door. Choose from trusted brands like Rose Petal, Fay, Hankies, Tulip, Violet by Rozana, and more. From facial tissues to multipurpose options, we offer everything for your daily convenience."
+      "Enjoy the ease of next-day delivery directly to your door. Choose from trusted brands like Rose Petal, Fay, Hankies, Tulip, Violet, and more. From facial tissues to multipurpose options, we offer everything for your daily convenience."
     ],
-    "whyTitle": "Why Shop with Rozana for Tissues?",
+    "whyTitle": "Why Shop with Bazaar for Tissues?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1736,11 +1736,11 @@ export const CATEGORY_SEO_CONTENT = {
       },
       {
         "question": "Can Tissues Be Used to Clean Surfaces?",
-        "answer": "Tissues can be used for light surface cleaning, like wiping counters or spills, but they may not be as effective as cleaning wipes or cloths. For deeper cleaning, it's better to use specialized wipes, which are available at Rozana."
+        "answer": "Tissues can be used for light surface cleaning, like wiping counters or spills, but they may not be as effective as cleaning wipes or cloths. For deeper cleaning, it's better to use specialized wipes, which are available at Bazaar."
       },
       {
         "question": "Where can I buy Tissues online in Pakistan?",
-        "answer": "You can buy Tissues from Rozana online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
+        "answer": "You can buy Tissues from Bazaar online and get it delivered in Karachi, Lahore, Islamabad and rest of Pakistan."
       }
     ],
     "priceList": [
@@ -1794,7 +1794,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our baby care range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Baby Care?",
+    "whyTitle": "Why Shop with Bazaar for Baby Care?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1816,7 +1816,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Baby Care online in Pakistan?",
-        "answer": "You can shop Baby Care on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Baby Care on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -1829,7 +1829,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our beverages range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Beverages?",
+    "whyTitle": "Why Shop with Bazaar for Beverages?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1851,7 +1851,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Beverages online in Pakistan?",
-        "answer": "You can shop Beverages on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Beverages on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -1864,7 +1864,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our breakfast range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Breakfast?",
+    "whyTitle": "Why Shop with Bazaar for Breakfast?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1886,7 +1886,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Breakfast online in Pakistan?",
-        "answer": "You can shop Breakfast on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Breakfast on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -1899,7 +1899,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our chicken & meat range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Chicken & Meat?",
+    "whyTitle": "Why Shop with Bazaar for Chicken & Meat?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1921,7 +1921,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Chicken & Meat online in Pakistan?",
-        "answer": "You can shop Chicken & Meat on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Chicken & Meat on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -1934,7 +1934,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our cigarettes & nicotine range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Cigarettes & Nicotine?",
+    "whyTitle": "Why Shop with Bazaar for Cigarettes & Nicotine?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1956,7 +1956,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Cigarettes & Nicotine online in Pakistan?",
-        "answer": "You can shop Cigarettes & Nicotine on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Cigarettes & Nicotine on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -1969,7 +1969,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our dessert & baking essentials range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Dessert & Baking Essentials?",
+    "whyTitle": "Why Shop with Bazaar for Dessert & Baking Essentials?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -1991,7 +1991,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Dessert & Baking Essentials online in Pakistan?",
-        "answer": "You can shop Dessert & Baking Essentials on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Dessert & Baking Essentials on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -2004,7 +2004,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our flour range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Flour?",
+    "whyTitle": "Why Shop with Bazaar for Flour?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -2026,7 +2026,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Flour online in Pakistan?",
-        "answer": "You can shop Flour on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Flour on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -2039,7 +2039,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our frozen range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Frozen?",
+    "whyTitle": "Why Shop with Bazaar for Frozen?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -2061,7 +2061,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Frozen online in Pakistan?",
-        "answer": "You can shop Frozen on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Frozen on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -2074,7 +2074,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our fruits & vegetables range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Fruits & Vegetables?",
+    "whyTitle": "Why Shop with Bazaar for Fruits & Vegetables?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -2096,7 +2096,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Fruits & Vegetables online in Pakistan?",
-        "answer": "You can shop Fruits & Vegetables on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Fruits & Vegetables on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -2109,7 +2109,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our rice range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Rice?",
+    "whyTitle": "Why Shop with Bazaar for Rice?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -2131,7 +2131,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Rice online in Pakistan?",
-        "answer": "You can shop Rice on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Rice on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []
@@ -2144,7 +2144,7 @@ export const CATEGORY_SEO_CONTENT = {
       "Browse our sugar range with everyday low prices and convenient delivery across Pakistan.",
       "Filter by brand to find your favourites quickly."
     ],
-    "whyTitle": "Why Shop with Rozana for Sugar?",
+    "whyTitle": "Why Shop with Bazaar for Sugar?",
     "whyBullets": [
       {
         "label": "Certified & Original Products",
@@ -2166,7 +2166,7 @@ export const CATEGORY_SEO_CONTENT = {
     "faqs": [
       {
         "question": "Where can I buy Sugar online in Pakistan?",
-        "answer": "You can shop Sugar on Rozana and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
+        "answer": "You can shop Sugar on Bazaar and get delivery in Karachi, Lahore, Islamabad, and across Pakistan."
       }
     ],
     "priceList": []

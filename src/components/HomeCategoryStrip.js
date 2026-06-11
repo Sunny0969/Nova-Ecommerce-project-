@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronsRight } from 'lucide-react';
 import api from 'api';
 import { unwrapCategoriesResponse } from '../lib/api';
+import { buildCategoryPath } from '../utils/urls';
 import './HomeCategoryStrip.css';
 
 const COMING_SOON = 'Coming Soon';
@@ -50,7 +51,7 @@ export default function HomeCategoryStrip() {
               return (
                 <Link
                   key={cat._id || slug}
-                  to={`/category/${encodeURIComponent(slug)}`}
+                  to={buildCategoryPath(slug)}
                   className="home-category-strip__link"
                 >
                   {name}

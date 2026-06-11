@@ -1,11 +1,11 @@
 /**
- * Central SEO configuration — Souvenir Handicraft Shop (Create React App).
+ * Central SEO configuration — Bazaar (Create React App).
  * Use with react-helmet-async. For production, set REACT_APP_SITE_URL to the canonical
  * public origin (no trailing slash), e.g. https://www.example.com
  */
 
 /** @type {string} Human-readable site name (brand) */
-export const siteName = 'Souvenir Handicraft Shop';
+export const siteName = 'Bazaar';
 
 /** Home hero image (LCP); keep in sync with `Home.js` hero `<img>` src for preload. */
 export const homeHeroImageUrl =
@@ -48,20 +48,20 @@ export const getBaseUrl = getSiteUrl;
  * Default document title (shown when a route does not set a <title>).
  * Distinct from the per-page title template in {@link titleTemplate}.
  */
-export const defaultTitle = 'Souvenir Handicraft Shop | Premium Products Delivered';
+export const defaultTitle = 'Bazaar | Premium Products Delivered';
 
 /**
  * When using short segment titles, full title = titleTemplate with %s replaced, e.g.
- * `formatPageTitle('My Account')` → "My Account | Souvenir HandicraftShop"
+ * `formatPageTitle('My Account')` → "My Account | Bazaar"
  */
-export const titleTemplate = '%s | Souvenir Handicraft Shop';
+export const titleTemplate = '%s | Bazaar';
 
 /**
  * Google typically displays ~150–160 characters; this default is 155.
  * Keep in sync with `public/index.html` meta name="description" (first paint / no-JS).
  */
 export const defaultDescription =
-  'Souvenir Handicraft Shop: your store for premium products, fast delivery, and secure payment. Curated quality, easy returns, and support. Shop online with confidence now.';
+  'Bazaar: your store for premium products, fast delivery, and secure checkout. Curated quality, easy returns, and support. Shop online with confidence today.';
 
 if (defaultDescription.length !== 155) {
   // Defensive: avoid silent length drift
@@ -73,15 +73,20 @@ if (defaultDescription.length !== 155) {
   }
 }
 
-/** Add this file to `public/` (recommended 1200×630 PNG) for best OG/Twitter previews. */
+/** Absolute default OG/Twitter image (1200×630 crop). Replace with /og-image.png on CDN when ready. */
+export const defaultOgImageUrl =
+  'https://images.unsplash.com/photo-1625432800813-5cad3897cf22?w=1200&h=630&auto=format&fit=crop&q=82&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8a2FzaG1pcmklMjBzaGF3bHxlbnwwfDF8MHx8fDI%3D';
+
+/** @deprecated Use {@link defaultOgImageUrl} — kept for path-based fallbacks */
 export const defaultOgImagePath = '/og-image.png';
 
 /**
  * Absolute Open Graph / Twitter default image URL.
- * Uses {@link getSiteUrl} + {@link defaultOgImagePath}; in dev without REACT_APP_SITE_URL,
- * still returns an absolute URL when running in the browser.
  */
 export function getDefaultOgImageUrl() {
+  if (defaultOgImageUrl.startsWith('http://') || defaultOgImageUrl.startsWith('https://')) {
+    return defaultOgImageUrl;
+  }
   const base = getSiteUrl();
   if (!base) {
     if (typeof window !== 'undefined' && window.location) {
@@ -100,7 +105,7 @@ export const defaultOgType = 'website';
 
 /**
  * Formats a short page segment into a full <title> using {@link titleTemplate}.
- * @param {string} [titleSegment] — e.g. "Sign in" → "Sign in | Souvenir Handicraft Shop"
+ * @param {string} [titleSegment] — e.g. "Sign in" → "Sign in | Bazaar"
  * @returns {string}
  */
 export function formatPageTitle(titleSegment) {
@@ -235,6 +240,7 @@ export function getAccountSeoTitle(pathname) {
   if (p === '/account') return 'My account';
   if (p === '/account/orders') return 'My orders';
   if (p.startsWith('/account/orders/')) return 'Order details';
+  if (p === '/account/wallet') return 'Wallet';
   if (p === '/account/profile') return 'Profile';
   if (p === '/account/addresses') return 'Addresses';
   if (p === '/account/wishlist') return 'Wishlist';

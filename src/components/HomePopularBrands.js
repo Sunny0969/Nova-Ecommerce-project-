@@ -4,6 +4,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import api from 'api';
 import { apiMessage } from '../lib/api';
+import { buildBrandImageAlt } from '../utils/imageAlt';
+import { optimizeImageUrl } from '../utils/optimizedImageUrl';
+import OptimizedImage from './OptimizedImage';
 import './HomePopularBrands.css';
 
 function unwrapBrands(res) {
@@ -109,12 +112,13 @@ export default function HomePopularBrands() {
                 title={brand.name}
               >
                 {brand.imageUrl ? (
-                  <img
+                  <OptimizedImage
                     className="brand-tile__img"
-                    src={brand.imageUrl}
-                    alt={brand.name}
-                    loading="lazy"
-                    decoding="async"
+                    src={optimizeImageUrl(brand.imageUrl, { width: 240, quality: 80 })}
+                    alt={buildBrandImageAlt(brand.name)}
+                    width={240}
+                    height={120}
+                    optimize={false}
                   />
                 ) : (
                   <span className="brand-tile__fallback">{brand.name}</span>

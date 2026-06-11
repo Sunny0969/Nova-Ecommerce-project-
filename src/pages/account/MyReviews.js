@@ -6,6 +6,7 @@ import { authAPI, productsAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
 import Modal from '../../components/Modal';
+import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
 
 export default function MyReviews() {
   const [reviews, setReviews] = useState([]);
@@ -112,7 +113,10 @@ export default function MyReviews() {
                   </div>
                   <div>
                     {slug ? (
-                      <Link to={`/shop/${slug}`} className="account-review-card__title">
+                      <Link
+                        to={buildProductPath(slug, getProductCategorySlug(p))}
+                        className="account-review-card__title"
+                      >
                         {name}
                       </Link>
                     ) : (

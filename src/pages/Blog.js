@@ -9,9 +9,8 @@ import SecondaryCarouselRow from '../components/SecondaryCarouselRow';
 import NewsletterCTA from '../components/NewsletterCTA';
 import QuickLinksGrid from '../components/QuickLinksGrid';
 import { blogAPI } from '../api';
+import { buildCategoryPath } from '../utils/urls';
 import './Blog.css';
-
-
 import toast from 'react-hot-toast';
 
 function useBlogCategories() {
@@ -115,32 +114,33 @@ export default function Blog() {
 
   const quickLinks = useMemo(() => {
     // 24 buttons; original destinations for theme.
+    const cat = (slug) => buildCategoryPath(slug);
     const base = [
-      { id: 'ql1', label: 'Shoe Care', url: '/shop?category=home' },
-      { id: 'ql2', label: 'Laundry Essentials', url: '/shop?category=home' },
-      { id: 'ql3', label: 'Device Care', url: '/shop?category=electronics' },
-      { id: 'ql4', label: 'Chargers & Cables', url: '/shop?category=electronics' },
-      { id: 'ql5', label: 'Ambient Lighting', url: '/shop?category=home' },
-      { id: 'ql6', label: 'Home Storage', url: '/shop?category=home' },
-      { id: 'ql7', label: 'Skincare Picks', url: '/shop?category=beauty' },
-      { id: 'ql8', label: 'Hair Essentials', url: '/shop?category=beauty' },
-      { id: 'ql9', label: 'Run Essentials', url: '/shop?category=sport' },
-      { id: 'ql10', label: 'Fitness Comfort', url: '/shop?category=sport' },
-      { id: 'ql11', label: 'Everyday Style', url: '/shop?category=fashion' },
-      { id: 'ql12', label: 'Seasonal Layers', url: '/shop?category=fashion' },
+      { id: 'ql1', label: 'Shoe Care', url: cat('home') },
+      { id: 'ql2', label: 'Laundry Essentials', url: cat('home') },
+      { id: 'ql3', label: 'Device Care', url: cat('electronics') },
+      { id: 'ql4', label: 'Chargers & Cables', url: cat('electronics') },
+      { id: 'ql5', label: 'Ambient Lighting', url: cat('home') },
+      { id: 'ql6', label: 'Home Storage', url: cat('home') },
+      { id: 'ql7', label: 'Skincare Picks', url: cat('beauty') },
+      { id: 'ql8', label: 'Hair Essentials', url: cat('beauty') },
+      { id: 'ql9', label: 'Run Essentials', url: cat('sport') },
+      { id: 'ql10', label: 'Fitness Comfort', url: cat('sport') },
+      { id: 'ql11', label: 'Everyday Style', url: cat('fashion') },
+      { id: 'ql12', label: 'Seasonal Layers', url: cat('fashion') },
 
-      { id: 'ql13', label: 'Fresh Home Cleaning', url: '/shop?category=home' },
-      { id: 'ql14', label: 'Air Care Devices', url: '/shop?category=electronics' },
-      { id: 'ql15', label: 'Focus Desk Setup', url: '/shop?category=electronics' },
-      { id: 'ql16', label: 'Coffee Corner Refresh', url: '/shop?category=home' },
-      { id: 'ql17', label: 'Morning Rituals', url: '/shop?category=home' },
-      { id: 'ql18', label: 'Wardrobe Reset', url: '/shop?category=fashion' },
-      { id: 'ql19', label: 'Styling Basics', url: '/shop?category=fashion' },
-      { id: 'ql20', label: 'Glow Routines', url: '/shop?category=beauty' },
-      { id: 'ql21', label: 'Recovery Essentials', url: '/shop?category=sport' },
-      { id: 'ql22', label: 'Checklist Gear', url: '/shop?category=sport' },
-      { id: 'ql23', label: 'Care That Lasts', url: '/shop?category=home' },
-      { id: 'ql24', label: 'Tech Simplified', url: '/shop?category=electronics' }
+      { id: 'ql13', label: 'Fresh Home Cleaning', url: cat('home') },
+      { id: 'ql14', label: 'Air Care Devices', url: cat('electronics') },
+      { id: 'ql15', label: 'Focus Desk Setup', url: cat('electronics') },
+      { id: 'ql16', label: 'Coffee Corner Refresh', url: cat('home') },
+      { id: 'ql17', label: 'Morning Rituals', url: cat('home') },
+      { id: 'ql18', label: 'Wardrobe Reset', url: cat('fashion') },
+      { id: 'ql19', label: 'Styling Basics', url: cat('fashion') },
+      { id: 'ql20', label: 'Glow Routines', url: cat('beauty') },
+      { id: 'ql21', label: 'Recovery Essentials', url: cat('sport') },
+      { id: 'ql22', label: 'Checklist Gear', url: cat('sport') },
+      { id: 'ql23', label: 'Care That Lasts', url: cat('home') },
+      { id: 'ql24', label: 'Tech Simplified', url: cat('electronics') }
     ];
     return base;
   }, []);
@@ -159,16 +159,14 @@ export default function Blog() {
         description={buildMetaDescription(
           'shopping guides Pakistan',
           'Read care, home, fashion, and tech articles with product picks from our shop.',
-          'Expert tips from Souvenir Handicraft Shop editorial.'
+          'Expert tips from Bazaar editorial.'
         )}
         canonicalUrl="/blog"
       />
 
-      {/* Keep existing top header / breadcrumb markup intact style-wise */}
-      <header className="page-header">
+      {/* Breadcrumb only — single H1 lives in BlogHero for SEO hierarchy */}
+      <header className="page-header page-header--compact">
         <div className="container">
-          <h1 className="page-header__title">Blog</h1>
-          <p className="page-header__subtitle">Stories and style notes from Souvenir Handicraft — more posts coming soon.</p>
           <ol className="breadcrumb" aria-label="Breadcrumb">
             <li>
               <Link to="/">Home</Link>
@@ -182,7 +180,7 @@ export default function Blog() {
 
       <BlogHero searchValue={searchValue} onSearchChange={setSearchValue} onSubmit={(e) => e.preventDefault()} />
 
-      <main className="section section--blog" id="main-content">
+      <div className="section section--blog">
 
         <div className="container blog-listing">
           <div className="blog-listing__head">
@@ -250,7 +248,7 @@ export default function Blog() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       <SecondaryCarouselRow title="Trending this week">
         {secondaryBlogs.map((b) => (

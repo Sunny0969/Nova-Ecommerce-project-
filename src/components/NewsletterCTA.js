@@ -57,7 +57,7 @@ export default function NewsletterCTA({ compact = false }) {
                 Subscribe
               </button>
             </div>
-            <p className="newsletter-cta__hint">By subscribing, you agree to receive emails from Souvenir Handicraft .</p>
+            <p className="newsletter-cta__hint">By subscribing, you agree to receive emails from Bazaar.</p>
           </form>
         </div>
       </div>

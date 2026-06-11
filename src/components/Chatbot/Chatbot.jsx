@@ -166,27 +166,27 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="fixed bottom-0 right-0 z-[9999] flex flex-col items-end p-4 max-md:p-3">
+    <div className="fixed bottom-0 right-0 z-[9999] flex flex-col items-end p-4 max-md:p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))]">
       <div
-        className={`mb-3 w-[350px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 transition-all duration-300 ease-out max-md:mb-2 max-md:w-[calc(100vw-1.5rem)] ${
+        className={`mb-3 w-[350px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 transition-all duration-300 ease-out max-md:mb-2 max-md:w-[calc(100vw-2rem)] ${
           isOpen
             ? 'pointer-events-auto nova-chat-panel-enter translate-y-0 opacity-100'
             : 'pointer-events-none h-0 max-h-0 translate-y-3 opacity-0'
-        } ${isOpen && minimized ? 'flex max-h-14 flex-col' : ''} ${isOpen && !minimized ? 'flex h-[400px] flex-col' : ''}`}
+        } ${isOpen && minimized ? 'flex max-h-14 flex-col' : ''} ${isOpen && !minimized ? 'flex h-[400px] max-md:h-[min(380px,calc(100dvh-5.5rem))] flex-col' : ''}`}
         aria-hidden={!isOpen}
       >
         {isOpen && (
           <>
             <header className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-rozana-cream px-3 py-2.5">
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold text-rozana-navy">Rozana Support</h2>
+                <h2 className="truncate text-sm font-semibold text-rozana-navy">Bazaar Support</h2>
                 <p className="text-xs text-gray-500">Roman Urdu & English — instant replies</p>
               </div>
               <div className="flex items-center gap-0.5">
                 <button
                   type="button"
                   onClick={toggleSound}
-                  className="rounded-md p-2 text-gray-600 hover:bg-gray-200/80"
+                  className="rounded-md p-2.5 text-gray-600 hover:bg-gray-200/80 max-md:min-h-[44px] max-md:min-w-[44px]"
                   aria-label={soundOn ? 'Mute reply sound' : 'Enable reply sound'}
                   title={soundOn ? 'Sound on' : 'Sound off (default)'}
                 >
@@ -383,7 +383,7 @@ export default function Chatbot() {
             setMinimized(false);
           }}
           className="relative flex h-14 w-14 items-center justify-center rounded-full bg-rozana-orange text-white shadow-lg transition hover:bg-rozana-orange-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-rozana-orange focus-visible:ring-offset-2"
-          aria-label="Open Nova Shop support chat"
+          aria-label="Open Bazaar support chat"
         >
           <MessageCircle size={24} aria-hidden />
           {unreadCount > 0 && (

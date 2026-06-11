@@ -1,0 +1,137 @@
+.faq-page__toc {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.faq-page__help-card {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(249, 115, 22, 0.22);
+  background: var(--white);
+}
+
+.faq-page__help-title {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-size-base, 1rem);
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.faq-page__help-text {
+  margin: 0 0 0.75rem;
+  font-size: var(--text-size-secondary, 0.875rem);
+  line-height: 1.5;
+  color: var(--gray);
+}
+
+.faq-page__help-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  color: var(--brand-orange-dark);
+  text-decoration: none;
+}
+
+.faq-page__help-phone:hover {
+  color: var(--brand-orange);
+}
+
+.faq-page__help-link {
+  display: inline-block;
+  margin-top: 0.65rem;
+  font-size: var(--text-size-secondary, 0.875rem);
+  font-weight: 700;
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.faq-page__help-link:hover {
+  color: var(--brand-orange-dark);
+}
+
+.faq-page__category {
+  padding-bottom: 2rem;
+}
+
+.faq-page__list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.faq-item {
+  border: 1px solid var(--gray-light);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faq-item--open {
+  border-color: rgba(249, 115, 22, 0.28);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.faq-item__heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.faq-item__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: var(--text-size-base, 1rem);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.faq-item__trigger:hover {
+  color: var(--brand-orange-dark);
+}
+
+.faq-item__trigger:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: -2px;
+}
+
+.faq-item__chevron {
+  flex-shrink: 0;
+  color: var(--brand-orange);
+  transition: transform 0.25s ease;
+}
+
+.faq-item--open .faq-item__chevron {
+  transform: rotate(180deg);
+}
+
+.faq-item__panel {
+  padding: 0 1rem 1rem;
+}
+
+.faq-item__answer {
+  margin: 0;
+  padding: 0.85rem 0 0;
+  font-size: var(--text-size-secondary, 0.875rem);
+  line-height: 1.7;
+  color: var(--gray);
+  border-top: 1px solid var(--gray-light);
+}
+
+@media (max-width: 991px) {
+  .faq-page__help-card {
+    margin-top: 0;
+  }
+}

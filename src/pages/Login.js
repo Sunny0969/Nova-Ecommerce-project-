@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { trackCompleteRegistration } from '../lib/metaPixel';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 import PasswordInput from '../components/PasswordInput';
@@ -127,6 +128,10 @@ const Login = ({ defaultTab = 'login' }) => {
     const result = await register(registerData);
     if (result.success) {
       const activated = result.code === 'GUEST_ACCOUNT_ACTIVATED';
+      trackCompleteRegistration({
+        email: registerData.email,
+        phone: registerData.phone
+      });
       toast.success(
         activated
           ? 'Account ready — your orders are in My Orders'

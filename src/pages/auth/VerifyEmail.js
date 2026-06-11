@@ -6,11 +6,11 @@ export default function VerifyEmail() {
   const { token } = useParams();
 
   return (
-    <main className="section container text-center" id="main-content" style={{ padding: '4rem 1rem' }}>
+    <div className="section container text-center" style={{ padding: '4rem 1rem' }}>
       <SEO
         noIndex
         title="Verify email"
-        description="Complete email verification for your Souvenir Handicraft account. This link is personal and is not shown in public search results."
+        description="Complete email verification for your Bazaar account. This link is personal and is not shown in public search results."
         canonicalUrl={token ? `/verify-email/${token}` : '/verify-email'}
       />
       <h1 style={{ marginBottom: '1rem' }}>Verify your email</h1>
@@ -24,6 +24,6 @@ export default function VerifyEmail() {
       <Link to="/login" className="btn btn-primary">
         Sign in
       </Link>
-    </main>
+    </div>
   );
 }

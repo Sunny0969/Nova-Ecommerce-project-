@@ -3,26 +3,45 @@
  * @param {number} itemsPrice
  * @param {number} discountAmount
  * @param {string} deliveryOption
- * @param {{ freeShippingMin?: number, shippingStandard?: number, shippingExpress?: number, shippingNextDay?: number, taxRate?: number }} settings
+ * @param {object} settings
+ * @param {number|null} [cartWeightKg]
  */
+import { calculateWeightBasedShipping, normalizeWeightShippingSettings } from '../lib/shippingWeight';
+
 export function round2(n) {
   return Math.round(Number(n) * 100) / 100;
 }
 
-export function calculateShipping(itemsPrice, deliveryOption, settings = {}) {
-  const threshold = Number(settings?.freeShippingMin);
-  const t = Number.isFinite(threshold) && threshold >= 0 ? threshold : 50;
+export {
+  computeCartWeightKg,
+  resolveProductWeightKg,
+  normalizeWeightShippingSettings
+} from '../lib/shippingWeight';
+
+export function calculateShipping(itemsPrice, deliveryOption, settings = {}, cartWeightKg = null) {
+  const cfg = normalizeWeightShippingSettings(settings);
   const d = deliveryOption || 'standard';
+  let shipping = 0;
   if (d === 'express') {
-    if (itemsPrice >= t) return 0;
-    return round2(Number(settings?.shippingExpress) ?? 5.99);
+    shipping = round2(Number(cfg.shippingExpress) >= 0 ? Number(cfg.shippingExpress) : 499);
+  } else if (d === 'nextday') {
+    shipping = round2(Number(cfg.shippingNextDay) >= 0 ? Number(cfg.shippingNextDay) : 599);
+  } else if (cfg.weightShippingEnabled && cartWeightKg != null) {
+    shipping = calculateWeightBasedShipping(cartWeightKg, cfg);
+  } else {
+    shipping = round2(Number(cfg.shippingStandard) ?? 299);
   }
-  if (d === 'nextday') {
-    if (itemsPrice >= t) return 0;
-    return round2(Number(settings?.shippingNextDay) ?? 9.99);
+
+  const freeMin = Number(settings?.freeShippingMin);
+  if (
+    d === 'standard' &&
+    Number.isFinite(freeMin) &&
+    freeMin > 0 &&
+    Number(itemsPrice) >= freeMin
+  ) {
+    return 0;
   }
-  // Standard — flat rate (default PKR 299); not waived by free-shipping threshold
-  return round2(Number(settings?.shippingStandard) ?? 299);
+  return shipping;
 }
 
 export function calculateTaxPrice(subtotalAfterDiscount, settings = {}) {
@@ -30,10 +49,16 @@ export function calculateTaxPrice(subtotalAfterDiscount, settings = {}) {
   return round2(Math.max(0, subtotalAfterDiscount) * rate);
 }
 
-export function computeTotalsPreview(itemsPrice, discountAmount, deliveryOption, settings) {
+export function computeTotalsPreview(
+  itemsPrice,
+  discountAmount,
+  deliveryOption,
+  settings,
+  cartWeightKg = null
+) {
   const disc = Math.min(Number(discountAmount) || 0, itemsPrice);
   const subAfterDisc = round2(Math.max(0, itemsPrice - disc));
-  const shippingPrice = calculateShipping(itemsPrice, deliveryOption, settings);
+  const shippingPrice = calculateShipping(itemsPrice, deliveryOption, settings, cartWeightKg);
   const taxPrice = calculateTaxPrice(subAfterDisc, settings);
   const totalPrice = round2(Math.max(0, subAfterDisc + shippingPrice + taxPrice));
   return {
@@ -42,6 +67,7 @@ export function computeTotalsPreview(itemsPrice, discountAmount, deliveryOption,
     subtotalAfterDiscount: subAfterDisc,
     shippingPrice,
     taxPrice,
-    totalPrice
+    totalPrice,
+    cartWeightKg: cartWeightKg != null ? cartWeightKg : undefined
   };
 }

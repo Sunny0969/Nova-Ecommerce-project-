@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getCategorySeoContent } from '../data/categorySeoContent';
-import { getClusterLinksForCategory } from '../data/seoInternalLinks';
+import { getClusterLinksResolved } from '../data/seoInternalLinks';
 import { getPillarGuideSections } from '../data/pillarGuideContent';
 import { filterValidFaqs } from '../utils/jsonLd';
 
@@ -31,7 +31,7 @@ export default function CategoryShopSeo({ categorySlug, categoryName, products =
 
   const priceRows = useMemo(() => buildPriceRows(seo, products), [seo, products]);
   const faqs = useMemo(() => filterValidFaqs(seo?.faqs), [seo]);
-  const clusterLinks = useMemo(() => getClusterLinksForCategory(categorySlug), [categorySlug]);
+  const clusterLinks = useMemo(() => getClusterLinksResolved(categorySlug), [categorySlug]);
   const pillarSections = useMemo(() => getPillarGuideSections(categorySlug), [categorySlug]);
 
   if (!seo && priceRows.length === 0 && !pillarSections.length) return null;
@@ -62,7 +62,7 @@ export default function CategoryShopSeo({ categorySlug, categoryName, products =
           }
         ];
 
-  const whyTitle = seo?.whyTitle || `Why Shop with Rozana for ${categoryName || 'this category'}?`;
+  const whyTitle = seo?.whyTitle || `Why Shop with Bazaar for ${categoryName || 'this category'}?`;
 
   const hasBottom = faqs.length > 0 || priceRows.length > 0;
 
@@ -99,11 +99,11 @@ export default function CategoryShopSeo({ categorySlug, categoryName, products =
 
         {clusterLinks.length > 0 ? (
           <nav className="category-shop-seo__related" aria-label="Related categories">
-            <h3 className="category-shop-seo__subtitle">Related departments</h3>
+            <h3 className="category-shop-seo__subtitle">Shop related categories</h3>
             <ul className="category-shop-seo__related-list">
               {clusterLinks.map((link) => (
-                <li key={link.slug}>
-                  <Link to={`/shop?category=${encodeURIComponent(link.slug)}`}>{link.label}</Link>
+                <li key={link.to}>
+                  <Link to={link.to}>{link.label}</Link>
                 </li>
               ))}
             </ul>

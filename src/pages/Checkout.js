@@ -6,17 +6,19 @@ import ProductImage from '../components/ProductImage';
 import { buildProductImageAlt } from '../utils/imageAlt';
 import SEO from '../components/SEO';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { ShieldCheck, Banknote, CreditCard } from 'lucide-react';
+import { boolean, object, string } from 'yup';
+import { ShieldCheck, Banknote, CreditCard, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { apiMessage } from '../lib/api';
-import { authAPI, ordersAPI, publicAPI } from 'api';
+import { authAPI, ordersAPI, publicAPI, walletAPI } from 'api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
+import { buildProductPath, getProductCategorySlug } from '../utils/urls';
+import { trackInitiateCheckout } from '../lib/metaPixel';
 import { computeTotalsPreview, computeCartWeightKg, calculateShipping } from '../utils/pricing';
 import { getPaymentOptions } from '../config/payments';
 import StripePaymentModal from '../components/StripePaymentModal';
@@ -45,35 +47,56 @@ function PaymentOptionIcon({ id }) {
   return <CreditCard size={22} />;
 }
 
-function paymentReviewLabel(method, orderTotal) {
-  if (method === 'stripe') {
-    return <>Credit / debit card (Stripe) — {formatPKR(orderTotal)} charged securely online.</>;
+function paymentReviewLabel(method, payTotal, walletPreview) {
+  const walletUsed = Number(walletPreview?.walletAmountUsed) || 0;
+  if (walletUsed > 0 && payTotal <= 0) {
+    return (
+      <>
+        Bazaar Wallet — {formatPKR(walletUsed)} paid from your wallet balance.
+      </>
+    );
   }
-  return <>Cash on delivery — pay {formatPKR(orderTotal)} when your order arrives.</>;
+  if (walletUsed > 0) {
+    const walletPart = `${formatPKR(walletUsed)} from wallet + `;
+    if (method === 'stripe') {
+      return (
+        <>
+          {walletPart}pay {formatPKR(payTotal)} by card (Stripe).
+        </>
+      );
+    }
+    return (
+      <>
+        {walletPart}pay {formatPKR(payTotal)} on delivery (cash).
+      </>
+    );
+  }
+  if (method === 'stripe') {
+    return <>Credit / debit card (Stripe) — {formatPKR(payTotal)} charged securely online.</>;
+  }
+  return <>Cash on delivery — pay {formatPKR(payTotal)} when your order arrives.</>;
 }
 
-const shippingSchema = yup.object({
-  firstName: yup.string().trim().required().max(80),
-  lastName: yup.string().trim().required().max(80),
-  email: yup.string().trim().email().required(),
-  phone: yup
-    .string()
+const shippingSchema = object({
+  firstName: string().trim().required().max(80),
+  lastName: string().trim().required().max(80),
+  email: string().trim().email().required(),
+  phone: string()
     .trim()
     .required('Phone number is required')
     .matches(/^\d+$/, 'Phone must contain numbers only')
     .min(10, 'Enter at least 10 digits')
     .max(15, 'Phone number is too long'),
-  street: yup.string().trim().required().max(200),
-  city: yup.string().trim().required('Please select a city').max(100),
-  state: yup.string().trim().required('Please select a province').max(100),
-  zipCode: yup
-    .string()
+  street: string().trim().required().max(200),
+  city: string().trim().required('Please select a city').max(100),
+  state: string().trim().required('Please select a province').max(100),
+  zipCode: string()
     .trim()
     .required('Postcode is required')
     .matches(/^\d{5}$/, 'Enter a valid 5-digit postcode'),
-  country: yup.string().trim().required().max(100),
-  deliveryOption: yup.string().oneOf(['standard', 'express', 'nextday']).required(),
-  saveAddress: yup.boolean().default(false)
+  country: string().trim().required().max(100),
+  deliveryOption: string().oneOf(['standard', 'express', 'nextday']).required(),
+  saveAddress: boolean().default(false)
 });
 
 const DEFAULT_SHIPPING_VALUES = {
@@ -203,7 +226,7 @@ export default function Checkout() {
 function CheckoutFlow({ stripeEnabled }) {
   const navigate = useNavigate();
   const { cart, cartState, loading, fetchCart, getSubtotal, clearCart } = useCart();
-  const { user, canAccessCustomerApp, loading: authLoading, token } = useAuth();
+  const { user, canAccessCustomerApp, loading: authLoading, token, checkAuth } = useAuth();
   const isLoggedInCustomer = Boolean(user && canAccessCustomerApp && token);
   const isGuestCheckout = !isLoggedInCustomer;
   const useGuestStripeApi =
@@ -213,6 +236,8 @@ function CheckoutFlow({ stripeEnabled }) {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [placing, setPlacing] = useState(false);
   const [stripeModalOpen, setStripeModalOpen] = useState(false);
+  const [useWallet, setUseWallet] = useState(false);
+  const [walletPreview, setWalletPreview] = useState(null);
   const placeLockRef = useRef(false);
   const { settings: storeSettings, loading: settingsLoading } = useStoreSettings();
 
@@ -268,6 +293,9 @@ function CheckoutFlow({ stripeEnabled }) {
   }, [storeSettings, cart.length, subtotal, discountAmount, activeDelivery, cartWeightKg]);
 
   const orderTotal = Number(checkoutSummary?.totalPrice ?? totals?.total ?? subtotal);
+  const payTotal = Number(walletPreview?.totalAfterWallet ?? orderTotal);
+  const walletAmountUsed = Number(walletPreview?.walletAmountUsed) || 0;
+  const walletBalance = Number(walletPreview?.balance ?? user?.walletBalance) || 0;
   const itemCount = cart.reduce((n, line) => n + (Number(line.quantity) || 0), 0);
   const paymentOptions = useMemo(
     () => getPaymentOptions({ includeStripe: stripeEnabled }),
@@ -285,9 +313,45 @@ function CheckoutFlow({ stripeEnabled }) {
   const handlePaymentMethodChange = (methodId) => {
     setPaymentMethod(methodId);
     if (methodId === 'stripe') {
+      setUseWallet(false);
       openStripeModal();
     }
   };
+
+  useEffect(() => {
+    if (!isLoggedInCustomer || !checkoutSummary?.totalPrice) {
+      setWalletPreview(null);
+      return undefined;
+    }
+    let cancelled = false;
+    walletAPI
+      .preview({ totalPrice: checkoutSummary.totalPrice, useWallet })
+      .then((res) => {
+        if (!cancelled) setWalletPreview(res.data?.data || null);
+      })
+      .catch(() => {
+        if (!cancelled) setWalletPreview(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedInCustomer, checkoutSummary?.totalPrice, useWallet]);
+
+  const initiateCheckoutTracked = useRef(false);
+
+  useEffect(() => {
+    if (step < 2 || !checkoutSummary || initiateCheckoutTracked.current) return;
+    initiateCheckoutTracked.current = true;
+    const shipping = lockedShipping || {};
+    const itemCount = cart.reduce((n, line) => n + (Number(line.quantity) || 0), 0);
+    trackInitiateCheckout({
+      value: payTotal,
+      numItems: itemCount,
+      email: shipping.email || user?.email,
+      phone: shipping.phone || user?.phone,
+      cart
+    });
+  }, [step, checkoutSummary, payTotal, cart, lockedShipping, user]);
 
   useEffect(() => {
     reset(defaultsFromUser(isLoggedInCustomer ? user : null));
@@ -342,6 +406,7 @@ function CheckoutFlow({ stripeEnabled }) {
       country: lockedShipping.country
     },
     paymentMethod,
+    useWallet: isLoggedInCustomer && useWallet && paymentMethod !== 'stripe',
     ...extra
   });
 
@@ -360,6 +425,9 @@ function CheckoutFlow({ stripeEnabled }) {
       void clearCart();
     } else {
       void fetchCart();
+    }
+    if (isLoggedInCustomer) {
+      void checkAuth();
     }
   };
 
@@ -409,7 +477,7 @@ function CheckoutFlow({ stripeEnabled }) {
         <StripePaymentModal
           isOpen={stripeModalOpen}
           onClose={() => !placing && setStripeModalOpen(false)}
-          orderTotal={orderTotal}
+          orderTotal={payTotal}
           lockedShipping={lockedShipping}
           getShippingAddress={() => placeOrderPayload().shippingAddress}
           isGuestCheckout={isGuestCheckout}
@@ -617,6 +685,42 @@ function CheckoutFlow({ stripeEnabled }) {
                     </button>
                   ) : null}
 
+                  {isLoggedInCustomer ? (
+                    <div className="checkout-wallet">
+                      {paymentMethod === 'stripe' ? (
+                        <p className="checkout-wallet__hint">
+                          Wallet balance can be used with cash on delivery. Switch payment method to
+                          apply your wallet.
+                        </p>
+                      ) : walletBalance > 0 ? (
+                        <label className="checkout-wallet__toggle">
+                          <input
+                            type="checkbox"
+                            checked={useWallet}
+                            onChange={(e) => setUseWallet(e.target.checked)}
+                          />
+                          <span>
+                            <span className="checkout-wallet__title">
+                              Use Bazaar Wallet
+                            </span>
+                            <span className="checkout-wallet__meta">
+                              {formatPKR(walletBalance)} available
+                              {useWallet && walletAmountUsed > 0
+                                ? ` — ${formatPKR(walletAmountUsed)} applied`
+                                : ''}
+                            </span>
+                          </span>
+                        </label>
+                      ) : (
+                        <p className="checkout-wallet__hint">
+                          <Wallet size={14} strokeWidth={1.75} aria-hidden />{' '}
+                          <Link to="/account/wallet">Top up your wallet</Link> for faster checkout
+                          and store credit.
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
                   <div className="checkout-step2-actions">
                     <button
                       type="button"
@@ -663,11 +767,18 @@ function CheckoutFlow({ stripeEnabled }) {
                   </div>
                   <div className="checkout-review-block">
                     <h3 className="checkout-review-title">Payment</h3>
-                    <p className="checkout-review-text">{paymentReviewLabel(paymentMethod, orderTotal)}</p>
+                    <p className="checkout-review-text">
+                      {paymentReviewLabel(paymentMethod, payTotal, walletPreview)}
+                    </p>
                   </div>
                   <div className="checkout-review-block">
                     <h3 className="checkout-review-title">Order total</h3>
-                    <p className="checkout-review-total">{formatPKR(orderTotal)}</p>
+                    <p className="checkout-review-total">{formatPKR(payTotal)}</p>
+                    {walletAmountUsed > 0 ? (
+                      <p className="checkout-wallet__meta">
+                        Includes {formatPKR(walletAmountUsed)} from your wallet
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="checkout-step2-actions">
@@ -739,7 +850,10 @@ function CheckoutFlow({ stripeEnabled }) {
                             )}
                           </div>
                           <div className="checkout-summary__meta">
-                            <Link to={`/shop/${p.slug || ''}`} className="checkout-summary__name">
+                            <Link
+                              to={buildProductPath(p.slug || '', getProductCategorySlug(p))}
+                              className="checkout-summary__name"
+                            >
                               {p.name || 'Product'}
                             </Link>
                             {p.cartVariantNote ? (
@@ -797,9 +911,15 @@ function CheckoutFlow({ stripeEnabled }) {
                             <span>{formatPKR(checkoutSummary.taxPrice)}</span>
                           </div>
                         ) : null}
+                        {walletAmountUsed > 0 ? (
+                          <div className="summary-row checkout-summary__wallet">
+                            <span>Bazaar Wallet</span>
+                            <span>−{formatPKR(walletAmountUsed)}</span>
+                          </div>
+                        ) : null}
                         <div className="summary-row total">
                           <span>Total</span>
-                          <span>{formatPKR(checkoutSummary.totalPrice)}</span>
+                          <span>{formatPKR(payTotal)}</span>
                         </div>
                       </>
                     ) : settingsLoading ? (

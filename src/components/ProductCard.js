@@ -4,11 +4,15 @@ import Skeleton from 'react-loading-skeleton';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
 import { productImageUrl } from '../lib/productImage';
+import { buildProductImageAlt } from '../utils/imageAlt';
+import { getCleanProductName } from '../lib/productDescription';
 import ProductImage from './ProductImage';
 import { formatPKR } from '../utils/currency';
 import StarRating from './StarRating';
 import { buildFakeReviews } from '../lib/fakeReviews';
+import { buildProductPath, getProductCategorySlug } from '../utils/urls';
 import ProductSaleRibbon from './ProductSaleRibbon';
+import { useProductPrefetch } from '../hooks/useProductPrefetch';
 
 function formatCategoryLabel(product) {
   const raw =
@@ -63,6 +67,8 @@ const ProductCard = ({
   imagePriority = false
 }) => {
   const { toggleWishlist, products: wishProducts } = useWishlist();
+  const slug = product?.slug || product?.productId || '';
+  const prefetchHandlers = useProductPrefetch(slug);
 
   const inWishlist = useMemo(() => {
     if (!product?._id) return false;
@@ -122,11 +128,13 @@ const ProductCard = ({
       ? Math.round(((Number(compareAt) - price) / Number(compareAt)) * 100)
       : 0;
 
-  const slug = product.slug || product.productId;
+  const displayName = getCleanProductName(product);
+  const productPath = buildProductPath(slug, getProductCategorySlug(product));
   const fake = buildFakeReviews(product);
   const ratingCount = fake.count;
   const rating = fake.rating;
   const imageUrl = productImageUrl(product);
+  if (!imageUrl) return null;
   const badge = getDisplayBadge(product);
   const categoryLabel = formatCategoryLabel(product);
   const inStock =
@@ -136,12 +144,16 @@ const ProductCard = ({
   return (
     <article className={`product-card${layout === 'list' ? ' product-card--list' : ''}`}>
       <div className="product-image">
-        <Link to={`/shop/${slug}`} className="product-image-link product-image-link--cover">
+        <Link
+          to={productPath}
+          className="product-image-link product-image-link--cover"
+          {...prefetchHandlers}
+        >
           {imageUrl ? (
             <ProductImage
               className="product-image__img product-image__img--zoom"
               src={imageUrl}
-              alt={product.name}
+              alt={buildProductImageAlt(product, { category: categoryLabel })}
               priority={imagePriority}
             />
           ) : (
@@ -171,8 +183,8 @@ const ProductCard = ({
         {categoryLabel ? (
           <div className="product-category product-category--muted">{categoryLabel}</div>
         ) : null}
-        <Link to={`/shop/${slug}`} className="product-name-link">
-          <h3 className="product-name product-name--lines-2">{product.name}</h3>
+        <Link to={productPath} className="product-name-link" {...prefetchHandlers}>
+          <h3 className="product-name product-name--lines-2">{displayName}</h3>
         </Link>
         <div className="product-rating product-rating--stars">
           <StarRating

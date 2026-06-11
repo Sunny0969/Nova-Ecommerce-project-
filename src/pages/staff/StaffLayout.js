@@ -177,14 +177,14 @@ export default function StaffLayout() {
       <SEO
         noIndex
         title="Staff Panel"
-        description="Souvenir Handicraft Shop staff console."
+        description="Bazaar staff console."
         canonicalUrl={location.pathname}
       />
 
       <div className="admin-shell">
         <aside className="admin-sidebar" aria-label="Staff navigation">
           <Link to="/staff/dashboard" className="admin-sidebar__brand">
-            <span className="admin-sidebar__logo">Souvenir Handicraft</span>
+            <span className="admin-sidebar__logo">Bazaar</span>
             <span className="admin-sidebar__logo-dot">.</span>
             <span className="admin-sidebar__logo-sub">Staff</span>
           </Link>

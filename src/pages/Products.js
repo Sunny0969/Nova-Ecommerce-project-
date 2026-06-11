@@ -1,34 +1,37 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutGrid, List, SlidersHorizontal, Search, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 import Pagination from '../components/Pagination';
 import CategoryShopSeo from '../components/CategoryShopSeo';
+import OptimizedImage from '../components/OptimizedImage';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
-import { buildMetaDescription, buildPageTitle, getShopListingCanonicalPath } from '../utils/pageSeo';
+import { buildMetaDescription, buildMetaKeywords, buildPageTitle } from '../utils/pageSeo';
+import {
+  buildBrandPath,
+  buildCategoryPath,
+  categoriesFromSearchParams,
+  getShopListingCanonicalPath,
+  parseShopPath,
+  shopFiltersOnlyQuery,
+  shouldStayOnLegacyShopQuery
+} from '../utils/urls';
+import { buildBrandImageAlt } from '../utils/imageAlt';
 import { getCategorySeoContent } from '../data/categorySeoContent';
 import {
   buildFAQPageSchema,
+  buildProductItemListSchema,
   buildSpeakableSpecificationSchema,
   filterValidFaqs
 } from '../utils/jsonLd';
 import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
+import { networkErrorMessage } from '../config/apiOrigin';
 import api from 'api';
 
-const PAGE_SIZE = 50;
-const VIEW_STORAGE_KEY = 'Souvenir Handicraft-shop-products-view';
-
-function categoriesFromSearchParams(searchParams) {
-  const multi = searchParams.getAll('category');
-  if (multi.length) {
-    return [...new Set(multi.map((s) => String(s).trim()).filter(Boolean))];
-  }
-  const legacy = searchParams.get('cat');
-  if (legacy && legacy !== 'all') return [String(legacy).trim()];
-  return [];
-}
+const PAGE_SIZE = 20;
+const VIEW_STORAGE_KEY = 'bazaar-shop-products-view';
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(() =>
@@ -46,6 +49,33 @@ function useMediaQuery(query) {
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const pathInfo = useMemo(() => parseShopPath(location.pathname), [location.pathname]);
+
+  const effectiveSearchParams = useMemo(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('category');
+    next.delete('cat');
+    next.delete('brand');
+    if (pathInfo.categorySlug) next.append('category', pathInfo.categorySlug);
+    if (pathInfo.brandSlug) next.set('brand', pathInfo.brandSlug);
+    return next;
+  }, [searchParams, pathInfo]);
+
+  useEffect(() => {
+    if (location.pathname !== '/shop') return;
+    const cats = categoriesFromSearchParams(searchParams);
+    const brand = (searchParams.get('brand') || '').trim().toLowerCase();
+    if (shouldStayOnLegacyShopQuery(searchParams)) return;
+    const q = shopFiltersOnlyQuery(searchParams);
+    const suffix = q ? `?${q}` : '';
+    if (cats.length === 1 && !brand) {
+      navigate(`${buildCategoryPath(cats[0])}${suffix}`, { replace: true });
+    } else if (brand && cats.length === 0) {
+      navigate(`${buildBrandPath(brand)}${suffix}`, { replace: true });
+    }
+  }, [location.pathname, searchParams, navigate]);
   const isDesktopFilters = useMediaQuery('(min-width: 1025px)');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerCloseRef = useRef(null);
@@ -81,10 +111,10 @@ const Products = () => {
   const inStock = searchParams.get('inStock') === 'true';
   const onSale = searchParams.get('onSale') === 'true';
   const selectedTag = (searchParams.get('tag') || '').trim();
-  const selectedBrandSlug = (searchParams.get('brand') || '').trim().toLowerCase();
+  const selectedBrandSlug = (effectiveSearchParams.get('brand') || '').trim().toLowerCase();
   const selectedCategories = useMemo(
-    () => categoriesFromSearchParams(searchParams),
-    [searchParams]
+    () => categoriesFromSearchParams(effectiveSearchParams),
+    [effectiveSearchParams]
   );
 
   const [searchInput, setSearchInput] = useState(searchUrl);
@@ -151,7 +181,7 @@ const Products = () => {
     };
   }, []);
 
-  const querySignature = searchParams.toString();
+  const querySignature = effectiveSearchParams.toString();
 
   useEffect(() => {
     let cancelled = false;
@@ -197,7 +227,7 @@ const Products = () => {
         if (cancelled) return;
       const msg =
         error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')
-            ? 'Cannot reach the API. Is the backend running on port 5001?'
+            ? networkErrorMessage()
             : apiMessage(error, 'Failed to load products');
       setFetchError(String(msg || 'Failed to load products'));
         setItems([]);
@@ -266,16 +296,14 @@ const Products = () => {
   const toggleCategory = (slug) => {
     const s = String(slug || '').trim().toLowerCase();
     if (!s) return;
-    updateParams((next) => {
-      next.delete('cat');
-      next.delete('tag');
-      const set = new Set(next.getAll('category').map((x) => String(x).trim()).filter(Boolean));
-      if (set.has(s)) set.delete(s);
-      else set.add(s);
-      next.delete('category');
-      Array.from(set).forEach((c) => next.append('category', c));
-      next.set('page', '1');
-    });
+    const isActive = selectedCategories.some((c) => String(c).toLowerCase() === s);
+    const q = shopFiltersOnlyQuery(searchParams);
+    const suffix = q ? `?${q}` : '';
+    if (isActive) {
+      navigate(`/shop${suffix}`);
+    } else {
+      navigate(`${buildCategoryPath(s)}${suffix}`);
+    }
   };
 
   const setSubcategoryTag = (tag) => {
@@ -324,7 +352,7 @@ const Products = () => {
   };
 
   const clearAllFilters = () => {
-    setSearchParams(new URLSearchParams(), { replace: false });
+    navigate('/shop');
     setSearchInput('');
     setMinDraft('');
     setMaxDraft('');
@@ -580,10 +608,10 @@ const Products = () => {
   }, [selectedTag, activeCategorySlug, categoryTags, categoryTagsLoading, setSearchParams]);
 
   const headerTitle = activeBrand?.name
-    ? String(activeBrand.name)
+    ? `${activeBrand.name} Products`
     : activeCategory?.name
-      ? String(activeCategory.name)
-      : 'Shop';
+      ? `Buy ${activeCategory.name} Online`
+      : 'Shop Online in Pakistan';
   const headerSubtitle = activeBrand?.name
     ? `Browse all ${activeBrand.name} products — add to cart with secure checkout.`
     : activeCategory?.description
@@ -591,7 +619,7 @@ const Products = () => {
       : 'Browse the full catalog — refine with filters or search by name.';
 
   const listingSeo = useMemo(() => {
-    const canonicalPath = getShopListingCanonicalPath(searchParams);
+    const canonicalPath = getShopListingCanonicalPath(searchParams, location.pathname);
     const shopListUrl = getCanonicalUrl(canonicalPath);
     const catLabel = activeBrand?.name || activeCategory?.name || headerTitle;
     const title = activeBrand?.name
@@ -603,21 +631,26 @@ const Products = () => {
       ? buildMetaDescription(
           `Buy ${catLabel} online`,
           'Compare prices and get fast delivery. Secure checkout.',
-          `Shop ${catLabel} products at Souvenir Handicraft Shop.`
+          `Shop ${catLabel} products at Bazaar.`
         )
       : activeCategory?.name
         ? buildMetaDescription(
             `Buy ${catLabel} online`,
             'Compare prices, filter by brand, and get fast delivery. Secure checkout.',
-            activeCategory?.description || `Shop ${catLabel} at Souvenir Handicraft Shop.`
+            activeCategory?.description || `Shop ${catLabel} at Bazaar.`
           )
         : buildMetaDescription(
             'Online shopping Pakistan',
             'Browse groceries, homecare, fashion, and electronics with secure payment.',
-            'Souvenir Handicraft Shop — curated products delivered across Pakistan.'
+            'Bazaar — curated products delivered across Pakistan.'
           );
-    return { shopListUrl, title, description };
-  }, [searchParams, activeBrand, activeCategory, headerTitle]);
+    const keywords = activeBrand?.name
+      ? buildMetaKeywords(`buy ${catLabel} online`, catLabel, 'Bazaar', 'online shopping Pakistan')
+      : activeCategory?.name
+        ? buildMetaKeywords(`buy ${catLabel} online`, catLabel, 'groceries', 'Bazaar', 'Pakistan delivery')
+        : buildMetaKeywords('shop online Pakistan', 'groceries', 'Bazaar', 'online store', 'fast delivery');
+    return { shopListUrl, title, description, keywords };
+  }, [searchParams, location.pathname, activeBrand, activeCategory, headerTitle]);
 
   const { listingCanonicalUrl, listingBreadcrumbJsonLd } = useMemo(() => {
     const shopListUrl = listingSeo.shopListUrl;
@@ -648,7 +681,6 @@ const Products = () => {
         listingCanonicalUrl: shopListUrl,
         listingBreadcrumbJsonLd: buildBreadcrumbListSchema([
           { name: 'Home', path: '/' },
-          { name: 'Shop', path: '/shop' },
           { name, url: shopListUrl }
         ])
       };
@@ -666,6 +698,11 @@ const Products = () => {
     const schemas = [];
     if (listingBreadcrumbJsonLd) schemas.push(listingBreadcrumbJsonLd);
 
+    if (items.length > 0) {
+      const itemList = buildProductItemListSchema(items, headerTitle);
+      if (itemList) schemas.push(itemList);
+    }
+
     if (activeCategorySlug) {
       const seoContent = getCategorySeoContent(activeCategorySlug);
       const faqSchema = buildFAQPageSchema(filterValidFaqs(seoContent?.faqs));
@@ -679,7 +716,7 @@ const Products = () => {
     }
 
     return schemas.length ? schemas : null;
-  }, [listingBreadcrumbJsonLd, activeCategorySlug, listingCanonicalUrl]);
+  }, [listingBreadcrumbJsonLd, activeCategorySlug, listingCanonicalUrl, items, headerTitle]);
 
   return (
     <>
@@ -687,6 +724,7 @@ const Products = () => {
         title={listingSeo.title}
         description={listingSeo.description}
         canonicalUrl={listingCanonicalUrl}
+        keywords={listingSeo.keywords}
         schema={listingJsonLd}
       />
       <header className="page-header">
@@ -701,11 +739,11 @@ const Products = () => {
               <li>
                 <Link to="/brands">Brands</Link>
               </li>
-            ) : selectedCategories.length === 1 ? (
+            ) : selectedCategories.length === 1 ? null : (
               <li>
                 <Link to="/shop">Shop</Link>
               </li>
-            ) : null}
+            )}
             <li className="active" aria-current="page">
               {shopBreadcrumbLabel}
             </li>
@@ -743,7 +781,7 @@ const Products = () => {
         </div>
       </header>
 
-      <main className="section shop-page" id="main-content">
+      <div className="section shop-page">
         <div className="container">
           {!isDesktopFilters && (
             <div className="shop-mobile-filter-bar">
@@ -768,7 +806,7 @@ const Products = () => {
             </div>
           )}
 
-          <div className="shop-layout shop-layout--Souvenir Handicraft">
+          <div className="shop-layout shop-layout--bazaar">
             {isDesktopFilters ? (
               <aside className="filter-sidebar shop-filters-desktop" aria-labelledby="shop-filters-heading">
                 {filterPanel}
@@ -802,14 +840,13 @@ const Products = () => {
                 <div className="shop-brand-bar" aria-label="Active brand filter">
                   <div className="shop-brand-bar__identity">
                     {activeBrand.imageUrl ? (
-                      <img
+                      <OptimizedImage
                         className="shop-brand-bar__logo"
                         src={activeBrand.imageUrl}
-                        alt=""
+                        alt={buildBrandImageAlt(activeBrand.name)}
                         width={48}
                         height={48}
-                        loading="lazy"
-                        decoding="async"
+                        optimizeWidth={96}
                       />
                     ) : null}
                     <div>
@@ -824,12 +861,7 @@ const Products = () => {
                     <button
                       type="button"
                       className="shop-brand-bar__clear"
-                      onClick={() =>
-                        updateParams((next) => {
-                          next.delete('brand');
-                          next.set('page', '1');
-                        })
-                      }
+                      onClick={() => navigate('/shop')}
                     >
                       Clear filter
                     </button>
@@ -886,7 +918,7 @@ const Products = () => {
                 </div>
               ) : null}
 
-              <div className="shop-toolbar shop-toolbar--Souvenir Handicraft">
+              <div className="shop-toolbar shop-toolbar--bazaar">
                 <p className="results-count" aria-live="polite">
                   {loading || searchPending ? (
                     <span className="results-count__label">
@@ -1032,7 +1064,7 @@ const Products = () => {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 };

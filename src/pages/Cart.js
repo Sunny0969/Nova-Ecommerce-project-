@@ -4,15 +4,15 @@ import { Lock, ShoppingCart, Truck } from 'lucide-react';
 import SEO from '../components/SEO';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import CartItem from '../components/CartItem';
 import { formatPKR } from '../utils/currency';
-import { computeTotalsPreview } from '../utils/pricing';
-import { storeSettingsAPI, recommendationsAPI } from 'api';
+import { computeTotalsPreview, computeCartWeightKg } from '../utils/pricing';
+import { recommendationsAPI } from 'api';
 import RecommendationRow from '../components/RecommendationRow';
 import { getSessionId } from '../lib/sessionId';
+import { useStoreSettings } from '../hooks/useStoreSettings';
 
 function round2(n) {
   return Math.round(Number(n) * 100) / 100;
@@ -20,8 +20,6 @@ function round2(n) {
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { user, canAccessCustomerApp } = useAuth();
-  const customerUser = canAccessCustomerApp ? user : null;
   const {
     cart,
     cartState,
@@ -34,21 +32,8 @@ const Cart = () => {
     getSubtotal
   } = useCart();
   const [couponCode, setCouponCode] = useState('');
-  const [publicSettings, setPublicSettings] = useState(null);
   const [mightLike, setMightLike] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    storeSettingsAPI
-      .get()
-      .then((r) => {
-        if (!cancelled) setPublicSettings(r.data?.data || null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { settings, loading: settingsLoading } = useStoreSettings();
 
   useEffect(() => {
     const sid = getSessionId();
@@ -68,18 +53,11 @@ const Cart = () => {
     return Number(cartState.discountAmount) || 0;
   }, [totals, cartState.discountAmount]);
 
-  const settings = customerUser ? cartState.storeSettings : publicSettings;
-
   const preview = useMemo(() => {
     if (!cart.length || !settings) return null;
-    if (customerUser && cartState.pricingPreview) return cartState.pricingPreview;
-    return computeTotalsPreview(subtotal, discountAmount, 'standard', settings);
-  }, [cart.length, customerUser, cartState.pricingPreview, subtotal, discountAmount, settings]);
-
-  const freeThreshold = useMemo(() => {
-    const t = Number(settings?.freeShippingMin);
-    return Number.isFinite(t) && t >= 0 ? t : 50;
-  }, [settings]);
+    const cartWeightKg = computeCartWeightKg(cart, settings);
+    return computeTotalsPreview(subtotal, discountAmount, 'standard', settings, cartWeightKg);
+  }, [cart, subtotal, discountAmount, settings]);
 
   const handleApplyCoupon = async () => {
     const code = couponCode.trim();
@@ -103,7 +81,7 @@ const Cart = () => {
       <SEO
         noIndex
         title="Shopping cart"
-        description="Review your Souvenir Handicraft Shop basket, apply a coupon, and proceed to secure checkout."
+        description="Review your Bazaar basket, apply a coupon, and proceed to secure checkout."
         canonicalUrl="/cart"
       />
       <header className="page-header">
@@ -124,7 +102,7 @@ const Cart = () => {
         </div>
       </header>
 
-      <main className="cart-page" id="main-content">
+      <div className="cart-page">
         <div className="container">
           <div className={`cart-layout ${cart.length === 0 ? 'cart-layout--empty' : ''}`}>
             <div className="cart-page__main">
@@ -148,7 +126,7 @@ const Cart = () => {
                     className="cart-empty-state"
                     illustration={<ShoppingCart className="h-12 w-12 sm:h-14 sm:w-14" strokeWidth={1.25} aria-hidden />}
                     title="Your cart is empty"
-                    message="Browse the shop and add products you love. Standard delivery is a flat rate; express options may qualify for free shipping over your store minimum at checkout."
+                    message="Browse the shop and add products you love. Shipping at checkout depends on delivery speed and cart weight."
                     actionLabel="Continue Shopping"
                     onAction={() => navigate('/shop')}
                   />
@@ -212,12 +190,26 @@ const Cart = () => {
                   {preview ? (
                     <>
                       <div className="summary-row">
-                        <span className="label">Shipping (standard)</span>
+                        <span className="label">
+                          Shipping (standard)
+                          {preview.shippingPrice === 0 ? ' — free' : ''}
+                        </span>
                         <span className="value">{formatPKR(preview.shippingPrice)}</span>
                       </div>
+                      {preview.cartWeightKg != null ? (
+                        <div className="summary-row summary-row--muted">
+                          <span className="label">Cart weight</span>
+                          <span className="value">{preview.cartWeightKg} kg</span>
+                        </div>
+                      ) : null}
                       {preview.taxPrice > 0 ? (
                         <div className="summary-row">
-                          <span className="label">Tax</span>
+                          <span className="label">
+                            Tax
+                            {settings?.taxRate > 0
+                              ? ` (${Math.round(Number(settings.taxRate) * 10000) / 100}%)`
+                              : ''}
+                          </span>
                           <span className="value">{formatPKR(preview.taxPrice)}</span>
                         </div>
                       ) : null}
@@ -230,8 +222,12 @@ const Cart = () => {
                         <span className="value">{formatPKR(preview.totalPrice)}</span>
                       </div>
                     </>
-                  ) : (
+                  ) : settingsLoading ? (
                     <p className="cart-summary__ship-hint text-sm text-neutral-600">Loading shipping &amp; tax…</p>
+                  ) : (
+                    <p className="cart-summary__ship-hint text-sm text-neutral-600">
+                      Shipping rates unavailable. Refresh the page.
+                    </p>
                   )}
 
                   <button
@@ -253,8 +249,8 @@ const Cart = () => {
                     </li>
                     <li>
                       <Truck size={16} strokeWidth={1.75} aria-hidden />
-                      Standard delivery {preview ? formatPKR(preview.shippingPrice) : formatPKR(299)} — express options
-                      may be free over {formatPKR(freeThreshold)} at checkout
+                      Standard {preview ? formatPKR(preview.shippingPrice) : formatPKR(299)} — express &amp; next-day
+                      rates shown at checkout
                     </li>
                   </ul>
                   <p className="cart-summary__hint">
@@ -268,7 +264,7 @@ const Cart = () => {
 
           <RecommendationRow title="You might also like" products={mightLike} />
         </div>
-      </main>
+      </div>
     </>
   );
 };

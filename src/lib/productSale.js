@@ -28,3 +28,12 @@ export function filterOnSaleProducts(products) {
   if (!Array.isArray(products)) return [];
   return products.filter(isProductOnSale);
 }
+
+/** Highest sale % across a product list (same rules as flash sale cards). */
+export function getMaxProductDiscountPercent(products) {
+  if (!Array.isArray(products)) return 0;
+  return products.reduce((max, product) => {
+    const sale = getProductSalePrices(product);
+    return sale ? Math.max(max, sale.discountPercent) : max;
+  }, 0);
+}

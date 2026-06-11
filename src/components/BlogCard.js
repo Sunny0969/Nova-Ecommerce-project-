@@ -1,5 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { optimizeImageUrl } from '../utils/optimizedImageUrl';
+import { buildBlogImageAlt } from '../utils/imageAlt';
+import OptimizedImage from './OptimizedImage';
 
 /**
  * BlogCard
@@ -53,13 +56,13 @@ export default function BlogCard({
         aria-label={`Read more: ${blog?.title || 'Blog post'}`}
       >
         <div className="blog-card__img">
-          <img
-            src={blog?.featuredImage}
-            alt={blog?.imageAlt || blog?.title || 'Blog featured'}
+          <OptimizedImage
+            src={optimizeImageUrl(blog?.featuredImage, { width: 900, quality: 80 })}
+            alt={buildBlogImageAlt(blog)}
             width={900}
             height={675}
-            decoding="async"
-            loading={priority ? 'eager' : 'lazy'}
+            priority={priority}
+            optimize={false}
           />
 
           <div className="blog-card__img-scrim" aria-hidden="true" />

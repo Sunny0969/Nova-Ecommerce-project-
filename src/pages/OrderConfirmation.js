@@ -7,6 +7,7 @@ import { apiMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatPKR } from '../utils/currency';
+import { trackPurchase } from '../lib/metaPixel';
 import { EASYPAISA_NUMBER } from '../config/payments';
 import { resolvePaymentProof } from '../utils/orderPaymentProof';
 
@@ -83,6 +84,11 @@ export default function OrderConfirmation() {
       cancelled = true;
     };
   }, [id, guestOrder]);
+
+  useEffect(() => {
+    if (!order?._id) return;
+    trackPurchase(order);
+  }, [order?._id]);
 
   if (loading) {
     return (

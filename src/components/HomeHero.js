@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Leaf, PartyPopper, RefreshCw } from 'lucide-react';
-import { publicAPI } from 'api';
+import { publicAPI, productsAPI } from 'api';
+import { unwrapFeaturedResponse } from '../lib/api';
+import { getMaxProductDiscountPercent } from '../lib/productSale';
 import './HomeHero.css';
-
-const COMING_SOON = 'Coming Soon';
 
 const FEATURES = [
   { icon: Leaf, title: 'Fresh & Fast Delivery', sub: 'Daily fresh items • Same day available' },
@@ -12,37 +12,98 @@ const FEATURES = [
 
 export default function HomeHero() {
   const [stats, setStats] = useState(null);
+  const [maxFromProducts, setMaxFromProducts] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
-        const res = await publicAPI.homeStats();
-        if (!cancelled) setStats(res.data?.data || null);
+        const [statsRes, flashRes] = await Promise.all([
+          publicAPI.homeStats(),
+          productsAPI.getFlashSale({ limit: 48 })
+        ]);
+
+        if (cancelled) return;
+
+        setStats(statsRes.data?.data || null);
+
+        const flashList = unwrapFeaturedResponse(flashRes);
+        setMaxFromProducts(getMaxProductDiscountPercent(flashList));
       } catch {
-        if (!cancelled) setStats(null);
+        if (!cancelled) {
+          setStats(null);
+          setMaxFromProducts(0);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
   const promo = stats?.promo;
-  const promoTitle = loading ? '…' : promo?.title || COMING_SOON;
-  const promoSub = loading ? '…' : promo?.subtitle || COMING_SOON;
+  const apiPct = Number(promo?.maxDiscountPercent);
+  const maxDiscountPercent = loading
+    ? 0
+    : Math.max(
+        Number.isFinite(apiPct) && apiPct > 0 ? Math.round(apiPct) : 0,
+        maxFromProducts
+      );
+
+  const renderPromoSub = () => {
+    if (loading) return '…';
+
+    const subtitle = promo?.subtitle || 'Limited time • Best prices on Bazaar';
+    const deliveryText =
+      stats?.deliveryLabel ||
+      (() => {
+        const bullet = subtitle.indexOf('•');
+        if (bullet === -1) return null;
+        const tail = subtitle.slice(bullet + 1).trim();
+        return /free delivery/i.test(tail) ? tail : null;
+      })();
+
+    if (deliveryText) {
+      return (
+        <>
+          Limited time • <strong className="rozana-hero__promo-delivery">{deliveryText}</strong>
+        </>
+      );
+    }
+
+    return subtitle;
+  };
+
+  const renderPromoTitle = () => {
+    if (loading) {
+      return (
+        <>
+          Sale — Up to <strong className="rozana-hero__promo-pct">…</strong> Off
+        </>
+      );
+    }
+
+    return (
+      <>
+        Sale — Up to <strong className="rozana-hero__promo-pct">{maxDiscountPercent}%</strong> Off
+      </>
+    );
+  };
 
   return (
-    <section className="rozana-hero" id="rozana-hero" aria-label="Rozana storefront hero">
+    <section className="rozana-hero" id="rozana-hero" aria-label="Bazaar storefront hero">
       <div className="container rozana-hero__grid">
         <div className="rozana-hero__copy">
           <p className="rozana-hero__eyebrow">Pakistan ka no. 1 online store</p>
 
           <h1 className="rozana-hero__title">
-            Sab kuch <span className="rozana-hero__accent">ghar pe</span>, sab se sasti qeemat pe.
+            Online Shopping Pakistan — sab kuch{' '}
+            <span className="rozana-hero__accent">ghar pe</span>, sab se sasti qeemat pe.
           </h1>
 
           <p className="rozana-hero__lead">
@@ -52,17 +113,13 @@ export default function HomeHero() {
         </div>
 
         <div className="rozana-hero__panel">
-          <div
-            className={`rozana-hero__promo ${!promo && !loading ? 'rozana-hero__promo--soon' : ''}`}
-            role="region"
-            aria-label="Current promotion"
-          >
+          <div className="rozana-hero__promo" role="region" aria-label="Current promotion">
             <span className="rozana-hero__promo-icon" aria-hidden>
               <PartyPopper size={22} strokeWidth={2.25} />
             </span>
             <div className="rozana-hero__promo-text">
-              <p className="rozana-hero__promo-title">{promoTitle}</p>
-              <p className="rozana-hero__promo-sub">{promoSub}</p>
+              <p className="rozana-hero__promo-title">{renderPromoTitle()}</p>
+              <p className="rozana-hero__promo-sub">{renderPromoSub()}</p>
             </div>
           </div>
 

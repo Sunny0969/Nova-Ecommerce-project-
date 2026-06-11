@@ -1,16 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
 import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import HomeBannerSlider from '../components/HomeBannerSlider';
 import HomeHero from '../components/HomeHero';
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
-import HomeFlashSale from '../components/HomeFlashSale';
-import HomeCategorySaleRows from '../components/HomeCategorySaleRows';
-import HomePopularBrands from '../components/HomePopularBrands';
-import HomeWhyChoose from '../components/HomeWhyChoose';
-import { buildMetaDescription, buildPageTitle } from '../utils/pageSeo';
+import LazySection from '../components/LazySection';
+import HomeSectionFallback from '../components/HomeSectionFallback';
+import { homeRouteSeo } from '../config/routeSeo';
 import api from 'api';
+
+const HomeFlashSale = lazy(() => import('../components/HomeFlashSale'));
+const HomePopularBrands = lazy(() => import('../components/HomePopularBrands'));
+const HomeCategorySaleRows = lazy(() => import('../components/HomeCategorySaleRows'));
+const HomeWhyChoose = lazy(() => import('../components/HomeWhyChoose'));
 
 const Home = () => {
   const [categories, setCategories] = useState([]);
@@ -45,12 +48,10 @@ const Home = () => {
   return (
     <>
       <SEO
-        title={buildPageTitle('Online Shopping Pakistan', 'Groceries & Handicrafts')}
-        description={buildMetaDescription(
-          'online shopping Pakistan',
-          'Shop groceries, cleaning, tea, rice, fashion & electronics with fast delivery from Hyderabad.',
-          'Souvenir Handicraft Shop — quality products, secure checkout, nationwide delivery.'
-        )}
+        title={homeRouteSeo.title}
+        description={homeRouteSeo.description}
+        keywords={homeRouteSeo.keywords}
+        canonicalUrl="/"
       />
 
       <div className="home-top-stack">
@@ -70,13 +71,29 @@ const Home = () => {
         </div>
       </section>
 
-      <HomeFlashSale />
+      <LazySection minHeight="280px">
+        <Suspense fallback={<HomeSectionFallback label="Loading flash sale" />}>
+          <HomeFlashSale />
+        </Suspense>
+      </LazySection>
 
-      <HomePopularBrands />
+      <LazySection minHeight="220px">
+        <Suspense fallback={<HomeSectionFallback label="Loading brands" />}>
+          <HomePopularBrands />
+        </Suspense>
+      </LazySection>
 
-      <HomeCategorySaleRows onAddToCart={handleAddToCart} />
+      <LazySection minHeight="360px">
+        <Suspense fallback={<HomeSectionFallback label="Loading category deals" />}>
+          <HomeCategorySaleRows onAddToCart={handleAddToCart} />
+        </Suspense>
+      </LazySection>
 
-      <HomeWhyChoose />
+      <LazySection minHeight="240px">
+        <Suspense fallback={<HomeSectionFallback label="Loading features" />}>
+          <HomeWhyChoose />
+        </Suspense>
+      </LazySection>
     </>
   );
 };

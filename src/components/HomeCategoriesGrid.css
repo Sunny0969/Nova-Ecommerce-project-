@@ -157,3 +157,10 @@
     font-size: var(--text-size-base, 0.82rem);
   }
 }
+
+/* Homepage categories grid — desktop/tablet only (category strip in header covers mobile) */
+@media (max-width: 767px) {
+  .home-categories-browse {
+    display: none !important;
+  }
+}

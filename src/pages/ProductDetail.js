@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import Skeleton from 'react-loading-skeleton';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 import { getCanonicalUrl, buildBreadcrumbListSchema } from '../utils/seo';
-import { buildMetaDescription, buildPageTitle } from '../utils/pageSeo';
+import { buildMetaDescription, buildMetaKeywords, buildPageTitle } from '../utils/pageSeo';
+import { buildCategoryPath, buildProductPath, getProductCategorySlug } from '../utils/urls';
+import { buildProductImageAlt } from '../utils/imageAlt';
+import { getProductDetailLinks } from '../data/seoInternalLinks';
+import InternalLinksBlock from '../components/InternalLinksBlock';
 import {
   buildProductSchema,
-  buildProductReviewSchemas,
   buildSpeakableSpecificationSchema,
   getProductPageReviews,
   getProductRatingForSchema
@@ -18,14 +20,24 @@ import {
 import { productImageUrl } from '../lib/productImage';
 import { apiMessage } from '../lib/api';
 import { formatPKR } from '../utils/currency';
+import { trackViewContent } from '../lib/metaPixel';
 import ImageGallery from '../components/ImageGallery';
 import NotFound from './NotFound';
 import ProductImage from '../components/ProductImage';
 import RecommendationRow from '../components/RecommendationRow';
+import ProductDetailPageSkeleton from '../components/skeletons/ProductDetailPageSkeleton';
+import { getPrefetchedProductResponse } from '../lib/prefetchProduct';
 import { eventsAPI, recommendationsAPI } from 'api';
 import { getSessionId } from '../lib/sessionId';
 import StarRating from '../components/StarRating';
 import { buildFakeReviews } from '../lib/fakeReviews';
+import { getProductPhysicalSpecs } from '../lib/productPhysicalSpecs';
+import {
+  getCleanShortDescription,
+  getCleanLongDescription,
+  resolveProductDescriptionHtml,
+  sanitizeProductDescriptions
+} from '../lib/productDescription';
 import api, { productsAPI } from 'api';
 
 function stripHtml(html) {
@@ -98,7 +110,10 @@ function formatCategoryLabel(slug, name) {
 }
 
 export default function ProductDetail() {
-  const { slug } = useParams();
+  const { slug: legacySlug, categorySlug: routeCategorySlug, productSlug } = useParams();
+  const slug = productSlug || legacySlug;
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, canAccessCustomerApp } = useAuth();
   const customerUser = canAccessCustomerApp ? user : null;
   const { addToCart } = useCart();
@@ -111,6 +126,8 @@ export default function ProductDetail() {
   const [notifyBanner, setNotifyBanner] = useState(null);
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
@@ -130,14 +147,15 @@ export default function ProductDetail() {
     setNotFound(false);
     setNotifyBanner(null);
     try {
-      const res = await productsAPI.getOne(slug);
+      const prefetched = getPrefetchedProductResponse(slug);
+      const res = prefetched ?? (await productsAPI.getOne(slug));
       const data = res.data?.data;
       if (data?.unavailable) {
-        setProduct(data);
+        setProduct(sanitizeProductDescriptions(data));
         return;
       }
       if (data) {
-        setProduct(data);
+        setProduct(sanitizeProductDescriptions(data));
         return;
       }
       setProduct(null);
@@ -158,6 +176,22 @@ export default function ProductDetail() {
   useEffect(() => {
     loadProduct();
   }, [loadProduct]);
+
+  /** Redirect legacy /shop/:slug → canonical /:category/:slug */
+  useEffect(() => {
+    if (!product?.slug || product.unavailable) return;
+    const canonical = buildProductPath(product.slug, getProductCategorySlug(product));
+    const current = location.pathname.replace(/\/+$/, '') || '/';
+    const target = canonical.replace(/\/+$/, '');
+    if (current !== target) {
+      navigate(`${target}${location.search}${location.hash}`, { replace: true });
+    }
+  }, [product, location.pathname, location.search, location.hash, navigate]);
+
+  useEffect(() => {
+    if (!product?._id || product?.unavailable) return;
+    trackViewContent(product, customerUser);
+  }, [product?._id, product?.unavailable, product?.name, product?.price, customerUser]);
 
   useEffect(() => {
     // log view + load product-page recommendations
@@ -190,6 +224,7 @@ export default function ProductDetail() {
   useEffect(() => {
     setNotifyEmail('');
     setNotifyBanner(null);
+    setTermsAccepted(false);
   }, [slug]);
 
   const handleNotifyStock = async (e) => {
@@ -219,16 +254,40 @@ export default function ProductDetail() {
     !product.unavailable &&
     wishProducts.some((p) => String(p._id || p) === String(product._id));
 
+  const getCartVariantNote = useCallback(() => {
+    if (!product || !hasStructuredVariantAxes(product.variantAxes)) return '';
+    return buildVariantSelectionSummary(product.variantAxes, variantPick);
+  }, [product, variantPick]);
+
   const handleAdd = async () => {
     if (!product) return;
     setAdding(true);
     try {
-      const cartVariantNote = hasStructuredVariantAxes(product.variantAxes)
-        ? buildVariantSelectionSummary(product.variantAxes, variantPick)
-        : '';
-      await addToCart(product, qty, { cartVariantNote });
+      await addToCart(product, qty, { cartVariantNote: getCartVariantNote() });
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!product) return;
+    if (!termsAccepted) {
+      toast.error('Please accept the Terms & Conditions to continue');
+      return;
+    }
+    if (!product.inStock) return;
+
+    setBuyingNow(true);
+    try {
+      const result = await addToCart(product, qty, {
+        cartVariantNote: getCartVariantNote(),
+        silent: true
+      });
+      if (result?.success) {
+        navigate('/checkout');
+      }
+    } finally {
+      setBuyingNow(false);
     }
   };
 
@@ -236,11 +295,6 @@ export default function ProductDetail() {
     if (!product) return;
     await toggleWishlist(product);
   };
-
-  const shareUrl = useMemo(() => {
-    if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/shop/${encodeURIComponent(slug || '')}`;
-  }, [slug]);
 
   const copyLink = async () => {
     try {
@@ -394,22 +448,30 @@ export default function ProductDetail() {
     [histogram]
   );
 
-  const productPath = useMemo(
-    () => (slug ? `/shop/${encodeURIComponent(String(slug))}` : '/shop'),
-    [slug]
-  );
+  const productPath = useMemo(() => {
+    if (!slug) return '/shop';
+    const cat = product
+      ? getProductCategorySlug(product)
+      : routeCategorySlug || '';
+    return buildProductPath(slug, cat);
+  }, [slug, product, routeCategorySlug]);
+  const shareUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}${productPath}`;
+  }, [productPath]);
   const canonicalUrl = useMemo(() => getCanonicalUrl(productPath), [productPath]);
 
   const productJsonLd = useMemo(() => {
     if (!product) return null;
     const imgs = images.map((i) => i && i.url).filter(Boolean);
-    const short = stripHtml(product.shortDescription || '');
-    const long = stripHtml(product.description || '');
+    const short = getCleanShortDescription(product);
+    const long = getCleanLongDescription(product);
     const desc = (short || long || String(product.name || '')).trim().slice(0, 8000);
     const stockN =
       product.stockQuantity != null && product.stockQuantity !== '' ? Number(product.stockQuantity) : null;
     const inStock = Boolean(product.inStock) || (stockN != null && !Number.isNaN(stockN) && stockN > 0);
     const { ratingValue, reviewCount } = getProductRatingForSchema(product, fake);
+    const pageReviews = getProductPageReviews(product, fake);
     return buildProductSchema(product, {
       canonicalUrl,
       images: imgs,
@@ -417,7 +479,8 @@ export default function ProductDetail() {
       inStock,
       ratingValue,
       reviewCount,
-      description: desc
+      description: desc,
+      reviews: pageReviews
     });
   }, [product, images, price, canonicalUrl, fake]);
 
@@ -427,12 +490,9 @@ export default function ProductDetail() {
     const catName = formatCategoryLabel(catSlug, product.categoryName);
     const pathCat =
       catSlug && String(catSlug)
-        ? `/shop?category=${encodeURIComponent(String(catSlug))}`
+        ? buildCategoryPath(String(catSlug))
         : null;
-    const list = [
-      { name: 'Home', path: '/' },
-      { name: 'Shop', path: '/shop' }
-    ];
+    const list = [{ name: 'Home', path: '/' }];
     if (pathCat) {
       list.push({
         name: catName,
@@ -446,9 +506,6 @@ export default function ProductDetail() {
   const structuredData = useMemo(() => {
     if (!productJsonLd || !breadcrumbJsonLd) return null;
     const schemas = [breadcrumbJsonLd, productJsonLd];
-    const pageReviews = getProductPageReviews(product, fake);
-    const reviewSchemas = buildProductReviewSchemas(pageReviews, product.name);
-    if (reviewSchemas.length) schemas.push(...reviewSchemas);
 
     const speakable = buildSpeakableSpecificationSchema(canonicalUrl, [
       '.product-detail-title',
@@ -457,7 +514,7 @@ export default function ProductDetail() {
     if (speakable) schemas.push(speakable);
 
     return schemas;
-  }, [productJsonLd, breadcrumbJsonLd, product, fake, canonicalUrl]);
+  }, [productJsonLd, breadcrumbJsonLd, canonicalUrl]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -479,18 +536,10 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <main className="section container product-detail-skeleton" id="main-content">
-        <SEO
-          title="Product"
-          description="Loading product details at Souvenir Handicraft Shop."
-        />
-        <div className="product-detail-grid">
-          <Skeleton height={420} style={{ borderRadius: 12 }} />
-          <div>
-            <Skeleton count={5} />
-          </div>
-        </div>
-      </main>
+      <>
+        <SEO title="Product" description="Loading product details at Bazaar." />
+        <ProductDetailPageSkeleton />
+      </>
     );
   }
 
@@ -506,8 +555,9 @@ export default function ProductDetail() {
     const catSlugUn = product.categorySlug || product.category;
     const catNameUn = formatCategoryLabel(catSlugUn, product.categoryName);
     const metaUnavailable =
-      stripHtml(product.shortDescription || product.description || '').slice(0, 160) ||
-      `${product.name} is not available at Souvenir Handicraft Shop.`;
+      getCleanShortDescription(product).slice(0, 160) ||
+      getCleanLongDescription(product).slice(0, 160) ||
+      `${product.name} is not available at Bazaar.`;
 
     return (
       <>
@@ -523,14 +573,15 @@ export default function ProductDetail() {
               <li>
                 <Link to="/">Home</Link>
               </li>
-              <li>
-                <Link to="/shop">Shop</Link>
-              </li>
               {catSlugUn ? (
                 <li>
-                  <Link to={`/shop?category=${encodeURIComponent(catSlugUn)}`}>{catNameUn}</Link>
+                  <Link to={buildCategoryPath(catSlugUn)}>{catNameUn}</Link>
                 </li>
-              ) : null}
+              ) : (
+                <li>
+                  <Link to="/shop">Shop</Link>
+                </li>
+              )}
               <li className="active" aria-current="page">
                 {product.name}
               </li>
@@ -538,7 +589,7 @@ export default function ProductDetail() {
           </div>
         </header>
 
-        <main className="section product-detail-page" id="main-content">
+        <div className="section product-detail-page">
           <div className="container product-detail-unavailable">
             <div className="product-detail-grid">
               <div className="product-detail-gallery-col">
@@ -567,7 +618,7 @@ export default function ProductDetail() {
                   </Link>
                   {catSlugUn ? (
                     <Link
-                      to={`/shop?category=${encodeURIComponent(catSlugUn)}`}
+                      to={buildCategoryPath(catSlugUn)}
                       className="btn btn-outline"
                     >
                       More in {catNameUn}
@@ -587,12 +638,16 @@ export default function ProductDetail() {
                       const pr = Number(p.price) || 0;
                       const ps = p.slug || p.productId;
                       return (
-                        <Link key={p._id} to={`/shop/${encodeURIComponent(ps || '')}`} className="related-card">
+                        <Link
+                          key={p._id}
+                          to={buildProductPath(ps || '', getProductCategorySlug(p))}
+                          className="related-card"
+                        >
                           <div className="related-card__img-wrap">
                             {img ? (
                               <ProductImage
                                 src={img}
-                                alt=""
+                                alt={buildProductImageAlt(p)}
                                 className="related-card__img"
                                 width={400}
                                 height={400}
@@ -613,21 +668,29 @@ export default function ProductDetail() {
               </section>
             ) : null}
           </div>
-        </main>
+        </div>
       </>
     );
   }
 
   const categorySlug = product.categorySlug || product.category;
   const categoryName = formatCategoryLabel(categorySlug, product.categoryName);
+  const physicalSpecs = getProductPhysicalSpecs(product);
+  const shortDescriptionClean = getCleanShortDescription(product);
+  const descriptionHtmlClean = resolveProductDescriptionHtml(product);
   const reviewCount = fake.count;
   const ratingValue = fake.rating;
 
   const metaDesc = buildMetaDescription(
     product.name,
     product.inStock ? 'Buy now with secure checkout and fast delivery.' : 'View details and get notified when back in stock.',
-    stripHtml(product.shortDescription || product.description || '').slice(0, 120)
+    shortDescriptionClean.slice(0, 120) || getCleanLongDescription(product).slice(0, 120)
   );
+
+  const productInternalLinks = getProductDetailLinks({
+    categorySlug,
+    categoryName
+  });
 
   return (
     <>
@@ -637,6 +700,8 @@ export default function ProductDetail() {
         canonicalUrl={productPath}
         ogType="product"
         ogImage={images[0]?.url}
+        ogImageAlt={product.name}
+        keywords={buildMetaKeywords(product.name, categoryName, 'buy online Pakistan', 'Bazaar')}
         schema={structuredData}
       />
 
@@ -646,16 +711,15 @@ export default function ProductDetail() {
             <li>
               <Link to="/">Home</Link>
             </li>
-            <li>
-              <Link to="/shop">Shop</Link>
-            </li>
-            <li>
-              {categorySlug ? (
-                <Link to={`/shop?category=${encodeURIComponent(categorySlug)}`}>{categoryName}</Link>
-              ) : (
-                <span>{categoryName}</span>
-              )}
-            </li>
+            {categorySlug ? (
+              <li>
+                <Link to={buildCategoryPath(categorySlug)}>{categoryName}</Link>
+              </li>
+            ) : (
+              <li>
+                <Link to="/shop">Shop</Link>
+              </li>
+            )}
             <li className="active" aria-current="page">
               {product.name}
             </li>
@@ -663,7 +727,7 @@ export default function ProductDetail() {
         </div>
       </header>
 
-      <main className="section product-detail-page" id="main-content">
+      <div className="section product-detail-page">
         <div className="container product-detail-grid">
           <div className="product-detail-gallery-col">
             <ImageGallery
@@ -680,7 +744,7 @@ export default function ProductDetail() {
             {categorySlug ? (
               <Link
                 className="product-detail-category-link"
-                to={`/shop?category=${encodeURIComponent(categorySlug)}`}
+                to={buildCategoryPath(categorySlug)}
               >
                 {categoryName}
               </Link>
@@ -742,8 +806,8 @@ export default function ProductDetail() {
               ) : null}
             </div>
 
-            {product.shortDescription ? (
-              <p className="product-detail-short">{product.shortDescription}</p>
+            {shortDescriptionClean ? (
+              <p className="product-detail-short">{shortDescriptionClean}</p>
             ) : null}
 
             {hasStructuredVariantAxes(product.variantAxes) ? (
@@ -774,13 +838,17 @@ export default function ProductDetail() {
                                 onClick={() => handleVariantOptionClick(key, i)}
                               >
                                 {o.image?.url ? (
-                                  <img
-                                    className="product-detail-variant-swatch"
-                                    src={o.image.url}
-                                    alt=""
-                                    width={36}
-                                    height={36}
-                                  />
+                                  <span className="product-detail-variant-swatch-wrap" aria-hidden>
+                                    <img
+                                      className="product-detail-variant-swatch"
+                                      src={o.image.url}
+                                      alt=""
+                                      width={36}
+                                      height={36}
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  </span>
                                 ) : null}
                                 <span>{o.label}</span>
                               </button>
@@ -792,8 +860,18 @@ export default function ProductDetail() {
                   );
                 })}
               </div>
-            ) : (product.color || product.texture || product.size) ? (
+            ) : (product.color || product.texture || physicalSpecs.size || physicalSpecs.weight) ? (
               <ul className="product-detail-attrs" aria-label="Product details">
+                {physicalSpecs.size ? (
+                  <li>
+                    <span className="product-detail-attrs__k">Size</span> {physicalSpecs.size}
+                  </li>
+                ) : null}
+                {physicalSpecs.weight ? (
+                  <li>
+                    <span className="product-detail-attrs__k">Weight</span> {physicalSpecs.weight}
+                  </li>
+                ) : null}
                 {product.color ? (
                   <li>
                     <span className="product-detail-attrs__k">Color</span> {product.color}
@@ -802,11 +880,6 @@ export default function ProductDetail() {
                 {product.texture ? (
                   <li>
                     <span className="product-detail-attrs__k">Texture</span> {product.texture}
-                  </li>
-                ) : null}
-                {product.size ? (
-                  <li>
-                    <span className="product-detail-attrs__k">Size</span> {product.size}
                   </li>
                 ) : null}
               </ul>
@@ -854,6 +927,46 @@ export default function ProductDetail() {
                   'ADD TO CART'
                 )}
               </button>
+
+              <div className="product-detail-buy-now">
+                <label className="product-detail-terms">
+                  <input
+                    type="checkbox"
+                    className="product-detail-terms__input"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    disabled={!product.inStock}
+                  />
+                  <span className="product-detail-terms__text">
+                    I agree to the{' '}
+                    <Link to="/terms-and-conditions" target="_blank" rel="noopener noreferrer">
+                      Terms &amp; Conditions
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy-policy" target="_blank" rel="noopener noreferrer">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-buy-now-detail"
+                  disabled={!product.inStock || buyingNow || !termsAccepted}
+                  aria-disabled={!product.inStock || buyingNow || !termsAccepted}
+                  onClick={handleBuyNow}
+                >
+                  {buyingNow ? (
+                    <span className="btn-buy-now-detail__inner">
+                      <span className="btn-spinner btn-spinner--on-gold" aria-hidden />
+                      Processing…
+                    </span>
+                  ) : (
+                    'BUY NOW'
+                  )}
+                </button>
+              </div>
+
               <button type="button" className="product-detail-wishlist-btn" onClick={handleWishlist}>
                 {inWishlist ? '♥ Saved to wishlist' : '♡ Add to Wishlist'}
               </button>
@@ -898,10 +1011,10 @@ export default function ProductDetail() {
             hidden={activeTab !== 'description'}
             className="product-detail-panel"
           >
-            {activeTab === 'description' && product.description ? (
+            {activeTab === 'description' && descriptionHtmlClean ? (
               <div
                 className="product-detail-html product-description-html"
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: descriptionHtmlClean }}
               />
             ) : activeTab === 'description' ? (
               <p className="empty-products-hint empty-products-hint--muted">No description provided.</p>
@@ -1069,12 +1182,16 @@ export default function ProductDetail() {
                   const pr = Number(p.price) || 0;
                   const ps = p.slug || p.productId;
                   return (
-                    <Link key={p._id} to={`/shop/${encodeURIComponent(ps || '')}`} className="related-card">
+                    <Link
+                      key={p._id}
+                      to={buildProductPath(ps || '', getProductCategorySlug(p))}
+                      className="related-card"
+                    >
                       <div className="related-card__img-wrap">
                         {img ? (
                           <ProductImage
                             src={img}
-                            alt=""
+                            alt={buildProductImageAlt(p)}
                             className="related-card__img"
                             width={400}
                             height={400}
@@ -1096,10 +1213,15 @@ export default function ProductDetail() {
         ) : null}
 
         <div className="container">
+          <InternalLinksBlock
+            className="product-detail-internal-links"
+            title="Shop related categories"
+            links={productInternalLinks}
+          />
           <RecommendationRow title="Customers also bought" products={alsoBought} />
           <RecommendationRow title="Similar items" products={similar} />
         </div>
-      </main>
+      </div>
     </>
   );
 }

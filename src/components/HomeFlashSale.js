@@ -109,13 +109,39 @@ export default function HomeFlashSale() {
     <section className="section home-flash-sale" id="flash-sale" aria-label="Flash sale">
       <div className="container">
         <div className="home-flash-sale__header">
-          <div>
-            <p className="home-flash-sale__eyebrow">Limited time</p>
-            <h2 className="home-flash-sale__title">Flash Sale</h2>
+          <div className="home-flash-sale__title-wrap">
+            <div className="home-flash-sale__title-block">
+              <p className="home-flash-sale__eyebrow">Limited time</p>
+              <h2 className="home-flash-sale__title">Flash Sale</h2>
+            </div>
+            {!loading && !error && products.length > 0 ? (
+              <Link to="/shop?onSale=true" className="home-flash-sale__view-all">
+                Shop flash sale deals online →
+              </Link>
+            ) : null}
           </div>
-          <Link to="/shop?onSale=true" className="home-flash-sale__view-all">
-            View all →
-          </Link>
+          {useSlider && !loading && !error ? (
+            <div className="home-flash-sale__nav" aria-label="Flash sale pages">
+              <button
+                type="button"
+                className="home-flash-sale__arrow"
+                onClick={goPrev}
+                disabled={safePage <= 0}
+                aria-label="Previous flash sale products"
+              >
+                <ChevronLeft size={20} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className="home-flash-sale__arrow"
+                onClick={goNext}
+                disabled={safePage >= totalPages - 1}
+                aria-label="Next flash sale products"
+              >
+                <ChevronRight size={20} strokeWidth={2} />
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {loading ? (
@@ -140,18 +166,6 @@ export default function HomeFlashSale() {
           </div>
         ) : (
           <div className={`home-flash-sale__body${useSlider ? ' home-flash-sale__body--slider' : ''}`}>
-            {useSlider ? (
-              <button
-                type="button"
-                className="home-flash-sale__nav home-flash-sale__nav--prev"
-                onClick={goPrev}
-                disabled={safePage <= 0}
-                aria-label="Previous flash sale products"
-              >
-                <ChevronLeft size={22} strokeWidth={2} />
-              </button>
-            ) : null}
-
             <div className="home-flash-sale__viewport">
               {useSlider ? (
                 <div
@@ -186,18 +200,6 @@ export default function HomeFlashSale() {
                 </div>
               )}
             </div>
-
-            {useSlider ? (
-              <button
-                type="button"
-                className="home-flash-sale__nav home-flash-sale__nav--next"
-                onClick={goNext}
-                disabled={safePage >= totalPages - 1}
-                aria-label="Next flash sale products"
-              >
-                <ChevronRight size={22} strokeWidth={2} />
-              </button>
-            ) : null}
           </div>
         )}
 

@@ -18,12 +18,13 @@ export default function BlogHero({ searchValue, onSearchChange, onSubmit }) {
             <div className="blog-hero__art-icon blog-hero__art-icon--compass">
               <Compass size={30} strokeWidth={1.75} />
             </div>
-            <div className="blog-hero__art-sub">Souvenir Handicraft  Journal</div>
+            <div className="blog-hero__art-sub">Bazaar Journal</div>
           </div>
         </div>
 
         <div className="blog-hero__right">
-          <h1 className="blog-hero__title">SHOP THE STORY</h1>
+          <p className="blog-hero__eyebrow">Shop the story</p>
+          <h1 className="blog-hero__title">Shopping Guides &amp; Tips</h1>
           <p className="blog-hero__subtitle">
             Explore care guides, tech tips, and style notes — then jump straight to curated picks.
           </p>

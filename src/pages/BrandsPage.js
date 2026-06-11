@@ -4,6 +4,11 @@ import Skeleton from 'react-loading-skeleton';
 import SEO from '../components/SEO';
 import api from 'api';
 import { apiMessage } from '../lib/api';
+import { buildMetaDescription, buildMetaKeywords, buildPageTitle } from '../utils/pageSeo';
+import { buildBrandPath } from '../utils/urls';
+import { buildBrandImageAlt } from '../utils/imageAlt';
+import { optimizeImageUrl } from '../utils/optimizedImageUrl';
+import OptimizedImage from '../components/OptimizedImage';
 import './BrandsPage.css';
 
 function unwrapBrands(res) {
@@ -38,8 +43,14 @@ export default function BrandsPage() {
   return (
     <>
       <SEO
-        title="Brands"
-        description="Shop by popular grocery, beverage, and household brands at Rozana."
+        title={buildPageTitle('Shop by Brand', 'Groceries & Essentials')}
+        description={buildMetaDescription(
+          'grocery brands Pakistan',
+          'Browse trusted household and food brands with fast delivery.',
+          'Shop popular brands at Bazaar — secure checkout and delivery across Pakistan.'
+        )}
+        keywords={buildMetaKeywords('brands', 'grocery brands', 'Bazaar', 'online shopping Pakistan')}
+        canonicalUrl="/brands"
       />
       <header className="page-header page-header--product-detail">
         <div className="container">
@@ -54,9 +65,10 @@ export default function BrandsPage() {
         </div>
       </header>
 
-      <main className="section brands-page" id="main-content">
+      <div className="section brands-page">
         <div className="container">
-          <h1 className="brands-page__title">Brands</h1>
+          <h1 className="brands-page__title">Shop by Brand</h1>
+          <h2 className="visually-hidden">Browse all grocery and household brands</h2>
 
           {loading ? (
             <div className="brands-page__grid brands-page__grid--loading">
@@ -84,18 +96,19 @@ export default function BrandsPage() {
                 return (
                   <Link
                     key={brand._id || slug}
-                    to={`/shop?brand=${encodeURIComponent(slug)}`}
+                    to={buildBrandPath(slug)}
                     className="brand-tile brand-tile--link"
                     role="listitem"
                     aria-label={`Shop ${brand.name} products`}
                   >
                     {brand.imageUrl ? (
-                      <img
+                      <OptimizedImage
                         className="brand-tile__img"
-                        src={brand.imageUrl}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
+                        src={optimizeImageUrl(brand.imageUrl, { width: 240, quality: 80 })}
+                        alt={buildBrandImageAlt(brand.name)}
+                        width={240}
+                        height={120}
+                        optimize={false}
                       />
                     ) : (
                       <span className="brand-tile__fallback">{brand.name}</span>
@@ -106,7 +119,7 @@ export default function BrandsPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </>
   );
 }

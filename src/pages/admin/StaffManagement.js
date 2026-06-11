@@ -5,6 +5,7 @@ import { adminAPI } from 'api';
 import Modal from '../../components/Modal';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { apiMessage } from '../../lib/api';
+import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
 
 const formFieldClass =
   'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900';
@@ -405,7 +406,7 @@ export default function StaffManagement() {
                             <div>
                               <div style={{ fontWeight: 700 }}>{p.name}</div>
                               <div className="text-muted" style={{ fontSize: 13 }}>
-                                {p.slug ? `/shop/${p.slug}` : '—'}
+                                {p.slug ? buildProductPath(p.slug, getProductCategorySlug(p)) : '—'}
                               </div>
                             </div>
                           </div>

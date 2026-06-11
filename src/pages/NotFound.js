@@ -6,6 +6,7 @@ import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import RecommendationRow from '../components/RecommendationRow';
 import api, { recommendationsAPI } from 'api';
 import { businessDisplayName } from '../utils/businessContact';
+import { buildCategoryPath } from '../utils/urls';
 
 export default function NotFound() {
   const { pathname } = useLocation();
@@ -59,11 +60,11 @@ export default function NotFound() {
   };
 
   return (
-    <main className="section container not-found-page" id="main-content">
+    <div className="section container not-found-page">
       <SEO
         noIndex
         title="Page Not Found"
-        description="This page is not on Souvenir Handicraft Shop. Search products, browse categories, or contact us in Hyderabad for order help."
+        description="This page is not on Bazaar. Search products, browse categories, or contact us in Hyderabad for order help."
         canonicalUrl={pathname}
       />
 
@@ -123,7 +124,7 @@ export default function NotFound() {
                 if (!slug) return null;
                 return (
                   <li key={cat._id || slug}>
-                    <Link to={`/shop?category=${encodeURIComponent(slug)}`} className="not-found-page__category-card">
+                    <Link to={buildCategoryPath(slug)} className="not-found-page__category-card">
                       <span className="not-found-page__category-name">{name}</span>
                       <span className="not-found-page__category-cta">Shop →</span>
                     </Link>
@@ -136,6 +137,6 @@ export default function NotFound() {
 
         <RecommendationRow title="Bestsellers you may like" products={popular} />
       </div>
-    </main>
+    </div>
   );
 }

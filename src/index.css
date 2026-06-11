@@ -77,7 +77,7 @@
    Single CSS file — zero inline styles used in HTML
    ============================================================ */
 
-/* Fonts self-hosted via @fontsource in index.js (font-display: swap) */
+/* Fonts: public/fonts/*.woff2 + @font-face in public/fonts/fonts.css (font-display: swap) */
 
 /* ============================================================
    1. CSS CUSTOM PROPERTIES (Design Tokens)
@@ -111,8 +111,8 @@
   --page-max-width: 1200px;
   --page-gutter: 1rem;
 
-  --font-display:    'Playfair Display', Georgia, serif;
-  --font-body:       'DM Sans', sans-serif;
+  --font-display:    'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body:       'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   --shadow-sm:       0 2px 8px rgba(26, 26, 46, 0.08);
   --shadow-md:       0 8px 32px rgba(26, 26, 46, 0.12);
@@ -1547,19 +1547,28 @@ p  { color: var(--gray); }
   position: absolute;
   inset: 0;
   z-index: 1;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
+  padding: 0.65rem;
+  box-sizing: border-box;
 }
 /* LazyLoadImage blur wrapper: inline 640×640 was shrinking/centering the image inside the card */
 .product-image .lazy-load-image-background {
-  position: absolute !important;
-  inset: 0 !important;
-  display: block !important;
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: 100% !important;
   height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  background-size: cover !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  background-size: contain !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
   transform: scale(1);
@@ -1567,25 +1576,31 @@ p  { color: var(--gray); }
   transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .product-card:hover .product-image-link--cover > .lazy-load-image-background {
-  transform: scale(1.08);
+  transform: scale(1.03);
 }
 .product-image .lazy-load-image-background > img {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  inset: auto;
   width: 100% !important;
   height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  object-fit: cover;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
   object-position: center;
   z-index: 0;
 }
 .product-image__img {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  inset: auto;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  object-fit: contain;
+  object-position: center;
   z-index: 0;
 }
 /* Priority/eager cards render a plain <img> (no lazy wrapper): keep zoom on the image */
@@ -1595,7 +1610,7 @@ p  { color: var(--gray); }
   transform-origin: center center;
 }
 .product-card:hover .product-image-link--cover > img.product-image__img--zoom {
-  transform: scale(1.08);
+  transform: scale(1.03);
 }
 /* When the blur wrapper zooms, do not also scale the inner img */
 .product-image-link--cover .lazy-load-image-background .product-image__img--zoom {
@@ -3684,8 +3699,6 @@ select.form-control {
   .form-row  { grid-template-columns: 1fr; }
   .footer__grid { grid-template-columns: 1fr; }
   .footer-grid--nova { grid-template-columns: 1fr; }
-  .footer-grid--store { grid-template-columns: 1fr; gap: 2rem; }
-  .footer-categories__grid { grid-template-columns: 1fr; }
   .footer-newsletter { align-items: stretch; flex-direction: column; gap: 1rem; }
   .footer-newsletter__form { width: 100%; flex-direction: column; }
   .footer-newsletter__input { max-width: none; width: 100%; }
@@ -5648,6 +5661,26 @@ select.form-control {
   line-height: 1.25;
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
+.product-detail-variant-swatch-wrap {
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--gray-light);
+  background: var(--white);
+}
+.product-detail-variant-swatch {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center top;
+  border: none;
+  border-radius: 0;
+}
 .product-detail-variant-chip:hover {
   border-color: var(--gray);
   background: var(--white);
@@ -5661,10 +5694,8 @@ select.form-control {
   background: var(--white);
   box-shadow: 0 0 0 1px var(--gold-dark);
 }
-.product-detail-variant-swatch {
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--gray-light);
+.product-detail-variant-chip.is-selected .product-detail-variant-swatch-wrap {
+  border-color: var(--gold-dark);
 }
 
 .qty-control--detail {
@@ -6146,7 +6177,7 @@ select.form-control {
   margin: 0 auto;
   padding: 0;
   border: none;
-  background: var(--gray-light);
+  background: var(--white);
   cursor: zoom-in;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -6159,8 +6190,8 @@ select.form-control {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
+  object-position: center center;
   border-radius: var(--radius-lg);
   display: block;
   max-height: none;
@@ -6195,8 +6226,8 @@ select.form-control {
   height: 100% !important;
   max-width: none !important;
   max-height: none !important;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
+  object-position: center center;
   display: block;
 }
 
@@ -7408,7 +7439,7 @@ select.form-control {
 
 .account-dashboard__stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -7434,6 +7465,202 @@ select.form-control {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--gold-dark);
+}
+
+/* —— Account wallet —— */
+.account-wallet__lead {
+  color: var(--gray);
+  margin: -0.5rem 0 1.25rem;
+  font-size: 0.95rem;
+}
+
+.account-wallet__balance {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1rem;
+}
+
+.account-wallet__balance-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--navy);
+  flex-shrink: 0;
+}
+
+.account-wallet__balance-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-wallet__balance-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--gray);
+}
+
+.account-wallet__balance-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.account-wallet__offer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+  background: rgba(201, 162, 39, 0.08);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+}
+
+.account-wallet__offer p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.account-wallet__section-title {
+  font-size: 1.05rem;
+  margin: 0 0 0.35rem;
+  color: var(--navy);
+}
+
+.account-wallet__topup {
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.account-wallet__hint {
+  font-size: 0.88rem;
+  color: var(--gray);
+  margin: 0 0 0.85rem;
+}
+
+.account-wallet__hint--muted {
+  margin-bottom: 0;
+}
+
+.account-wallet__topup-row {
+  display: flex;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.account-wallet__topup-row .form-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-wallet__quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.account-wallet__uses {
+  margin-bottom: 1.5rem;
+}
+
+.account-wallet__uses-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.account-wallet__uses-list li + li {
+  margin-top: 0.35rem;
+}
+
+.account-wallet__history {
+  margin-bottom: 1rem;
+}
+
+.account-wallet__tx-reason {
+  display: block;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.account-wallet__tx-desc {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--gray);
+  margin-top: 0.15rem;
+}
+
+.account-wallet__tx-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.account-wallet__tx-amount--credit {
+  color: #15803d;
+}
+
+.account-wallet__tx-amount--debit {
+  color: #b45309;
+}
+
+.checkout-wallet {
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.checkout-wallet__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.checkout-wallet__toggle input {
+  margin-top: 0.2rem;
+  accent-color: var(--gold-dark);
+}
+
+.checkout-wallet__title {
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.checkout-wallet__meta {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--gray);
+  margin-top: 0.15rem;
+}
+
+.checkout-wallet__hint {
+  font-size: 0.85rem;
+  color: var(--gray);
+  margin: 0.75rem 0 0;
+}
+
+.checkout-wallet__hint a {
+  color: var(--gold-dark);
+  font-weight: 600;
+}
+
+.checkout-summary__wallet {
+  color: #15803d;
 }
 
 .account-dashboard__recent {
@@ -10690,3 +10917,351 @@ select.form-control {
 .nova-chat-panel-enter {
   animation: nova-chat-open 0.32s ease-out both;
 }
+
+/* ============================================================
+   WhatsApp live chat widget
+   ============================================================ */
+
+.wa-chat-root {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 9999;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.wa-chat-fab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.75rem;
+  height: 3.75rem;
+  border: none;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wa-chat-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.55);
+}
+
+.wa-chat-fab__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid #25d366;
+  animation: wa-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes wa-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.wa-chat-panel {
+  width: min(22rem, calc(100vw - 2rem));
+  height: 32rem;
+  max-height: calc(100vh - 6rem);
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  background: #e5ddd5;
+}
+
+.wa-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #075e54;
+  color: #fff;
+}
+
+.wa-chat-header__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.wa-chat-header__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-chat-header__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.wa-chat-header__status {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: #dcf8c6;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wa-chat-header__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #25d366;
+  flex-shrink: 0;
+}
+
+.wa-chat-header__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.wa-chat-header__close:hover {
+  opacity: 1;
+}
+
+.wa-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.85rem 0.75rem;
+  background-color: #e5ddd5;
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c8c0b8' fill-opacity='0.25'%3E%3Cpath d='M0 0h40v40H0V0zm40 40h40v40H40V40z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.wa-chat-body__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wa-chat-bubble {
+  max-width: 82%;
+  padding: 0.5rem 0.65rem 0.35rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+}
+
+.wa-chat-bubble--user {
+  align-self: flex-end;
+  background: #dcf8c6;
+  border-top-right-radius: 0.15rem;
+}
+
+.wa-chat-bubble--bot,
+.wa-chat-bubble--admin {
+  align-self: flex-start;
+  background: #fff;
+  border-top-left-radius: 0.15rem;
+}
+
+.wa-chat-bubble--admin {
+  border-left: 3px solid #25d366;
+}
+
+.wa-chat-bubble__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #111827;
+}
+
+.wa-chat-bubble__time {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.65rem;
+  color: #6b7280;
+  text-align: right;
+}
+
+.wa-chat-bubble__wa-btn {
+  display: inline-block;
+  margin-top: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  background: #25d366;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.wa-chat-bubble__wa-btn:hover {
+  background: #1da851;
+}
+
+.wa-chat-typing {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.15rem 0;
+}
+
+.wa-chat-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  background: #f0f2f5;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.wa-chat-quick__chip {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  border: 1px solid #075e54;
+  border-radius: 999px;
+  background: #fff;
+  color: #075e54;
+  cursor: pointer;
+}
+
+.wa-chat-quick__chip:hover {
+  background: #075e54;
+  color: #fff;
+}
+
+.wa-chat-compose {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: #f0f2f5;
+}
+
+.wa-chat-compose__input {
+  flex: 1;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  outline: none;
+  background: #fff;
+}
+
+.wa-chat-compose__send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 999px;
+  background: #075e54;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wa-chat-compose__send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wa-chat-wa-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  font-size: 0.7rem;
+  color: #075e54;
+  background: #ece5dd;
+  text-decoration: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.wa-chat-wa-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .wa-chat-root {
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .wa-chat-panel {
+    width: calc(100vw - 1.5rem);
+    height: min(32rem, calc(100vh - 5rem));
+  }
+}
+
+/* Route-level page skeletons (Suspense + slow API) */
+.page-skeleton {
+  min-height: 50vh;
+}
+
+.page-skeleton__breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.page-skeleton__thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.page-skeleton__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-skeleton__category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .page-skeleton__category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.page-skeleton__category-tile {
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-toolbar-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+

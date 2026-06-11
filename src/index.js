@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import '@fontsource/dm-sans/300.css';
-import '@fontsource/dm-sans/400.css';
-import '@fontsource/dm-sans/500.css';
-import '@fontsource/dm-sans/600.css';
-import '@fontsource/playfair-display/400.css';
-import '@fontsource/playfair-display/700.css';
-import '@fontsource/playfair-display/900.css';
+import './assets/fonts/taskor/taskor.css';
 import './index.css';
-import App from './App';
+import './styles/mobile.css';
 import './mix.css';
+
+const App = lazy(() => import('./App'));
+
+function RootFallback() {
+  return (
+    <div
+      className="site-chrome-placeholder site-chrome-placeholder--header"
+      style={{ minHeight: '100vh' }}
+      aria-busy="true"
+      aria-label="Loading Bazaar"
+    />
+  );
+}
+
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <Suspense fallback={<RootFallback />}>
+      <App />
+    </Suspense>
   </React.StrictMode>
 );

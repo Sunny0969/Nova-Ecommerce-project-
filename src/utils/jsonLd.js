@@ -1,6 +1,7 @@
 import {
   getSiteUrl,
   getDefaultOgImageUrl,
+  getCanonicalUrl,
   siteName,
   buildBreadcrumbListSchema
 } from './seo';
@@ -11,6 +12,7 @@ import {
   businessAddressCountry,
   businessPhoneE164
 } from './businessContact';
+import { buildProductPath, getProductCategorySlug } from './urls';
 
 export { buildBreadcrumbListSchema };
 
@@ -26,7 +28,7 @@ export const organizationSameAs = [
   'https://www.youtube.com/'
 ];
 
-export const editorialAuthorName = 'Souvenir Handicraft Editorial Team';
+export const editorialAuthorName = 'Bazaar Editorial Team';
 
 function normalizeBaseUrl(baseUrl) {
   const base =
@@ -139,6 +141,36 @@ export function buildWebSiteSchema(baseUrl, searchParam = 'search') {
 }
 
 /**
+ * @param {Array<{ question: string, answer: string }>|Array<{ q: string, a: string }>} faqs
+ */
+export function flattenFaqItems(faqs) {
+  return (faqs || [])
+    .flatMap((entry) => {
+      if (entry?.question && entry?.answer) {
+        return [{ question: entry.question, answer: entry.answer }];
+      }
+      if (entry?.q && entry?.a) {
+        return [{ question: entry.q, answer: entry.a }];
+      }
+      if (Array.isArray(entry?.items)) {
+        return entry.items.map((item) => ({
+          question: item.q || item.question,
+          answer: item.a || item.answer
+        }));
+      }
+      return [];
+    })
+    .filter((f) => f?.question && f?.answer);
+}
+
+/**
+ * FAQ categories from faqContent.js → flat FAQ rows.
+ */
+export function flattenFaqCategories(categories) {
+  return flattenFaqItems(categories || []);
+}
+
+/**
  * @param {Array<{ question: string, answer: string }>} faqs
  */
 export function buildFAQPageSchema(faqs) {
@@ -180,10 +212,11 @@ export function buildArticleSchema(blog, pageUrl) {
 
   return {
     '@context': SCHEMA_CONTEXT,
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline,
     description: String(blog.description || '').trim() || undefined,
     image: image ? [image] : undefined,
+    articleSection: blog.category ? String(blog.category).trim() : undefined,
     author: {
       '@type': 'Person',
       name: editorialAuthorName
@@ -257,93 +290,40 @@ export function buildSpeakableSpecificationSchema(pageUrl, cssSelectors) {
   };
 }
 
-/**
- * @param {object} product
- * @param {object} options
- * @param {string} options.canonicalUrl
- * @param {string[]} [options.images]
- * @param {number} options.price
- * @param {boolean} options.inStock
- * @param {number} [options.ratingValue]
- * @param {number} [options.reviewCount]
- */
-export function buildProductSchema(product, options) {
-  if (!product) return null;
-  const {
-    canonicalUrl,
-    images = [],
-    price,
-    inStock,
-    ratingValue,
-    reviewCount
-  } = options || {};
+function resolveProductBrandName(product) {
+  const raw = product?.brand?.name || product?.brandName || product?.brand;
+  if (raw != null && String(raw).trim()) return String(raw).trim();
+  return siteName;
+}
 
-  const imgs = (images || []).filter(Boolean);
-  const desc = String(options?.description || product.shortDescription || product.description || product.name || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 8000);
-
-  const aggregateRating = buildAggregateRatingSchema(ratingValue, reviewCount);
-
-  const schema = {
-    '@context': SCHEMA_CONTEXT,
-    '@type': 'Product',
-    name: product.name,
-    image: imgs.length ? imgs : undefined,
-    description: desc || undefined,
-    sku:
-      product.sku != null && String(product.sku).trim() ? String(product.sku).trim() : undefined,
-    brand: {
-      '@type': 'Brand',
-      name: siteName
-    },
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'PKR',
-      price: String(Number(price).toFixed(2)),
-      availability: inStock ? `${SCHEMA_CONTEXT}/InStock` : `${SCHEMA_CONTEXT}/OutOfStock`,
-      url: canonicalUrl
-    }
-  };
-
-  if (aggregateRating) {
-    schema.aggregateRating = aggregateRating;
-  }
-
-  return schema;
+function resolveProductCategoryName(product) {
+  const raw =
+    product?.categoryName ||
+    product?.category?.name ||
+    (typeof product?.category === 'string' ? product.category : '');
+  return raw != null && String(raw).trim() ? String(raw).trim() : undefined;
 }
 
 /**
- * Review JSON-LD objects for visible product reviews.
- * @param {Array<object>} reviews — API or UI review rows
- * @param {string} productName
+ * Review entities nested inside Product schema (no itemReviewed).
+ * @param {Array<object>} reviews
+ * @param {number} [max=5]
  */
-export function buildProductReviewSchemas(reviews, productName) {
-  const name = String(productName || 'Product').trim();
+export function buildNestedProductReviews(reviews, max = 5) {
   return (reviews || [])
+    .slice(0, max)
     .map((rev) => {
       const rating = Number(rev.rating);
       if (!Number.isFinite(rating) || rating < RATING_WORST || rating > RATING_BEST) {
         return null;
       }
       const authorName =
-        (rev.user && (rev.user.name || rev.user.email)) ||
-        rev.name ||
-        'Customer';
+        (rev.user && (rev.user.name || rev.user.email)) || rev.name || 'Customer';
       const body = String(rev.comment || rev.reviewBody || '').trim();
-      const datePublished = rev.createdAt
-        ? new Date(rev.createdAt).toISOString()
-        : undefined;
+      const datePublished = rev.createdAt ? new Date(rev.createdAt).toISOString() : undefined;
 
       const review = {
-        '@context': SCHEMA_CONTEXT,
         '@type': 'Review',
-        itemReviewed: {
-          '@type': 'Product',
-          name
-        },
         reviewRating: {
           '@type': 'Rating',
           ratingValue: String(rating),
@@ -355,12 +335,154 @@ export function buildProductReviewSchemas(reviews, productName) {
           name: String(authorName).trim()
         }
       };
-
       if (body) review.reviewBody = body;
       if (datePublished) review.datePublished = datePublished;
       return review;
     })
     .filter(Boolean);
+}
+
+/**
+ * @param {object} product
+ * @param {object} options
+ * @param {string} options.canonicalUrl
+ * @param {string[]} [options.images]
+ * @param {number} options.price
+ * @param {boolean} options.inStock
+ * @param {number} [options.ratingValue]
+ * @param {number} [options.reviewCount]
+ * @param {string} [options.description]
+ * @param {Array<object>} [options.reviews] — nested Review objects (max 5)
+ */
+export function buildProductSchema(product, options) {
+  if (!product) return null;
+  const {
+    canonicalUrl,
+    images = [],
+    price,
+    inStock,
+    ratingValue,
+    reviewCount,
+    reviews = []
+  } = options || {};
+
+  const imgs = (images || []).filter(Boolean);
+  const desc = String(options?.description || product.shortDescription || product.description || product.name || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 8000);
+
+  const aggregateRating = buildAggregateRatingSchema(ratingValue, reviewCount);
+  const nestedReviews = buildNestedProductReviews(reviews);
+  const categoryName = resolveProductCategoryName(product);
+  const brandName = resolveProductBrandName(product);
+
+  const schema = {
+    '@context': SCHEMA_CONTEXT,
+    '@type': 'Product',
+    '@id': canonicalUrl ? `${canonicalUrl}#product` : undefined,
+    name: product.name,
+    url: canonicalUrl,
+    image: imgs.length ? imgs : undefined,
+    description: desc || undefined,
+    category: categoryName,
+    sku:
+      product.sku != null && String(product.sku).trim() ? String(product.sku).trim() : undefined,
+    brand: {
+      '@type': 'Brand',
+      name: brandName
+    },
+    offers: {
+      '@type': 'Offer',
+      url: canonicalUrl,
+      priceCurrency: 'PKR',
+      price: String(Number(price).toFixed(2)),
+      availability: inStock ? `${SCHEMA_CONTEXT}/InStock` : `${SCHEMA_CONTEXT}/OutOfStock`,
+      itemCondition: `${SCHEMA_CONTEXT}/NewCondition`,
+      seller: {
+        '@type': 'Organization',
+        name: siteName
+      }
+    }
+  };
+
+  if (aggregateRating) {
+    schema.aggregateRating = aggregateRating;
+  }
+  if (nestedReviews.length) {
+    schema.review = nestedReviews;
+  }
+
+  return schema;
+}
+
+/**
+ * Standalone Review JSON-LD (legacy / optional separate scripts).
+ * @param {Array<object>} reviews — API or UI review rows
+ * @param {string} productName
+ */
+export function buildProductReviewSchemas(reviews, productName) {
+  const name = String(productName || 'Product').trim();
+  return buildNestedProductReviews(reviews).map((review) => ({
+    '@context': SCHEMA_CONTEXT,
+    ...review,
+    itemReviewed: {
+      '@type': 'Product',
+      name
+    }
+  }));
+}
+
+/**
+ * ItemList for shop/category listings.
+ * @param {Array<object>} products
+ * @param {string} [listName]
+ */
+export function buildProductItemListSchema(products, listName = 'Products') {
+  const items = (products || [])
+    .slice(0, 20)
+    .map((p, i) => {
+      const slug = p?.slug || p?.productId;
+      if (!slug || !p?.name) return null;
+      const path = buildProductPath(String(slug), getProductCategorySlug(p));
+      return {
+        '@type': 'ListItem',
+        position: i + 1,
+        name: String(p.name).trim(),
+        url: getCanonicalUrl(path)
+      };
+    })
+    .filter(Boolean);
+
+  if (!items.length) return null;
+
+  return {
+    '@context': SCHEMA_CONTEXT,
+    '@type': 'ItemList',
+    name: listName,
+    itemListElement: items
+  };
+}
+
+/**
+ * Breadcrumb + optional FAQ for static content pages.
+ */
+export function buildStaticPageSchemas({ breadcrumbs, faqs, speakableUrl, speakableSelectors }) {
+  const schemas = [];
+  if (Array.isArray(breadcrumbs) && breadcrumbs.length) {
+    const crumbs = buildBreadcrumbListSchema(breadcrumbs);
+    if (crumbs) schemas.push(crumbs);
+  }
+  if (faqs?.length) {
+    const faqSchema = buildFAQPageSchema(faqs);
+    if (faqSchema) schemas.push(faqSchema);
+  }
+  if (speakableUrl && speakableSelectors?.length) {
+    const speakable = buildSpeakableSpecificationSchema(speakableUrl, speakableSelectors);
+    if (speakable) schemas.push(speakable);
+  }
+  return schemas.length ? schemas : null;
 }
 
 /**

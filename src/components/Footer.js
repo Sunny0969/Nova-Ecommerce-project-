@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Facebook, Twitter, Instagram, Youtube, MapPin, Phone } from 'lucide-react';
+import { Youtube, MapPin, Phone } from 'lucide-react';
+// import { Facebook, Twitter, Instagram } from 'lucide-react';
 import api from 'api';
 import { unwrapCategoriesResponse } from '../lib/api';
 import {
@@ -10,6 +11,7 @@ import {
   businessPhoneE164,
   formatBusinessAddressLine
 } from '../utils/businessContact';
+import { buildCategoryPath } from '../utils/urls';
 import './Footer.css';
 
 const ABOUT_LINKS = [
@@ -18,7 +20,8 @@ const ABOUT_LINKS = [
   { label: 'All Brands', to: '/brands' },
   { label: 'Blogs', to: '/blog' },
   { label: 'Privacy Policy', to: '/privacy-policy' },
-  { label: 'Contact Us', to: '/#footer-contact' },
+  { label: 'Terms & Conditions', to: '/terms-and-conditions' },
+  { label: 'Contact Us', to: '/contact-us' },
   { label: 'FAQs', to: '/faqs' },
   { label: 'About Us', to: '/about-us' }
 ];
@@ -72,7 +75,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="footer footer--Souvenir Handicraft" role="contentinfo">
+    <footer className="footer footer--bazaar" role="contentinfo">
       <div className="container">
         <div className="footer-grid footer-grid--store">
           <div className="footer-brand">
@@ -97,8 +100,9 @@ const Footer = () => {
               </p>
             </address>
             <div className="footer-socials" aria-label="Social media">
+              {/* Re-enable when official profile URLs are ready
               <a
-                href="https://facebook.com"
+                href="https://facebook.com/..."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-social"
@@ -107,7 +111,7 @@ const Footer = () => {
                 <Facebook size={18} strokeWidth={1.75} />
               </a>
               <a
-                href="https://twitter.com"
+                href="https://twitter.com/..."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-social"
@@ -116,7 +120,7 @@ const Footer = () => {
                 <Twitter size={18} strokeWidth={1.75} />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://instagram.com/..."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-social"
@@ -124,7 +128,8 @@ const Footer = () => {
               >
                 <Instagram size={18} strokeWidth={1.75} />
               </a>
-              <a
+              */}
+              {/* <a
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -132,12 +137,12 @@ const Footer = () => {
                 aria-label="YouTube"
               >
                 <Youtube size={18} strokeWidth={1.75} />
-              </a>
+              </a> */}
             </div>
           </div>
 
           <div className="footer-col footer-col--about">
-            <h4>About Us</h4>
+            <p className="footer-col__heading">About Us</p>
             <ul className="footer-links">
               {ABOUT_LINKS.map((link) => (
                 <li key={link.label}>
@@ -152,7 +157,7 @@ const Footer = () => {
           </div>
 
           <div className="footer-col footer-col--categories">
-            <h4>Categories</h4>
+            <p className="footer-col__heading">Categories</p>
             {categories.length === 0 ? (
               <ul className="footer-links">
                 <li>
@@ -165,7 +170,7 @@ const Footer = () => {
                   <ul key={colIndex} className="footer-links footer-categories__col">
                     {col.map((cat) => (
                       <li key={cat._id || cat.slug}>
-                        <Link to={`/shop?category=${encodeURIComponent(cat.slug || '')}`}>
+                        <Link to={buildCategoryPath(cat.slug || '')}>
                           {cat.name}
                         </Link>
                       </li>
@@ -179,7 +184,7 @@ const Footer = () => {
 
         <div className="footer-newsletter">
           <div className="footer-newsletter__text">
-            <h4 className="footer-newsletter__title">Newsletter</h4>
+            <p className="footer-newsletter__title">Newsletter</p>
             <p>Subscribe for new arrivals, offers, and style inspiration.</p>
           </div>
           <form className="footer-newsletter__form" onSubmit={handleNewsletter} noValidate>
@@ -202,10 +207,13 @@ const Footer = () => {
           </form>
         </div>
 
-        <div className="footer-bottom footer-bottom--Souvenir Handicraft">
+        <div className="footer-bottom footer-bottom--bazaar">
           <p className="footer-copyright">
-            © {new Date().getFullYear()} {businessDisplayName}. All rights reserved. Powered by Rathisoft
-            Innovation.
+            © {new Date().getFullYear()} {businessDisplayName}. All rights reserved.{' '}
+            <Link to="/terms-and-conditions" className="footer-copyright__link">
+              Terms &amp; Conditions
+            </Link>
+            . Powered by <a href="https://rathisoft.com" target="_blank" rel="noopener noreferrer"><span style={{ color: 'var(--gold)', textDecoration: 'underline' }}>Rathisoft Innovation</span></a>.
           </p>
           <div className="footer-payments" aria-label="Accepted payment methods">
             <span className="footer-pay footer-pay--visa" title="Visa">

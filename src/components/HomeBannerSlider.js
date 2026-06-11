@@ -1,30 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, ShoppingCart } from 'lucide-react';
-import { publicAPI } from 'api';
-import { HOME_BANNER_INTERVAL_MS, HOME_BANNER_SLIDES } from '../config/homeBannerSlides';
+import { Helmet } from 'react-helmet-async';
+import { HOME_BANNER_INTERVAL_MS, HOME_BANNER_SLIDES, HOME_BANNER_WIDTH, HOME_BANNER_HEIGHT } from '../config/homeBannerSlides';
+import OptimizedImage from './OptimizedImage';
 import './HomeBannerSlider.css';
 
 export default function HomeBannerSlider() {
   const slides = HOME_BANNER_SLIDES;
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [shopReady, setShopReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    publicAPI
-      .homeStats()
-      .then((res) => {
-        if (!cancelled) setShopReady(Boolean(res.data?.data?.hasPublishedProducts));
-      })
-      .catch(() => {
-        if (!cancelled) setShopReady(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const goTo = useCallback(
     (index) => {
@@ -44,7 +28,15 @@ export default function HomeBannerSlider() {
 
   if (!slides.length) return null;
 
+  const lcpSlide = slides[0];
+
   return (
+    <>
+      {lcpSlide?.src ? (
+        <Helmet>
+          <link rel="preload" as="image" href={lcpSlide.src} fetchpriority="high" />
+        </Helmet>
+      ) : null}
     <section
       className="home-banner-slider"
       aria-label="Promotional offers"
@@ -66,34 +58,27 @@ export default function HomeBannerSlider() {
               className="home-banner-slider__slide"
               aria-hidden={index !== active}
             >
-              <img
-                src={slide.src}
-                alt={slide.alt || ''}
-                className="home-banner-slider__img"
-                loading={index === 0 ? 'eager' : 'lazy'}
-                decoding="async"
-              />
+              <Link
+                to={slide.href || '/shop'}
+                className="home-banner-slider__slide-link"
+                aria-label={slide.alt || `Promotional banner ${index + 1}`}
+                tabIndex={index === active ? 0 : -1}
+              >
+                <OptimizedImage
+                  src={slide.src}
+                  alt={slide.alt || `Promotional banner ${index + 1} at Bazaar`}
+                  className="home-banner-slider__img"
+                  width={HOME_BANNER_WIDTH}
+                  height={HOME_BANNER_HEIGHT}
+                  priority={index === 0}
+                  optimize={false}
+                />
+              </Link>
             </div>
           ))}
         </div>
 
-        <div className="home-banner-slider__shade" aria-hidden />
-
-        <div className="home-banner-slider__overlay">
-          <div className="home-banner-slider__actions">
-            <Link
-              to="/shop"
-              className={`home-banner-slider__btn home-banner-slider__btn--primary${shopReady ? '' : ' home-banner-slider__btn--muted'}`}
-            >
-              <ShoppingCart size={18} aria-hidden />
-              Abhy Khareedo
-            </Link>
-            <a href="#rozana-hero" className="home-banner-slider__btn home-banner-slider__btn--ghost">
-              <Play size={16} aria-hidden className="home-banner-slider__play-icon" />
-              Deals dekhain
-            </a>
-          </div>
-
+        {slides.length > 1 && (
           <div className="home-banner-slider__dots" role="tablist" aria-label="Choose slide">
             {slides.map((slide, index) => (
               <button
@@ -107,8 +92,9 @@ export default function HomeBannerSlider() {
               />
             ))}
           </div>
-        </div>
+        )}
       </div>
     </section>
+    </>
   );
 }

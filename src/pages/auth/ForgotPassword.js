@@ -6,11 +6,11 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
 
   return (
-    <main className="auth-page section container" id="main-content" style={{ maxWidth: 480, margin: '0 auto' }}>
+    <div className="auth-page section container" style={{ maxWidth: 480, margin: '0 auto' }}>
       <SEO
         noIndex
         title="Reset password"
-        description="Request a password reset link for your Souvenir Handicraft account. Secure and private — not for search indexing."
+        description="Request a password reset link for your Bazaar account. Secure and private — not for search indexing."
         canonicalUrl="/forgot-password"
       />
       <div className="auth-card">
@@ -46,6 +46,6 @@ export default function ForgotPassword() {
           <Link to="/login">← Back to sign in</Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

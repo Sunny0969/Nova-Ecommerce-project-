@@ -7,9 +7,15 @@ import React, {
   useMemo,
   useRef
 } from 'react';
-import toast from 'react-hot-toast';
+import toast, { showAddedToCartToast } from '../components/Toast';
 import { cartAPI } from 'api';
 import { useAuth } from './AuthContext';
+
+function trackMetaAddToCart(product, quantity, user) {
+  void import('../lib/metaPixel').then(({ trackAddToCart }) =>
+    trackAddToCart(product, quantity, user)
+  );
+}
 
 const CartContext = createContext();
 
@@ -63,7 +69,9 @@ function minimalProduct(p, opts = {}) {
     shortDescription: p.shortDescription,
     category: p.category,
     cartVariantNote: note,
-    cartLineKey
+    cartLineKey,
+    weight: p.weight,
+    weightKg: p.weightKg
   };
 }
 
@@ -279,7 +287,6 @@ export const CartProvider = ({ children }) => {
     async (product, quantity = 1, options = {}) => {
       const silent = Boolean(options.silent);
       const cartVariantNote = String(options.cartVariantNote || '').trim();
-      const toastSuffix = cartVariantNote ? ` (${cartVariantNote})` : '';
       const ref = product?._id || product?.productId || product?.slug;
       if (!ref) {
         toast.error('Invalid product');
@@ -329,14 +336,16 @@ export const CartProvider = ({ children }) => {
         );
         writeGuestNormalized(norm);
         applyNormalized(norm);
-        if (!silent) toast.success(`${name}${toastSuffix} added to cart`);
+        if (!silent) showAddedToCartToast(name, cartVariantNote);
+        trackMetaAddToCart(product, qty, customerUser);
         return { success: true };
       }
 
       try {
         await cartAPI.addItem({ productId: String(ref), quantity: qty });
         await fetchCart();
-        if (!silent) toast.success(`${name}${toastSuffix} added to cart`);
+        if (!silent) showAddedToCartToast(name, cartVariantNote);
+        trackMetaAddToCart(product, qty, customerUser);
         return { success: true };
       } catch (error) {
         const msg = apiErrorMessage(error, 'Failed to add to cart');

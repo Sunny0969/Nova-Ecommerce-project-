@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { buildCategorySalePath } from '../utils/urls';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from './ProductCard';
 
@@ -11,7 +12,7 @@ export default function CategorySaleRow({ category, products, onAddToCart }) {
 
   if (!list.length) return null;
 
-  const shopUrl = `/shop?category=${encodeURIComponent(slug)}&onSale=true`;
+  const shopUrl = buildCategorySalePath(slug);
 
   const scrollBy = (dir) => {
     const el = scrollRef.current;

@@ -1,28 +1,30 @@
 /**
- * Homepage promo slider — replace `src` with your banner images (4 slides).
- * Put files in `frontend/public/banners/` e.g. `/banners/deal-1.jpg`
+ * Homepage promo slider — banners in `src/assets/images/slider/` (1920×575).
  */
+import summerSaleBanner from '../assets/images/slider/summer-sale.jpg';
+import image03Banner from '../assets/images/slider/image-03.jpg';
+import petStoreBanner from '../assets/images/slider/pet-store.jpg';
+
 export const HOME_BANNER_SLIDES = [
   {
-    src: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=1600&auto=format&fit=crop&q=85',
-    alt: 'Rozana — grocery deals',
+    src: summerSaleBanner,
+    alt: 'Summer Sale — Flat 20% off at Bazaar',
     href: '/shop'
   },
   {
-    src: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&auto=format&fit=crop&q=85',
-    alt: 'Fresh groceries — Rozana',
+    src: image03Banner,
+    alt: 'Shop groceries and essentials at Bazaar',
     href: '/shop'
   },
   {
-    src: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1600&auto=format&fit=crop&q=85',
-    alt: 'Special offers',
-    href: '/shop'
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1600&auto=format&fit=crop&q=85',
-    alt: 'Shop online — Rozana',
+    src: petStoreBanner,
+    alt: 'Pet food — 20% discount at Bazaar',
     href: '/shop'
   }
 ];
 
 export const HOME_BANNER_INTERVAL_MS = 5000;
+
+/** Normalized slider assets — keeps width/height on <img> for CLS. */
+export const HOME_BANNER_WIDTH = 1920;
+export const HOME_BANNER_HEIGHT = 575;

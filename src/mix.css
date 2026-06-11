@@ -30,6 +30,13 @@
   --h4-size: clamp(1rem, 0.4vw + 0.9rem, 1.125rem);
   --heading-line: 1.2;
   --heading-color: var(--navy, #1a1a2e);
+
+  /* Single horizontal inset for header, footer, container, banner — edit once */
+  --page-max-width: 1280px;
+  --page-gutter: 0.25rem;
+
+  /* Header + footer wordmark only */
+  --font-brand-logo: 'Taskor', var(--font-display);
 }
 
 /* Storefront body + paragraphs — never below --text-min-size */
@@ -174,6 +181,7 @@ html {
 body,
 #root,
 .App {
+  position: relative;
   background-color: var(--site-background);
 }
 

@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+import { array, boolean, number, object, string } from 'yup';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader2, GripVertical, X } from 'lucide-react';
-import JoditEditor from 'jodit-react';
-import 'jodit/es2021/jodit.min.css';
+import LazyJoditEditor from '../../components/LazyJoditEditor';
 import { adminAPI } from 'api';
+import { buildProductPath } from '../../utils/urls';
 
 /** Preview of public URL path from the product title (matches server slug-from-name rules). */
 function seoSlugFromTitle(s) {
@@ -24,52 +24,52 @@ const LS_PREFIX = 'nova_shop_admin_product_form_v1_';
 /** Soft cap for description HTML (whole MongoDB document must stay under 16MB BSON). */
 const RICH_DESC_MAX_TOTAL_CHARS = 14_000_000;
 
-const schema = yup.object({
-  name: yup.string().required('Name is required').max(200),
-  shortDescription: yup.string().max(500, 'Short description is at most 500 characters'),
-  description: yup
-    .string()
+const schema = object({
+  name: string().required('Name is required').max(200),
+  shortDescription: string().max(500, 'Short description is at most 500 characters'),
+  description: string()
     .default('')
     .max(
       RICH_DESC_MAX_TOTAL_CHARS,
       'Full description is extremely long. If save still fails, shorten text or use fewer embedded images (MongoDB document size limit).'
     ),
-  price: yup
-    .number()
+  price: number()
     .typeError('Valid price is required')
     .min(0, 'Price cannot be negative')
     .required('Price is required'),
-  comparePrice: yup
-    .number()
+  comparePrice: number()
     .transform((v, o) => (o === '' || o == null || Number.isNaN(v) ? null : v))
     .nullable()
     .min(0)
     .notRequired(),
-  costPrice: yup
-    .number()
+  costPrice: number()
     .transform((v, o) => (o === '' || o == null || Number.isNaN(v) ? null : v))
     .nullable()
     .min(0)
     .notRequired(),
-  sku: yup.string().max(120, 'SKU is too long'),
-  stock: yup
-    .number()
+  sku: string().max(120, 'SKU is too long'),
+  stock: number()
     .typeError('Valid stock is required')
     .integer('Stock must be a whole number')
     .min(0)
     .required('Stock is required'),
-  lowStockThreshold: yup
-    .number()
+  lowStockThreshold: number()
     .transform((v, o) => (o === '' || o == null || Number.isNaN(v) ? null : v))
     .nullable()
     .min(0)
     .integer()
     .notRequired(),
-  category: yup.string().required('Category is required'),
-  tags: yup.array().of(yup.string().max(60)).default([]),
-  isFeatured: yup.boolean().default(false),
-  isPublished: yup.boolean().default(false),
-  variantGroupKey: yup.string().max(120, 'Too long').default('')
+  category: string().required('Category is required'),
+  tags: array().of(string().max(60)).default([]),
+  isFeatured: boolean().default(false),
+  isPublished: boolean().default(false),
+  variantGroupKey: string().max(120, 'Too long').default(''),
+  weight: string().max(120, 'Weight label is too long').default(''),
+  weightKg: number()
+    .transform((v, o) => (o === '' || o == null || Number.isNaN(v) ? null : v))
+    .nullable()
+    .min(0, 'Weight cannot be negative')
+    .notRequired()
 });
 
 const defaultForm = {
@@ -86,7 +86,9 @@ const defaultForm = {
   tags: [],
   isFeatured: false,
   isPublished: false,
-  variantGroupKey: ''
+  variantGroupKey: '',
+  weight: '',
+  weightKg: null
 };
 
 function newLocalKey() {
@@ -501,6 +503,7 @@ export default function ProductForm() {
   });
 
   const nameW = useWatch({ control, name: 'name' });
+  const categoryW = useWatch({ control, name: 'category' });
   const shortW = useWatch({ control, name: 'shortDescription' });
   const descW = useWatch({ control, name: 'description' });
   const priceW = useWatch({ control, name: 'price' });
@@ -598,7 +601,12 @@ export default function ProductForm() {
           tags: Array.isArray(p.tags) ? p.tags : [],
           isFeatured: Boolean(p.isFeatured),
           isPublished: Boolean(p.isPublished),
-          variantGroupKey: p.variantGroupKey != null ? String(p.variantGroupKey) : ''
+          variantGroupKey: p.variantGroupKey != null ? String(p.variantGroupKey) : '',
+          weight: p.weight != null ? String(p.weight) : '',
+          weightKg:
+            p.weightKg != null && Number.isFinite(Number(p.weightKg)) && Number(p.weightKg) >= 0
+              ? Number(p.weightKg)
+              : null
         });
         setVariantAxes(
           normalizeLoadedVariantAxes(p.variantAxes, p.color, p.texture, p.size)
@@ -790,6 +798,11 @@ export default function ProductForm() {
           : String(data.lowStockThreshold)
       ],
       ['variantGroupKey', data.variantGroupKey != null ? String(data.variantGroupKey) : ''],
+      ['weight', data.weight != null ? String(data.weight) : ''],
+      [
+        'weightKg',
+        data.weightKg == null || data.weightKg === '' ? '' : String(data.weightKg)
+      ],
       ['isFeatured', data.isFeatured ? 'true' : 'false'],
       ['isPublished', published ? 'true' : 'false'],
       ['tags', JSON.stringify(normTags)],
@@ -889,7 +902,16 @@ export default function ProductForm() {
     }
   };
 
-  const seopath = `${typeof window !== 'undefined' ? window.location.origin : ''}/shop/${seoSlugFromTitle(nameW || '')}`;
+  const previewCategorySlug = useMemo(() => {
+    const id = String(categoryW || '').trim();
+    if (!id) return '';
+    const match = categories.find((c) => String(c._id) === id || String(c.id) === id);
+    return match?.slug || '';
+  }, [categoryW, categories]);
+
+  const previewProductSlug = seoSlugFromTitle(nameW || '');
+  const previewProductPath = buildProductPath(previewProductSlug, previewCategorySlug);
+  const seopath = `${typeof window !== 'undefined' ? window.location.origin : ''}${previewProductPath}`;
   const seoTitle = (nameW && String(nameW).trim()) || 'Product title';
   const dPlain = stripHtml(descW || '') || '';
   const shortTrim = (shortW && String(shortW).trim()) || '';
@@ -936,9 +958,9 @@ export default function ProductForm() {
             <div className="product-form__label">
               Store URL (from product title)
               <span className="product-form__field-hint">
-                The public link is always built from the title, e.g.{' '}
-                <code>{`/shop/${seoSlugFromTitle(nameW || '')}`}</code>. If that path is already taken, the server may
-                append <code>-2</code>, <code>-3</code>, etc.
+                The public link includes the category and product slug, e.g.{' '}
+                <code>{previewProductPath || '/your-category/product-name'}</code>. If that path is already
+                taken, the server may append <code>-2</code>, <code>-3</code>, etc.
               </span>
             </div>
             <label className="product-form__label">
@@ -964,7 +986,7 @@ export default function ProductForm() {
                 control={control}
                 render={({ field }) => (
                   <div className="product-form__rich-editor">
-                    <JoditEditor
+                    <LazyJoditEditor
                       value={field.value ?? ''}
                       config={descriptionEditorConfig}
                       tabIndex={0}
@@ -1136,6 +1158,39 @@ export default function ProductForm() {
                 {errors.lowStockThreshold && (
                   <span className="product-form__err">{errors.lowStockThreshold.message}</span>
                 )}
+              </label>
+            </div>
+          </section>
+
+          <section className="product-form__section">
+            <h2 className="product-form__section-title">Shipping weight</h2>
+            <p className="product-form__hint">
+              Used to calculate delivery charges. Set weight in kg for accurate shipping (e.g. 0.28 for 280 g, 1.6 for
+              1.6 kg).
+            </p>
+            <div className="product-form__grid-3">
+              <label className="product-form__label">
+                Weight (kg)
+                <input
+                  className="product-form__input"
+                  type="number"
+                  min={0}
+                  step={0.001}
+                  placeholder="e.g. 1.6"
+                  {...register('weightKg')}
+                />
+                {errors.weightKg && <span className="product-form__err">{errors.weightKg.message}</span>}
+              </label>
+              <label className="product-form__label">
+                Weight label (optional)
+                <span className="product-form__field-hint">Shown on product page, e.g. &quot;1.6 kg&quot; or &quot;280 g&quot;</span>
+                <input
+                  className="product-form__input"
+                  type="text"
+                  placeholder="e.g. 1.6 kg"
+                  {...register('weight')}
+                />
+                {errors.weight && <span className="product-form__err">{errors.weight.message}</span>}
               </label>
             </div>
           </section>

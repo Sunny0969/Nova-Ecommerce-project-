@@ -15,6 +15,7 @@ import { Wallet, ShoppingCart, Package, Users } from 'lucide-react';
 import { adminAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
+import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { formatPKR, formatPKRChartTick } from '../../utils/currency';
 import {
@@ -335,7 +336,7 @@ export default function AdminAnalytics() {
                     const p = row.product;
                     const img = p ? productImageUrl(p) : '';
                     const name = p?.name || 'Product';
-                    const link = p?.slug ? `/shop/${p.slug}` : null;
+                    const link = p?.slug ? buildProductPath(p.slug, getProductCategorySlug(p)) : null;
                     return (
                       <tr key={p?._id || i}>
                         <td>

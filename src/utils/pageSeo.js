@@ -2,7 +2,8 @@ import { siteName } from './seo';
 
 const TITLE_MAX = 60;
 const META_MIN = 140;
-const META_MAX = 155;
+const META_MAX = 160;
+const KEYWORDS_MAX = 12;
 const BRAND_SUFFIX = ` | ${siteName}`;
 
 /**
@@ -27,7 +28,7 @@ export function buildPageTitle(primary, secondary) {
 }
 
 /**
- * Meta description 140–155 chars with keyword + CTA.
+ * Meta description 140–160 chars with keyword + CTA.
  */
 export function buildMetaDescription(primaryKeyword, actionPhrase, extraContext = '') {
   const kw = String(primaryKeyword || '').trim();
@@ -62,16 +63,23 @@ export function truncateMetaDescription(text, max = META_MAX) {
   return `${t.slice(0, max - 1).trim()}…`;
 }
 
-/** Shop listing canonical: strip pagination/filters except single category or brand. */
-export function getShopListingCanonicalPath(searchParams) {
-  const brand = (searchParams.get('brand') || '').trim();
-  if (brand) {
-    return `/shop?brand=${encodeURIComponent(brand)}`;
+/**
+ * Comma-separated meta keywords (max 12 unique terms). Google largely ignores
+ * keywords meta, but some tools still read it — keep concise and page-specific.
+ */
+export function buildMetaKeywords(...terms) {
+  const unique = [];
+  const seen = new Set();
+  for (const term of terms.flat()) {
+    const raw = String(term || '').trim();
+    if (!raw) continue;
+    const key = raw.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(raw);
+    if (unique.length >= KEYWORDS_MAX) break;
   }
-  const cats = searchParams.getAll('category').filter(Boolean);
-  const singleCat = cats.length === 1 ? cats[0] : searchParams.get('cat');
-  if (singleCat && singleCat !== 'all') {
-    return `/shop?category=${encodeURIComponent(singleCat)}`;
-  }
-  return '/shop';
+  return unique.join(', ');
 }
+
+export { getShopListingCanonicalPath } from './urls';

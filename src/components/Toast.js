@@ -1,22 +1,94 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Toaster, toast as hotToast } from 'react-hot-toast';
+import { CheckCircle2 } from 'lucide-react';
+import './Toast.css';
 
 const toastBase =
-  '!rounded-lg !px-4 !py-3 !text-sm !font-medium !shadow-lg !max-w-[min(100vw-2rem,24rem)]';
+  '!rounded-xl !px-4 !py-3 !text-sm !font-medium !shadow-lg !min-w-0 !w-full !max-w-[min(calc(100vw-2rem),22rem)] !flex !flex-row !items-start !gap-3 !text-left !leading-snug';
+
+function useMobileViewport() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  return isMobile;
+}
+
+function truncateLabel(text, max = 52) {
+  const s = String(text || '').trim();
+  if (s.length <= max) return s;
+  return `${s.slice(0, max - 1).trim()}…`;
+}
 
 /**
- * App-level toast host — import once in `App.js` (replaces raw `<Toaster />`).
- * Uses Tailwind classes via `!` prefix so they win over library defaults.
+ * Professional add-to-cart confirmation — short heading + product name (2 lines max).
+ * @param {string} productName
+ * @param {string} [variantNote]
+ */
+export function showAddedToCartToast(productName, variantNote = '') {
+  const name = truncateLabel(productName);
+  const variant = String(variantNote || '').trim();
+
+  hotToast.custom(
+    (t) => (
+      <div
+        className={`cart-added-toast${t.visible ? ' cart-added-toast--visible' : ''}`}
+        role="status"
+        aria-live="polite"
+      >
+        <span className="cart-added-toast__icon" aria-hidden>
+          <CheckCircle2 size={22} strokeWidth={2.25} />
+        </span>
+        <div className="cart-added-toast__body">
+          <p className="cart-added-toast__title">Added to cart</p>
+          <p className="cart-added-toast__name">
+            {name}
+            {variant ? <span className="cart-added-toast__variant"> ({variant})</span> : null}
+          </p>
+        </div>
+      </div>
+    ),
+    { duration: 3200 }
+  );
+}
+
+/**
+ * App-level toast host — import once in `App.js`.
+ * Mobile: full-width bar above WhatsApp FAB.
  */
 export function AppToaster() {
+  const isMobile = useMobileViewport();
+
   return (
     <Toaster
-      position="top-right"
-      containerClassName="!top-4 !right-4 sm:!top-6 sm:!right-6"
+      position={isMobile ? 'bottom-center' : 'top-right'}
+      gutter={10}
+      containerStyle={
+        isMobile
+          ? {
+              left: 16,
+              right: 16,
+              bottom: 'calc(4.75rem + env(safe-area-inset-bottom, 0px))',
+              top: 'auto',
+            }
+          : undefined
+      }
+      containerClassName={
+        isMobile
+          ? 'app-toaster app-toaster--mobile'
+          : 'app-toaster app-toaster--desktop !top-4 !right-4 sm:!top-6 sm:!right-6'
+      }
       toastOptions={{
         duration: 4000,
         className: `${toastBase} !bg-rozana-navy !text-white`,
-        style: {},
         success: {
           duration: 3500,
           iconTheme: {

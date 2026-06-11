@@ -18,6 +18,7 @@ import { getGrantedStaffSections } from '../utils/staffPermissions';
 import SmartSearchBar from './SmartSearchBar';
 import NavDeliveryLocation from './NavDeliveryLocation';
 import { businessDisplayName } from '../utils/businessContact';
+import { buildProductPath, getProductCategorySlug, isRootCatalogPath } from '../utils/urls';
 
 function getInitials(name) {
   if (!name || typeof name !== 'string') return '?';
@@ -129,7 +130,8 @@ export default function Navbar() {
   const isShopActive =
     location.pathname === '/shop' ||
     location.pathname.startsWith('/shop/') ||
-    location.pathname.startsWith('/brand/');
+    location.pathname.startsWith('/brand/') ||
+    isRootCatalogPath(location.pathname);
   const isBlogActive = location.pathname.startsWith('/blog');
   const staffSections = isStaff ? getGrantedStaffSections(permissionMap) : [];
 
@@ -322,9 +324,14 @@ export default function Navbar() {
               onFocus={() => setSearchFocused(true)}
               onPick={(picked) => {
                 if (picked?.type === 'product') {
-                  navigate(`/shop/${encodeURIComponent(picked.slug)}`);
+                  navigate(
+                    buildProductPath(
+                      picked.slug,
+                      getProductCategorySlug(picked.product || { slug: picked.slug })
+                    )
+                  );
                 } else if (picked?.type === 'basic') {
-                  navigate(`/shop/${encodeURIComponent(picked.slug)}`);
+                  navigate(buildProductPath(picked.slug, picked.categorySlug || ''));
                 } else if (picked?.type === 'blog' && picked.slug) {
                   navigate(`/blog/${encodeURIComponent(picked.slug)}`);
                 } else if (picked?.type === 'query') {

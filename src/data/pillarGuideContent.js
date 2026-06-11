@@ -45,7 +45,7 @@ const PILLAR_GUIDES = {
         heading: 'How to shop smart for cleaning & homecare online',
         paragraphs: [
           'Build a monthly basket around three zones: kitchen, bathroom, and floor care. Buy value packs on detergents you use weekly; keep one backup disinfectant and one glass/surface spray. Compare unit prices (per litre or per kg) rather than pack size alone.',
-          'At Souvenir Handicraft Shop you can filter by category, compare prices in PKR, and reorder staples in a few clicks. Stock up before monsoon and wedding seasons when guests and humidity increase cleaning frequency.',
+          'At Bazaar you can filter by category, compare prices in PKR, and reorder staples in a few clicks. Stock up before monsoon and wedding seasons when guests and humidity increase cleaning frequency.',
           'Ready to fill your cart? Browse our Cleaning & Homecare aisle for dishwash, toilet cleaners, sponges, air fresheners, and pest control—with delivery across Pakistan.'
         ]
       }
@@ -82,7 +82,7 @@ const PILLAR_GUIDES = {
         heading: 'Price, pack size, and storage tips',
         paragraphs: [
           'Compare price per kilogram across 1 kg, 5 kg, and 10 kg sacks. Larger packs save money if you have airtight bins at home. Store rice cool and dry; bay leaves in the bin deter insects. Never mix old and new stock without cleaning the container first.',
-          'Shop rice online at Souvenir Handicraft Shop alongside pulses, ghee, and spices for one checkout, secure payment, and doorstep delivery in Hyderabad and nationwide.'
+          'Shop rice online at Bazaar alongside pulses, ghee, and spices for one checkout, secure payment, and doorstep delivery in Hyderabad and nationwide.'
         ]
       }
     ]
@@ -118,7 +118,7 @@ const PILLAR_GUIDES = {
         heading: 'Buying tea & coffee online in Pakistan',
         paragraphs: [
           'Compare pack sizes: family boxes of tea bags versus single-origin coffee tins. Subscribe mentally to a monthly rhythm—tea weekly, coffee every two weeks—to avoid last-minute store runs.',
-          'Browse Tea & Coffee at Souvenir Handicraft Shop for national brands, value packs, and complementary snacks—with delivery to Citizen Colony, Hyderabad, and cities nationwide.'
+          'Browse Tea & Coffee at Bazaar for national brands, value packs, and complementary snacks—with delivery to Citizen Colony, Hyderabad, and cities nationwide.'
         ]
       }
     ]

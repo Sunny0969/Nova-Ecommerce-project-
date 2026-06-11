@@ -8,8 +8,8 @@
         "aoa", "assalamualaikum", "help", "start"
       ],
       "responses": [
-        "Assalam o Alaikum! 👋 Souvenir Handicraft  mein khush amdeed!\n\nMein aapki help kar sakta hoon:\n🛍️ Products & Prices\n🚚 Delivery Info\n↩️ Returns & Refunds\n💳 Payment Methods\n📦 Order Tracking\n\nAap kya jaanna chahte hain?",
-        "Hello! Welcome to Souvenir Handicraft  😊 Aap kaise help kar sakta hoon aapki?"
+        "Assalam o Alaikum! 👋 Bazaar mein khush amdeed!\n\nMein aapki help kar sakta hoon:\n🛍️ Products & Prices\n🚚 Delivery Info\n↩️ Returns & Refunds\n💳 Payment Methods\n📦 Order Tracking\n\nAap kya jaanna chahte hain?",
+        "Hello! Welcome to Bazaar 😊 Aap kaise help kar sakta hoon aapki?"
       ]
     },
     {
@@ -66,7 +66,7 @@
         "order track", "mera order", "kb aye ga mera order"
       ],
       "responses": [
-        "📦 Order Track Karne ke Tarike:\n\n1️⃣ Website: My Account → My Orders\n2️⃣ WhatsApp: 0300-1234567 (Order ID bhejein)\n3️⃣ Email: orders@nSouvenir Handicraft .pk\n\n⏰ Orders 24 hours mein dispatch ho jaate hain\n📲 Dispatch hone pe SMS aata hai tracking number ka"
+        "📦 Order Track Karne ke Tarike:\n\n1️⃣ Website: My Account → My Orders\n2️⃣ WhatsApp: 0300-1234567 (Order ID bhejein)\n3️⃣ Email: orders@bazaar-pk.com\n\n⏰ Orders 24 hours mein dispatch ho jaate hain\n📲 Dispatch hone pe SMS aata hai tracking number ka"
       ]
     },
     {
@@ -77,7 +77,7 @@
         "baat karna", "contact karna", "complain", "complaint"
       ],
       "responses": [
-        "📞 Humse Contact Karein:\n\n💬 WhatsApp: 0300-1234567\n📧 Email: support@Souvenir Handicraft .pk\n📸 Instagram: Souvenir Handicraft \n📘 Facebook: Souvenir Handicraft  PK\n\n⏰ Available: Mon-Sat, 9AM - 8PM\n⚡ WhatsApp pe fastest reply milta hai!"
+        "📞 Humse Contact Karein:\n\n💬 WhatsApp: 0300-1234567\n📧 Email: support@bazaar-pk.com\n📸 Instagram: Bazaar\n📘 Facebook: Bazaar PK\n\n⏰ Available: Mon-Sat, 9AM - 8PM\n⚡ WhatsApp pe fastest reply milta hai!"
       ]
     },
     {
@@ -88,7 +88,7 @@
         "sale kab", "offer ha", "cheap", "saving", "percent off"
       ],
       "responses": [
-        "🎉 Discounts & Offers:\n\n🆕 First Order: 10% off (Code: Souvenir10)\n💌 Newsletter Subscribe: 15% off\n👥 Refer a Friend: PKR 200 cashback\n🛒 Buy 2 Get 1: Selected items\n\n📲 Latest deals ke liye:\nInstagram follow karein: @Souvenir Handicraft \nYa newsletter subscribe karein!"
+        "🎉 Discounts & Offers:\n\n🆕 First Order: 10% off (Code: Bazaar10)\n💌 Newsletter Subscribe: 15% off\n👥 Refer a Friend: PKR 200 cashback\n🛒 Buy 2 Get 1: Selected items\n\n📲 Latest deals ke liye:\nInstagram follow karein: @Bazaar\nYa newsletter subscribe karein!"
       ]
     },
     {
@@ -120,7 +120,7 @@
         "theek ha", "that's all", "done", "no more questions", "allah hafiz"
       ],
       "responses": [
-        "Allah Hafiz! 😊 Souvenir Handicraft  pe shopping ke liye shukriya!\n\nKoi bhi sawaal ho, hum yahan hain. Have a great day! 🌟",
+        "Allah Hafiz! 😊 Bazaar pe shopping ke liye shukriya!\n\nKoi bhi sawaal ho, hum yahan hain. Have a great day! 🌟",
         "Shukriya! 🙏 Aur koi help chahiye to zaroor poochein. Khuda Hafiz! 😊"
       ]
     }
@@ -149,17 +149,17 @@
     },
     {
       "patterns": ["joke", "funny", "hasao"],
-      "response": "😄 Hahaha! Mein toh sirf customer support jaanta hoon. Lekin yeh zaroor jaanta hoon ke Souvenir Handicraft  ke deals sach mein funny hain - itni sasti prices! 😂"
+      "response": "😄 Hahaha! Mein toh sirf customer support jaanta hoon. Lekin yeh zaroor jaanta hoon ke Bazaar ke deals sach mein funny hain - itni sasti prices! 😂"
     },
     {
       "patterns": ["who are you", "kya ho tum", "bot", "robot", "ai"],
-      "response": "Mein Souvenir Handicraft  ka virtual assistant hoon! 🤖 Aapki shopping mein help karna mera kaam hai. Real agent se baat karni ho to WhatsApp: 0300-1234567"
+      "response": "Mein Bazaar ka virtual assistant hoon! 🤖 Aapki shopping mein help karna mera kaam hai. Real agent se baat karni ho to WhatsApp: 0300-1234567"
     }
   ],
   "defaultResponses": [
     "Hmm, mujhe samajh nahi aaya. 🤔 Kya aap thoda aur detail mein bata sakte hain?",
     "Is baare mein mujhe puri maloomat nahi. Please WhatsApp karein: 0300-1234567",
-    "Yeh question mujhse thoda mushkil hai! 😅 Hamari team se poochein: support@Souvenir Handicraft .pk"
+    "Yeh question mujhse thoda mushkil hai! 😅 Hamari team se poochein: support@bazaar-pk.com"
   ],
   "quickReplies": [
     "📦 Delivery info",

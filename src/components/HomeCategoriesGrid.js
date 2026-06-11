@@ -1,14 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { optimizeImageUrl } from '../utils/optimizedImageUrl';
+import { buildCategoryImageAlt } from '../utils/imageAlt';
+import { buildCategoryPath } from '../utils/urls';
+import OptimizedImage from './OptimizedImage';
 import './HomeCategoriesGrid.css';
 
 const SKELETON_COUNT = 32;
-
-function categoryImageAlt(name, slug) {
-  const label = String(name || slug || 'category').trim();
-  return `${label} — shop online at Souvenir Handicraft Shop`;
-}
+const CATEGORY_TILE_SIZE = 600;
 
 export default function HomeCategoriesGrid({ categories, loading, error, onRetry }) {
   if (loading) {
@@ -58,19 +57,18 @@ export default function HomeCategoriesGrid({ categories, loading, error, onRetry
         return (
           <Link
             key={cat._id || slug}
-            to={`/category/${encodeURIComponent(slug)}`}
+            to={buildCategoryPath(slug)}
             className="home-category-tile"
           >
             <span className="home-category-tile__media">
               {imageUrl ? (
-                <img
+                <OptimizedImage
                   src={imageUrl}
-                  alt={categoryImageAlt(name, slug)}
+                  alt={buildCategoryImageAlt(name, slug)}
                   className="home-category-tile__img"
-                  width={600}
-                  height={600}
-                  loading="lazy"
-                  decoding="async"
+                  width={CATEGORY_TILE_SIZE}
+                  height={CATEGORY_TILE_SIZE}
+                  optimizeWidth={CATEGORY_TILE_SIZE}
                 />
               ) : (
                 <span className="home-category-tile__placeholder" aria-hidden="true">

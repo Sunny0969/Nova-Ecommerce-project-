@@ -97,6 +97,13 @@ export default function AccountDashboard() {
 
       <div className="account-dashboard__stats">
         <div className="account-stat card-like">
+          <div className="account-stat__value">{formatPKR(Number(user?.walletBalance) || 0)}</div>
+          <div className="account-stat__label">Wallet balance</div>
+          <Link to="/account/wallet" className="account-stat__link">
+            Manage wallet
+          </Link>
+        </div>
+        <div className="account-stat card-like">
           <div className="account-stat__value">{loading ? '—' : totalOrders}</div>
           <div className="account-stat__label">Total orders</div>
           <Link to="/account/orders" className="account-stat__link">

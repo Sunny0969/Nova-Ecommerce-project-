@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LazyLoadImage } from 'react-lazy-load-image-component';
-import 'react-lazy-load-image-component/src/effects/blur.css';
-import 'react-lazy-load-image-component/src/effects/opacity.css';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import OptimizedImage from './OptimizedImage';
+import { buildProductImageAlt } from '../utils/imageAlt';
 import ProductSaleRibbon from './ProductSaleRibbon';
+
+const GALLERY_MAIN_SIZE = 1200;
+const GALLERY_THUMB_SIZE = 112;
 
 /**
  * @param {{ url: string }[]} props.images
@@ -29,6 +31,8 @@ export default function ImageGallery({
   const [internalActive, setInternalActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [lbIndex, setLbIndex] = useState(0);
+
+  const mainAlt = buildProductImageAlt({ name: productName });
 
   useEffect(() => {
     if (!controlled) setInternalActive(0);
@@ -86,7 +90,6 @@ export default function ImageGallery({
   }
 
   const mainUrl = list[safeActive]?.url || list[0]?.url;
-
   const lbUrl = list[lbIndex]?.url || mainUrl;
 
   return (
@@ -103,15 +106,15 @@ export default function ImageGallery({
         onClick={() => openLightbox(safeActive)}
         aria-label={`View larger image ${safeActive + 1} of ${list.length}`}
       >
-        <LazyLoadImage
+        <OptimizedImage
           key={mainUrl}
           src={mainUrl}
-          alt={productName}
-          effect=""
+          alt={mainAlt}
           className="image-gallery__main-img"
-          width={1200}
-          height={1200}
-          decoding="async"
+          width={GALLERY_MAIN_SIZE}
+          height={GALLERY_MAIN_SIZE}
+          priority
+          optimizeWidth={GALLERY_MAIN_SIZE}
         />
       </button>
 
@@ -123,17 +126,17 @@ export default function ImageGallery({
               type="button"
               role="tab"
               aria-selected={i === safeActive}
+              aria-label={`Product image ${i + 1} of ${list.length}`}
               className={`image-gallery__thumb ${i === safeActive ? 'is-active' : ''}`}
               onClick={() => commitActive(i)}
             >
-              <LazyLoadImage
+              <OptimizedImage
                 src={im.url}
                 alt=""
-                effect="opacity"
                 className="image-gallery__thumb-img"
-                width={112}
-                height={112}
-                decoding="async"
+                width={GALLERY_THUMB_SIZE}
+                height={GALLERY_THUMB_SIZE}
+                optimizeWidth={GALLERY_THUMB_SIZE}
               />
             </button>
           ))}
@@ -182,14 +185,14 @@ export default function ImageGallery({
                 </button>
               </>
             ) : null}
-            <img
+            <OptimizedImage
               className="image-gallery-lightbox__img"
               src={lbUrl}
-              alt={productName}
+              alt={mainAlt}
               width={1400}
               height={1400}
-              decoding="async"
-
+              priority
+              optimizeWidth={1400}
             />
             {list.length > 1 ? (
               <p className="image-gallery-lightbox__counter">

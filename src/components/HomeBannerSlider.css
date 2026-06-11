@@ -1,13 +1,15 @@
 /* First screen = categories + slider only; hero (“ghar pe”) starts below on scroll */
 
+/* Uniform slider — all banners 1920×575, full width, full image visible */
+
 .home-banner-slider {
   position: relative;
-  width: min(1280px, calc(100% - 2 * clamp(1rem, 3vw, 2rem)));
-  height: 100%;
-  min-height: 140px;
+  width: min(var(--page-max-width, 1280px), calc(100% - 2 * var(--page-gutter, 0.25rem)));
+  aspect-ratio: 1920 / 575;
+  height: auto;
   margin: clamp(0.75rem, 2vw, 1.25rem) auto 0;
   padding: 0;
-  background-color: var(--navy);
+  background-color: #ffffff;
   border-radius: var(--radius-lg, 12px);
   overflow: hidden;
   box-sizing: border-box;
@@ -18,7 +20,6 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: inherit;
   overflow: hidden;
   border-radius: inherit;
 }
@@ -27,7 +28,6 @@
   display: flex;
   width: 100%;
   height: 100%;
-  min-height: inherit;
   transition: transform 0.55s ease-in-out;
   will-change: transform;
 }
@@ -38,102 +38,38 @@
   min-width: 100%;
   width: 100%;
   height: 100%;
-  min-height: inherit;
   overflow: hidden;
-  background-color: var(--navy);
+  background-color: #ffffff;
 }
 
-.home-banner-slider__img {
-  position: absolute;
-  inset: 0;
+.home-banner-slider__slide-link {
   display: block;
   width: 100%;
   height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  max-width: none;
-  object-fit: cover;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.home-banner-slider__slide-link:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: -3px;
+}
+
+.home-banner-slider__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   object-position: center center;
 }
 
-.home-banner-slider__shade {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-color: rgba(26, 26, 46, 0.28);
-}
-
-.home-banner-slider__overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0.5rem clamp(1rem, 3vw, 2rem) 0.65rem;
-  box-sizing: border-box;
-  pointer-events: none;
-}
-
-.home-banner-slider__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem 0.75rem;
-  margin-bottom: 0.45rem;
-  pointer-events: auto;
-}
-
-.home-banner-slider__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  padding: 0.55rem 1.1rem;
-  border-radius: 12px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-decoration: none;
-  border: 2px solid transparent;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-}
-
-.home-banner-slider__btn--primary {
-  background-color: var(--brand-orange);
-  border-color: var(--brand-orange);
-  color: var(--white);
-}
-
-.home-banner-slider__btn--primary:hover {
-  background-color: var(--brand-orange-dark);
-  border-color: var(--brand-orange-dark);
-  transform: translateY(-2px);
-}
-
-.home-banner-slider__btn--muted {
-  opacity: 0.92;
-}
-
-.home-banner-slider__btn--ghost {
-  background-color: transparent;
-  border-color: var(--white);
-  color: var(--white);
-}
-
-.home-banner-slider__btn--ghost:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-  border-color: var(--cream);
-  transform: translateY(-2px);
-}
-
-.home-banner-slider__play-icon {
-  fill: var(--white);
-}
-
 .home-banner-slider__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.65rem;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,20 +104,11 @@
 
 @media (max-width: 768px) {
   .home-banner-slider {
-    width: calc(100% - 1.25rem);
     margin-top: 0.65rem;
   }
-}
 
-@media (max-width: 520px) {
-  .home-banner-slider__btn {
-    width: 100%;
-    max-width: 16rem;
-  }
-
-  .home-banner-slider__actions {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
+  /* Dots become oversized circles on touch layouts — slider auto-advances on mobile */
+  .home-banner-slider__dots {
+    display: none;
   }
 }

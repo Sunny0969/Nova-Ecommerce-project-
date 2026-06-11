@@ -229,14 +229,14 @@ export default function ChatWidget() {
           aria-label="Open Nova AI chat"
         >
           <MessageCircle size={20} aria-hidden />
-          <span className="chat-fab__label">Souvenir Handicraft  AI</span>
+          <span className="chat-fab__label">Bazaar AI</span>
         </button>
       ) : (
         <div className={`chat-panel ${minimized ? 'chat-panel--min' : ''}`} aria-label="Nova AI chat">
           <div className="chat-panel__header">
             <div className="chat-panel__title">
               <span className="chat-panel__dot" aria-hidden />
-             Souvenir Handicraft  AI <span className="chat-panel__status">{headerStatus}</span>
+             Bazaar AI <span className="chat-panel__status">{headerStatus}</span>
             </div>
             <div className="chat-panel__actions">
               <button
@@ -275,7 +275,7 @@ export default function ChatWidget() {
               <div className="chat-panel__messages" ref={listRef}>
                 {messages.length === 0 ? (
                   <div className="chat-empty">
-                    <p className="chat-empty__title">Hi, I’m Souvenir Handicraft .</p>
+                    <p className="chat-empty__title">Hi, I’m Bazaar.</p>
                     <p className="chat-empty__text">Ask about orders, shipping, returns, or products.</p>
                     <div className="chat-quick">
                       {QUICK_REPLIES.map((q) => (

@@ -1,27 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+import { object, ref, string } from 'yup';
 import toast from 'react-hot-toast';
 import { authAPI } from 'api';
 import { apiMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
-const profileSchema = yup.object({
-  name: yup.string().trim().required('Name is required').max(120),
-  email: yup.string().trim().email('Valid email required').required('Email is required'),
-  phone: yup.string().trim().max(40).default('')
+const profileSchema = object({
+  name: string().trim().required('Name is required').max(120),
+  email: string().trim().email('Valid email required').required('Email is required'),
+  phone: string().trim().max(40).default('')
 });
 
-const passwordSchema = yup.object({
-  currentPassword: yup.string().required('Required'),
-  newPassword: yup
-    .string()
+const passwordSchema = object({
+  currentPassword: string().required('Required'),
+  newPassword: string()
     .min(6, 'At least 6 characters')
     .required('Required'),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('newPassword')], 'Passwords must match')
+  confirmPassword: string()
+    .oneOf([ref('newPassword')], 'Passwords must match')
     .required('Required')
 });
 

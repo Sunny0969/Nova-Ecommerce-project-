@@ -9,6 +9,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import Modal from '../../components/Modal';
 import SEO from '../../components/SEO';
 import { formatPKR } from '../../utils/currency';
+import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
 
 const STEPS = [
   { key: 'pending', label: 'Order placed' },
@@ -211,6 +212,7 @@ export default function OrderDetail() {
                 typeof line.product === 'object' && line.product?.slug
                   ? line.product.slug
                   : null;
+              const productRef = typeof line.product === 'object' ? line.product : null;
               const inner = (
                 <>
                   <div className="account-order-lines__img-wrap">
@@ -244,7 +246,10 @@ export default function OrderDetail() {
               return (
                 <li key={`${line.name}-${i}`} className="account-order-lines__row">
                   {slug ? (
-                    <Link to={`/shop/${slug}`} className="account-order-lines__link">
+                    <Link
+                      to={buildProductPath(slug, getProductCategorySlug(productRef))}
+                      className="account-order-lines__link"
+                    >
                       {inner}
                     </Link>
                   ) : (
@@ -355,7 +360,7 @@ export default function OrderDetail() {
         }}
       >
         <p>
-          We will attempt to refund your payment if applicable. This cannot be undone from your
+          Eligible refunds will be credited to your Bazaar Wallet. This cannot be undone from your
           account.
         </p>
       </Modal>

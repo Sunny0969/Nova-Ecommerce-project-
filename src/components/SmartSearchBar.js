@@ -234,7 +234,7 @@ export default function SmartSearchBar({
   };
 
   return (
-    <div className="smart-search" role="search">
+    <div className="smart-search" role="search" aria-label="Site search">
       <div className="nav-search__field">
         <Search size={18} strokeWidth={1.75} className="nav-search__icon" aria-hidden="true" />
         <input
@@ -245,7 +245,7 @@ export default function SmartSearchBar({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           onFocus={onFocus}
-          aria-autocomplete="list"
+          aria-label="Search products and blog posts"
           aria-controls="nav-search-results"
           autoComplete="off"
         />
@@ -260,7 +260,7 @@ export default function SmartSearchBar({
       </div>
 
       {showDropdown && (
-        <div className="nav-search__dropdown" id="nav-search-results" role="listbox">
+        <div className="nav-search__dropdown" id="nav-search-results" aria-hidden={!showDropdown}>
           {loading && <div className="nav-search__hint">Searching…</div>}
           {!loading && rawTrim.length >= 1 && hint ? <div className="nav-search__hint">{hint}</div> : null}
 
@@ -273,7 +273,6 @@ export default function SmartSearchBar({
                 <button
                   key={s}
                   type="button"
-                  role="option"
                   className="nav-search__item smart-search__query"
                   onClick={() => onPickQuery(s)}
                 >
@@ -295,7 +294,6 @@ export default function SmartSearchBar({
                     <button
                       key={p._id || p.slug}
                       type="button"
-                      role="option"
                       className="nav-search__item smart-search__product"
                       onClick={() => onPickProduct(p)}
                     >
@@ -313,7 +311,6 @@ export default function SmartSearchBar({
                   <button
                     key={x.row.slug}
                     type="button"
-                    role="option"
                     className="nav-search__item smart-search__query"
                     onClick={() => onPick?.({ type: 'basic', slug: x.row.slug })}
                   >
@@ -333,7 +330,6 @@ export default function SmartSearchBar({
                 <button
                   key={post.slug}
                   type="button"
-                  role="option"
                   className="nav-search__item smart-search__blog"
                   onClick={() => onPickBlog(post.slug)}
                 >
@@ -351,7 +347,6 @@ export default function SmartSearchBar({
                 <button
                   key={s}
                   type="button"
-                  role="option"
                   className="nav-search__item smart-search__query"
                   onClick={() => onPickQuery(s)}
                 >
@@ -373,7 +368,6 @@ export default function SmartSearchBar({
                   <button
                     key={trendingKey(t, i)}
                     type="button"
-                    role="option"
                     className="nav-search__item smart-search__query"
                     onClick={() => onPickQuery(label)}
                   >

@@ -56,7 +56,7 @@ export default function WishlistPage({ embedded }) {
         <SEO
           noIndex
           title="Wishlist"
-          description="Your saved products at Souvenir Handicraft Shop. Add to cart when you are ready to buy."
+          description="Your saved products at Bazaar. Add to cart when you are ready to buy."
         />
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Wishlist</h2>
         {grid}
@@ -69,7 +69,7 @@ export default function WishlistPage({ embedded }) {
       <SEO
         noIndex
         title="Wishlist"
-        description="Save your favorite Souvenir Handicraft Shop products, compare later, and add to cart in one click."
+        description="Save your favorite Bazaar products, compare later, and add to cart in one click."
         canonicalUrl="/wishlist"
       />
       <header className="page-header">
@@ -86,9 +86,9 @@ export default function WishlistPage({ embedded }) {
           </ol>
         </div>
       </header>
-      <main className="section wishlist-page" id="main-content">
+      <div className="section wishlist-page">
         <div className="container">{grid}</div>
-      </main>
+      </div>
     </>
   );
 }

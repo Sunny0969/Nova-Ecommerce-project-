@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import staffApi from '../../api/staffAxios';
 import { useStaffAuth } from '../../context/StaffAuthContext';
 import { apiMessage } from '../../lib/api';
+import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
 
 function badgeClass(status) {
   if (status === 'pending_approval') return 'badge badge--warn';
@@ -62,7 +63,7 @@ export default function StaffProducts() {
               <div>
                 <div style={{ fontWeight: 650 }}>{p.name}</div>
                 <div className="text-muted" style={{ fontSize: 13 }}>
-                  {p.slug ? `/shop/${p.slug}` : null}
+                  {p.slug ? buildProductPath(p.slug, getProductCategorySlug(p)) : null}
                 </div>
               </div>
               <span className={badgeClass(p.approvalStatus)}>{p.approvalStatus || 'approved'}</span>

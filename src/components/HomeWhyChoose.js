@@ -39,7 +39,7 @@ export default function HomeWhyChoose() {
     <section className="section home-why-choose trust-badges" aria-label="Why choose us">
       <div className="container">
         <h2 className="home-why-choose__title">
-          Why Souvenir Handicraft is Pakistan&apos;s Best Online Shop
+          Why Bazaar is Pakistan&apos;s Best Online Shop
         </h2>
         <div className="home-why-choose__grid trust-grid">
           {cards.map((card) => {

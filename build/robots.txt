@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
+Allow: /llms.txt
 
+Disallow: /admin
+Disallow: /admin/
 Disallow: /staff
 Disallow: /staff/
 Disallow: /account
@@ -8,9 +11,12 @@ Disallow: /account/
 Disallow: /orders
 Disallow: /checkout
 Disallow: /cart
+Disallow: /wishlist
 Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /order-confirmation
 
-Sitemap: https://bazaar-pk.com/sitemap.xml
+Sitemap: https://www.bazaar-pk.com/sitemap.xml

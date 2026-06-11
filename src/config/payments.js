@@ -1,15 +1,26 @@
-/** Manual checkout payment options (Stripe disabled). */
+const COD_OPTION = {
+  id: 'cod',
+  label: 'Cash on delivery',
+  description: 'Pay with cash when your order arrives at your doorstep.'
+};
+
+const STRIPE_OPTION = {
+  id: 'stripe',
+  label: 'Credit / debit card (Stripe)',
+  description: 'Pay securely online with Visa, Mastercard, or other supported cards.'
+};
+
+/** Legacy Easypaisa number — shown only for older bank-transfer orders. */
 export const EASYPAISA_NUMBER = '03483510584';
 
-export const PAYMENT_OPTIONS = [
-  {
-    id: 'cod',
-    label: 'Cash on delivery',
-    description: 'Pay with cash when your order arrives at your doorstep.'
-  },
-  {
-    id: 'bank_transfer',
-    label: 'Bank transfer (Easypaisa)',
-    description: `Send the order total via Easypaisa to ${EASYPAISA_NUMBER}. We will confirm after payment.`
+/** @param {{ includeStripe?: boolean }} [opts] */
+export function getPaymentOptions(opts = {}) {
+  const options = [COD_OPTION];
+  if (opts.includeStripe) {
+    options.push(STRIPE_OPTION);
   }
-];
+  return options;
+}
+
+/** @deprecated use getPaymentOptions() */
+export const PAYMENT_OPTIONS = [COD_OPTION];

@@ -1,59 +1,51 @@
 import axios from 'axios';
+import { networkErrorMessage, resolveStoreApiOrigin } from '../config/apiOrigin';
 
 /** Keep in sync with `AuthContext` token storage */
 export const TOKEN_KEY = 'nova_shop_token';
 
-function normalizeApiOrigin(url) {
-  if (url == null || url === '') return '';
-  let u = String(url).trim().replace(/\/$/, '');
-  if (u.endsWith('/api')) u = u.slice(0, -4);
-  return u;
-}
-
 /**
- * Production API (Render) — hardcoded so Hostinger builds never miss env vars.
- * Optional override: `public/api-config.js` sets `window.__REACT_APP_API_URL__` (e.g. to test another API).
- * Local `npm start`: uses http://localhost:5001 (your machine’s backend).
+ * Production API (Railway) ? see `src/config/apiOrigin.js` and `public/api-config.js`.
  */
-const HARDCODED_PRODUCTION_API = 'https://nova-ecommerce-project-backend.onrender.com';
-
-function readRuntimeApiOrigin() {
-  if (typeof window === 'undefined' || !window.__REACT_APP_API_URL__) {
-    return '';
-  }
-  return String(window.__REACT_APP_API_URL__);
-}
-
-// In development, ignore `public/api-config.js` so requests hit the local backend (port 5001).
-// In production, Hostinger can override the API via `window.__REACT_APP_API_URL__`.
-const baseURL = normalizeApiOrigin(
-  process.env.NODE_ENV === 'production'
-    ? readRuntimeApiOrigin() || HARDCODED_PRODUCTION_API
-    : 'http://localhost:5001'
-);
-
 export const api = axios.create({
-  baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-/** Public store pricing (shipping thresholds, tax rate) — no auth required */
+api.interceptors.request.use(
+  (config) => {
+    config.baseURL = resolveStoreApiOrigin();
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+/** Public store pricing (shipping thresholds, tax rate) ? no auth required */
 export const storeSettingsAPI = {
   get: () => api.get('/api/store-settings')
 };
 
-/** Public homepage metrics — no auth required */
+/** Public homepage metrics ? no auth required */
 export const publicAPI = {
-  homeStats: () => api.get('/api/public/home-stats')
+  homeStats: () => api.get('/api/public/home-stats'),
+  getStripeConfig: () => api.get('/api/public/stripe-config')
 };
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('nova_shop_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    const url = String(config.url || '');
+    const isGuestStripe = /\/api\/stripe\/guest\//.test(url);
+    const isGuestOrder = /\/api\/orders\/guest\//.test(url);
+
+    if (!isGuestStripe && !isGuestOrder) {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      delete config.headers.Authorization;
+    }
+
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       delete config.headers['Content-Type'];
       if (config.headers.common) {
@@ -75,20 +67,29 @@ api.interceptors.response.use(
     if (status === 401) {
       const skipRedirect =
         cfg.skipAuthRedirect === true ||
-        /\/auth\/(login|register|forgot-password|reset-password)(\?|$)/.test(url);
+        /\/auth\/(login|register|forgot-password|reset-password)(\?|$)/.test(url) ||
+        /\/api\/orders\/guest\//.test(url) ||
+        /\/api\/stripe\/guest\//.test(url);
 
-      if (!skipRedirect) {
-        localStorage.removeItem(TOKEN_KEY);
-        delete api.defaults.headers.common.Authorization;
+      localStorage.removeItem(TOKEN_KEY);
+      delete api.defaults.headers.common.Authorization;
 
-        if (typeof window !== 'undefined') {
-          const pathname = window.location.pathname;
-          const target = '/login';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nova-auth-expired'));
+      }
 
-          // Avoid pointless navigation when already on target.
-          if (pathname !== target) {
-            window.location.assign(target);
-          }
+      if (!skipRedirect && typeof window !== 'undefined') {
+        const pathname = window.location.pathname;
+        const isStorefrontPublic =
+          pathname === '/checkout' ||
+          pathname === '/cart' ||
+          pathname.startsWith('/shop') ||
+          pathname.startsWith('/order-confirmation') ||
+          pathname === '/' ||
+          pathname === '/home';
+
+        if (!isStorefrontPublic && pathname !== '/login') {
+          window.location.assign('/login');
         }
       }
     }
@@ -98,7 +99,7 @@ api.interceptors.response.use(
 );
 
 /**
- * Auth — `/api/auth/*`
+ * Auth G?? `/api/auth/*`
  * Note: `updateProfile`, `forgotPassword`, `resetPassword` expect matching backend routes.
  */
 export const authAPI = {
@@ -142,7 +143,7 @@ export const authAPI = {
 };
 
 /**
- * Products — `/api/products/*`
+ * Products G?? `/api/products/*`
  */
 export const productsAPI = {
   getAll: (params) => api.get('/api/products', { params }),
@@ -197,8 +198,13 @@ export const chatbotAPI = {
   message: (body) => api.post('/api/chatbot/message', body)
 };
 
+export const whatsappChatAPI = {
+  status: () => api.get('/api/chat/status'),
+  send: (body) => api.post('/api/chat/send-to-whatsapp', body)
+};
+
 /**
- * Cart — `/api/cart/*` (JWT required on server)
+ * Cart G?? `/api/cart/*` (JWT required on server)
  */
 export const cartAPI = {
   get: () => api.get('/api/cart'),
@@ -219,21 +225,28 @@ export const cartAPI = {
 };
 
 /**
- * Orders — `/api/orders/*` (JWT). Checkout uses manual payment (COD / Easypaisa).
+ * Orders ? `/api/orders/*` (JWT). Checkout: COD, Easypaisa, or Stripe card.
  */
 export const ordersAPI = {
-  /** Place order: COD or bank_transfer (Easypaisa) */
   place: (body) => api.post('/api/orders/place', body),
 
-  /** @deprecated Stripe disabled — use `place` */
-  create: (body) => api.post('/api/orders/place', body),
+  guestPlace: (body) => {
+    if (body instanceof FormData) {
+      return api.post('/api/orders/guest/place', body, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        skipAuthRedirect: true
+      });
+    }
+    return api.post('/api/orders/guest/place', body, { skipAuthRedirect: true });
+  },
 
-  /** @deprecated Stripe disabled */
   confirm: (body) => api.post('/api/orders/confirm', body),
+
+  create: (body) => api.post('/api/orders/place', body),
 
   getMyOrders: (params) => api.get('/api/orders/my-orders', { params }),
 
-  getOne: (id) => api.get(`/api/orders/${id}`),
+  getOne: (id) => api.get(`/api/orders/${id}`, { skipAuthRedirect: true }),
 
   cancel: (id, body) => api.post(`/api/orders/cancel/${id}`, body || {}),
 
@@ -242,14 +255,48 @@ export const ordersAPI = {
 };
 
 /**
- * Wishlist — `/api/wishlist/*` (JWT)
+ * Wallet — `/api/wallet/*` (JWT). Balance, top-up, checkout preview.
+ */
+export const walletAPI = {
+  getSummary: () => api.get('/api/wallet'),
+
+  getTransactions: (params) => api.get('/api/wallet/transactions', { params }),
+
+  preview: (body) => api.post('/api/wallet/preview', body),
+
+  topUpIntent: (body) => api.post('/api/wallet/top-up/intent', body),
+
+  topUpConfirm: (body) => api.post('/api/wallet/top-up/confirm', body)
+};
+
+/**
+ * Meta Conversions API mirror — `/api/meta/*` (browser → server, dedup with pixel eventID).
+ */
+export const metaAPI = {
+  trackEvent: (body) => api.post('/api/meta/event', body, { skipAuthRedirect: true }),
+
+  getStatus: () => api.get('/api/meta/status', { skipAuthRedirect: true })
+};
+
+/**
+ * Stripe ? `/api/stripe/*`
+ */
+export const stripeAPI = {
+  createPaymentIntent: (body) => api.post('/api/stripe/create-payment-intent', body),
+  guestCreatePaymentIntent: (body) =>
+    api.post('/api/stripe/guest/create-payment-intent', body, { skipAuthRedirect: true }),
+  guestConfirm: (body) => api.post('/api/stripe/guest/confirm', body, { skipAuthRedirect: true })
+};
+
+/**
+ * Wishlist G?? `/api/wishlist/*` (JWT)
  */
 export const wishlistAPI = {
   get: () => api.get('/api/wishlist'),
 
   /**
-   * Toggle add/remove — POST /api/wishlist/toggle with body (avoids path/proxy 404s).
-   * @param {string} productId — Mongo _id or slug
+   * Toggle add/remove G?? POST /api/wishlist/toggle with body (avoids path/proxy 404s).
+   * @param {string} productId G?? Mongo _id or slug
    */
   toggle: (productId) =>
     api.post('/api/wishlist/toggle', { productId: String(productId) }),
@@ -261,7 +308,7 @@ export const wishlistAPI = {
 };
 
 /**
- * Admin — `/api/admin/*` (JWT + admin role)
+ * Admin G?? `/api/admin/*` (JWT + admin role)
  */
 export const adminAPI = {
   dashboard: {
@@ -426,3 +473,4 @@ export const adminAPI = {
 };
 
 export default api;
+export { networkErrorMessage };

@@ -22,6 +22,5 @@ export default function AdminRoute({ children }) {
     return <Navigate to="/home" replace />;
   }
 
-  const next = encodeURIComponent(`${location.pathname}${location.search}`);
-  return <Navigate to={`/login?next=${next}`} replace />;
+  return <Navigate to="/login" state={{ from: location }} replace />;
 }

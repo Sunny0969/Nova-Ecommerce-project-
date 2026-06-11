@@ -77,7 +77,7 @@ export default function Orders({ embedded }) {
         <SEO
           noIndex
           title="My orders"
-          description="View your order history and delivery status at Souvenir Handicraft Shop. Private to your account."
+          description="View your order history and delivery status at Bazaar. Private to your account."
         />
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Orders</h2>
         {body}
@@ -90,7 +90,7 @@ export default function Orders({ embedded }) {
       <SEO
         noIndex
         title="My orders"
-        description="Your Souvenir Handicraft Shop order history — track past purchases and order status. Sign in required."
+        description="Your Bazaar order history — track past purchases and order status. Sign in required."
         canonicalUrl="/orders"
       />
       <header className="page-header">
@@ -107,9 +107,9 @@ export default function Orders({ embedded }) {
           </ol>
         </div>
       </header>
-      <main className="section orders-page" id="main-content">
+      <div className="section orders-page">
         <div className="container">{body}</div>
-      </main>
+      </div>
     </>
   );
 }

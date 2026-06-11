@@ -6,11 +6,11 @@ export default function ResetPassword() {
   const { token } = useParams();
 
   return (
-    <main className="auth-page section container" id="main-content" style={{ maxWidth: 480, margin: '0 auto' }}>
+    <div className="auth-page section container" style={{ maxWidth: 480, margin: '0 auto' }}>
       <SEO
         noIndex
         title="Set new password"
-        description="Set a new password for your Souvenir Handicraft account using the secure link from your email. One-time, private page."
+        description="Set a new password for your Bazaar account using the secure link from your email. One-time, private page."
         canonicalUrl={token ? `/reset-password/${token}` : '/reset-password'}
       />
       <div className="auth-card">
@@ -25,6 +25,6 @@ export default function ResetPassword() {
           <Link to="/login">← Back to sign in</Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

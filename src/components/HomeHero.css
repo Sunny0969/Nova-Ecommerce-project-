@@ -1,4 +1,4 @@
-/* Rozana hero — light section (no navy bar) */
+/* Bazaar hero — light section (no navy bar) */
 
 .rozana-hero {
   width: 100%;
@@ -150,11 +150,21 @@
   color: inherit;
 }
 
+.rozana-hero__promo-pct {
+  font-weight: 900;
+  font-size: 1.2em;
+  letter-spacing: -0.02em;
+}
+
 .rozana-hero__promo-sub {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.92);
+}
+
+.rozana-hero__promo-delivery {
+  font-weight: 800;
 }
 
 .rozana-hero__promo--soon .rozana-hero__promo-sub {

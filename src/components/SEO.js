@@ -13,19 +13,33 @@ import {
 import { truncateMetaDescription, truncateTitle } from '../utils/pageSeo';
 
 /**
- * Per-route meta + Open Graph + Twitter; always outputs canonical and robots.
+ * Per-route meta + Open Graph + Twitter via react-helmet-async.
+ * Use on every public page; pass unique title, description, and canonicalUrl.
  *
  * @param {object} props
- * @param {string} [props.title] — short segment; full title = `formatPageTitle(title)` (e.g. "Contact" → "Contact | Souvenir Handicraft")
- * @param {string} [props.description] — meta description; falls back to default from utils/seo
- * @param {string} [props.canonicalUrl] — absolute https URL, or path starting with `/` (no query). Omits = current path only (strips search params for duplicate-URL control)
- * @param {string} [props.ogImage] — absolute image URL; default site OG image
- * @param {string} [props.ogType] — e.g. `website` | `product`
- * @param {boolean} [props.noIndex] — `noindex, nofollow` for account, admin, auth, cart, etc.
- * @param {object|Array<object>} [props.schema] — one or more JSON-LD objects (array = multiple <script> tags)
- * @param {Array<{ href: string, as?: string, type?: string, crossOrigin?: string, imageSrcSet?: string, imageSizes?: string }>} [props.preload] — `<link rel="preload">` hints (e.g. LCP hero)
+ * @param {string} [props.title] — ≤60 chars with keyword first; or full title if it contains | or —
+ * @param {string} [props.description] — 140–160 chars, unique per page
+ * @param {string} [props.canonicalUrl] — absolute URL or path starting with /
+ * @param {string} [props.ogImage] — absolute image URL
+ * @param {string} [props.ogImageAlt] — alt text for social preview image
+ * @param {string} [props.ogType] — website | product | article
+ * @param {string} [props.keywords] — optional comma-separated meta keywords
+ * @param {boolean} [props.noIndex] — noindex for cart, checkout, account, admin
+ * @param {object|Array<object>} [props.schema] — JSON-LD
+ * @param {Array<object>} [props.preload] — link rel=preload hints
  */
-export default function SEO({ title, description, canonicalUrl, ogImage, ogType, noIndex, schema, preload }) {
+export default function SEO({
+  title,
+  description,
+  canonicalUrl,
+  ogImage,
+  ogImageAlt,
+  ogType,
+  keywords,
+  noIndex,
+  schema,
+  preload
+}) {
   const { pathname } = useLocation();
 
   const absoluteCanonical = useMemo(() => {
@@ -52,7 +66,17 @@ export default function SEO({ title, description, canonicalUrl, ogImage, ogType,
         : defaultDescription;
     return truncateMetaDescription(raw);
   }, [description]);
+
+  const keywordContent = useMemo(() => {
+    const raw = keywords != null ? String(keywords).trim() : '';
+    return raw || null;
+  }, [keywords]);
+
   const img = ogImage != null && String(ogImage).trim() !== '' ? String(ogImage).trim() : getDefaultOgImageUrl();
+  const imageAlt =
+    ogImageAlt != null && String(ogImageAlt).trim() !== ''
+      ? String(ogImageAlt).trim()
+      : fullTitle;
   const type = ogType != null && String(ogType).trim() !== '' ? String(ogType).trim() : 'website';
   const robots = noIndex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1';
 
@@ -93,6 +117,7 @@ export default function SEO({ title, description, canonicalUrl, ogImage, ogType,
       {preloadLinks}
       <title>{fullTitle}</title>
       <meta name="description" content={desc} />
+      {keywordContent ? <meta name="keywords" content={keywordContent} /> : null}
       <link rel="canonical" href={absoluteCanonical} />
       <meta name="robots" content={robots} />
       <meta name="theme-color" content="#1A1A2E" />
@@ -103,10 +128,12 @@ export default function SEO({ title, description, canonicalUrl, ogImage, ogType,
       <meta property="og:description" content={desc} />
       <meta property="og:url" content={absoluteCanonical} />
       <meta property="og:image" content={img} />
+      <meta property="og:image:alt" content={imageAlt} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />
       <meta name="twitter:image" content={img} />
+      <meta name="twitter:image:alt" content={imageAlt} />
       {jsonLd}
     </Helmet>
   );

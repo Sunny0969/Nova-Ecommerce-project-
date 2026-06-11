@@ -1,0 +1,2 @@
+"use strict";(globalThis.webpackChunknova_shop_frontend=globalThis.webpackChunknova_shop_frontend||[]).push([[8512],{8512(n,o,s){s.r(o),s.d(o,{default:()=>a});const a={}}}]);
+//# sourceMappingURL=8512.94e2be6a.chunk.js.map
