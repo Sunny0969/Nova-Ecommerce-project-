@@ -31,12 +31,41 @@
   --heading-line: 1.2;
   --heading-color: var(--navy, #1a1a2e);
 
-  /* Single horizontal inset for header, footer, container, banner — edit once */
+  /* Single horizontal inset for header, footer, container — edit once */
   --page-max-width: 1280px;
+  /* Homepage banner slider only — stays nearly full bleed */
+  --home-slider-gutter: 0.25rem;
   --page-gutter: 0.25rem;
 
-  /* Header + footer wordmark only */
-  --font-brand-logo: 'Taskor', var(--font-display);
+  /* Header + footer wordmark only — sans fallback avoids serif flash on live */
+  --font-brand-logo: 'Taskor', 'DM Sans', system-ui, sans-serif;
+}
+
+/* Logo wordmark — Taskor on all breakpoints */
+.nav-logo,
+.footer-logo {
+  font-family: var(--font-brand-logo);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 767px) {
+  .navbar .nav-logo {
+    font-size: 1.45rem;
+  }
+}
+
+/* Storefront: equal left/right inset (navbar, sections, footer) — not admin */
+@media (max-width: 767px) {
+  .App:has(.main-content:not(.main-content--admin)) {
+    --page-gutter: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .App:has(.main-content:not(.main-content--admin)) {
+    --page-gutter: 2rem;
+  }
 }
 
 /* Storefront body + paragraphs — never below --text-min-size */
@@ -128,6 +157,12 @@ h1,
   font-size: var(--h1-size);
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+/* Dark navy page headers — keep white titles (mix heading color is navy) */
+.page-header:not(.page-header--shop-listing):not(.page-header--blog):not(.page-header--product-detail) .page-header__title,
+.page-header:not(.page-header--shop-listing):not(.page-header--blog):not(.page-header--product-detail) h1.page-header__title {
+  color: var(--text-on-dark, #fff);
 }
 
 h2,
@@ -233,32 +268,6 @@ body,
 .home-categories-grid--loading .home-category-card--skeleton,
 .product-card--skeleton .product-image--skeleton {
   background: var(--site-background);
-}
-
-/* Admin — dark panel; do not inherit storefront white theme */
-.main-content--admin {
-  --cream: #fff7f0;
-  --page-bg: #12121f;
-  background-color: #12121f;
-}
-
-.main-content--admin h1,
-.main-content--admin h2,
-.main-content--admin h3,
-.main-content--admin h4,
-.main-content--admin .h1,
-.main-content--admin .h2,
-.main-content--admin .h3,
-.main-content--admin .h4 {
-  color: inherit;
-}
-
-.main-content--admin .admin-dashboard__title {
-  color: var(--cream);
-}
-
-.main-content--admin {
-  font-size: 14px;
 }
 
 /* === Sale ribbon & badges (yellow diagonal — all on-sale products) === */

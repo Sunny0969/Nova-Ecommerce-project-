@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -26,11 +27,15 @@ import NotFound from './NotFound';
 import ProductImage from '../components/ProductImage';
 import RecommendationRow from '../components/RecommendationRow';
 import ProductDetailPageSkeleton from '../components/skeletons/ProductDetailPageSkeleton';
+import { consumePrerenderProductSeed, hidePrerenderFallback } from '../lib/prerenderFallback';
 import { getPrefetchedProductResponse } from '../lib/prefetchProduct';
-import { eventsAPI, recommendationsAPI } from 'api';
+import { eventsAPI } from '../api/events';
+import { recommendationsAPI, productsAPI } from '../api/storefront';
+import api from '../api/client';
 import { getSessionId } from '../lib/sessionId';
 import StarRating from '../components/StarRating';
 import { buildFakeReviews } from '../lib/fakeReviews';
+import { useStoreSettings } from '../hooks/useStoreSettings';
 import { getProductPhysicalSpecs } from '../lib/productPhysicalSpecs';
 import {
   getCleanShortDescription,
@@ -38,7 +43,17 @@ import {
   resolveProductDescriptionHtml,
   sanitizeProductDescriptions
 } from '../lib/productDescription';
-import api, { productsAPI } from 'api';
+import {
+  axisHasOptionPrice,
+  buildDefaultVariantPick,
+  getOptionDisplayPrice,
+  hasPerOptionPrice,
+  isVariantOptionAvailable,
+  resolveEffectiveComparePrice,
+  resolveEffectivePrice,
+  resolveEffectiveStock
+} from '../lib/variantStock';
+import './ProductDetailStickyBar.css';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -109,6 +124,23 @@ function formatCategoryLabel(slug, name) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function readCachedProduct(slug) {
+  const res = getPrefetchedProductResponse(slug);
+  const data = res?.data?.data;
+  if (!data) return null;
+  return sanitizeProductDescriptions(data);
+}
+
+function readInitialProduct(slug) {
+  const cached = readCachedProduct(slug);
+  if (cached) return cached;
+  const seed = consumePrerenderProductSeed();
+  if (seed && (!slug || !seed.slug || seed.slug === slug)) {
+    return sanitizeProductDescriptions(seed);
+  }
+  return null;
+}
+
 export default function ProductDetail() {
   const { slug: legacySlug, categorySlug: routeCategorySlug, productSlug } = useParams();
   const slug = productSlug || legacySlug;
@@ -118,8 +150,9 @@ export default function ProductDetail() {
   const customerUser = canAccessCustomerApp ? user : null;
   const { addToCart } = useCart();
   const { toggleWishlist, products: wishProducts } = useWishlist();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const initialCached = readInitialProduct(slug);
+  const [product, setProduct] = useState(initialCached);
+  const [loading, setLoading] = useState(!initialCached);
   const [notFound, setNotFound] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [notifySubmitting, setNotifySubmitting] = useState(false);
@@ -138,17 +171,31 @@ export default function ProductDetail() {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [variantGalleryExtraUrl, setVariantGalleryExtraUrl] = useState(null);
   const [variantPick, setVariantPick] = useState({});
+  const loadSeqRef = useRef(0);
 
   // Must be declared before any early returns (hooks order).
   const fake = useMemo(() => buildFakeReviews(product), [product]);
+  const { settings: storeSettings } = useStoreSettings({ pollMs: 0 });
 
   const loadProduct = useCallback(async () => {
-    setLoading(true);
-    setNotFound(false);
-    setNotifyBanner(null);
+    const seq = ++loadSeqRef.current;
+    const cached = readCachedProduct(slug);
+
+    if (cached) {
+      setProduct(cached);
+      setLoading(false);
+      setNotFound(false);
+    } else {
+      setProduct(null);
+      setLoading(true);
+      setNotFound(false);
+    }
+
     try {
       const prefetched = getPrefetchedProductResponse(slug);
       const res = prefetched ?? (await productsAPI.getOne(slug));
+      if (seq !== loadSeqRef.current) return;
+
       const data = res.data?.data;
       if (data?.unavailable) {
         setProduct(sanitizeProductDescriptions(data));
@@ -161,6 +208,7 @@ export default function ProductDetail() {
       setProduct(null);
       setNotFound(true);
     } catch (e) {
+      if (seq !== loadSeqRef.current) return;
       setProduct(null);
       if (e.response?.status === 404) {
         setNotFound(true);
@@ -169,13 +217,21 @@ export default function ProductDetail() {
         setNotFound(true);
       }
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) {
+        setLoading(false);
+      }
     }
   }, [slug]);
 
   useEffect(() => {
     loadProduct();
   }, [loadProduct]);
+
+  useEffect(() => {
+    if (!loading && (product || notFound)) {
+      hidePrerenderFallback();
+    }
+  }, [loading, product, notFound]);
 
   /** Redirect legacy /shop/:slug → canonical /:category/:slug */
   useEffect(() => {
@@ -259,11 +315,36 @@ export default function ProductDetail() {
     return buildVariantSelectionSummary(product.variantAxes, variantPick);
   }, [product, variantPick]);
 
+  const selectionStock = useMemo(() => {
+    if (!product) return 0;
+    return resolveEffectiveStock(product, variantPick);
+  }, [product, variantPick]);
+
+  const selectionInStock = useMemo(() => selectionStock > 0, [selectionStock]);
+
+  const selectionPrice = useMemo(() => {
+    if (!product) return 0;
+    return resolveEffectivePrice(product, variantPick);
+  }, [product, variantPick]);
+
+  const selectionComparePrice = useMemo(() => {
+    if (!product) return null;
+    return resolveEffectiveComparePrice(product, variantPick);
+  }, [product, variantPick]);
+
   const handleAdd = async () => {
     if (!product) return;
+    if (!selectionInStock) {
+      toast.error('This option is out of stock');
+      return;
+    }
     setAdding(true);
     try {
-      await addToCart(product, qty, { cartVariantNote: getCartVariantNote() });
+      await addToCart(product, qty, {
+        cartVariantNote: getCartVariantNote(),
+        effectiveStock: selectionStock,
+        effectivePrice: selectionPrice
+      });
     } finally {
       setAdding(false);
     }
@@ -275,12 +356,14 @@ export default function ProductDetail() {
       toast.error('Please accept the Terms & Conditions to continue');
       return;
     }
-    if (!product.inStock) return;
+    if (!selectionInStock) return;
 
     setBuyingNow(true);
     try {
       const result = await addToCart(product, qty, {
         cartVariantNote: getCartVariantNote(),
+        effectiveStock: selectionStock,
+        effectivePrice: selectionPrice,
         silent: true
       });
       if (result?.success) {
@@ -312,6 +395,43 @@ export default function ProductDetail() {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: product?.name || 'Product',
+          text: product?.name || '',
+          url: shareUrl
+        });
+        return;
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+    copyLink();
+  };
+
+  useEffect(() => {
+    if (loading || notFound || !product) {
+      document.body.classList.remove('product-detail-sticky-visible');
+      return undefined;
+    }
+
+    const mq = window.matchMedia('(max-width: 767px)');
+    const apply = () => {
+      if (mq.matches) document.body.classList.add('product-detail-sticky-visible');
+      else document.body.classList.remove('product-detail-sticky-visible');
+    };
+
+    apply();
+    mq.addEventListener('change', apply);
+
+    return () => {
+      mq.removeEventListener('change', apply);
+      document.body.classList.remove('product-detail-sticky-visible');
+    };
+  }, [loading, notFound, product]);
+
   const scrollToReviews = () => {
     setActiveTab('reviews');
     window.setTimeout(() => {
@@ -319,13 +439,15 @@ export default function ProductDetail() {
     }, 80);
   };
 
-  const compareAt = product?.originalPrice ?? product?.comparePrice;
-  const price = product ? Number(product.price) : 0;
+  const price = selectionPrice;
   const hasSale =
-    product && compareAt != null && Number(compareAt) > price;
+    product &&
+    selectionComparePrice != null &&
+    Number(selectionComparePrice) > price &&
+    Number(selectionComparePrice) > 0;
   const discountPct =
-    hasSale && Number(compareAt) > 0
-      ? Math.round(((Number(compareAt) - price) / Number(compareAt)) * 100)
+    hasSale && Number(selectionComparePrice) > 0
+      ? Math.round(((Number(selectionComparePrice) - price) / Number(selectionComparePrice)) * 100)
       : null;
 
   const images = useMemo(() => {
@@ -368,32 +490,33 @@ export default function ProductDetail() {
             return u ? [{ url: u }] : [];
           })();
 
-    const next = {};
-    ['color', 'shape', 'size'].forEach((axisKey) => {
-      const ax = product.variantAxes[axisKey];
-      if (!ax?.enabled || !ax.options?.length) return;
-      const opts = trimVariantOptions(ax.options);
-      if (!opts.length) return;
-      next[axisKey] = [0];
-    });
+    const next = buildDefaultVariantPick(product.variantAxes, trimVariantOptions);
     setVariantPick(next);
     setVariantGalleryExtraUrl(null);
     setGalleryIndex(0);
 
-    for (const key of ['color', 'shape', 'size']) {
+    const firstAxisWithImage = ['color', 'shape', 'size'].find((key) => {
       const ax = product.variantAxes[key];
-      if (!ax?.enabled) continue;
+      if (!ax?.enabled) return false;
       const opts = trimVariantOptions(ax.options);
-      if (!opts.length || !opts[0]?.image?.url) continue;
-      const u = opts[0].image.url;
-      const idx = baseImgs.findIndex((im) => urlsMatchImage(im.url, u));
-      if (idx >= 0) {
-        setGalleryIndex(idx);
-        return;
+      const pickIdx = next[key]?.[0] ?? 0;
+      return opts[pickIdx]?.image?.url;
+    });
+
+    if (firstAxisWithImage) {
+      const ax = product.variantAxes[firstAxisWithImage];
+      const opts = trimVariantOptions(ax.options);
+      const pickIdx = next[firstAxisWithImage]?.[0] ?? 0;
+      const u = opts[pickIdx]?.image?.url;
+      if (u) {
+        const idx = baseImgs.findIndex((im) => urlsMatchImage(im.url, u));
+        if (idx >= 0) {
+          setGalleryIndex(idx);
+          return;
+        }
+        setVariantGalleryExtraUrl(u);
+        setGalleryIndex(0);
       }
-      setVariantGalleryExtraUrl(u);
-      setGalleryIndex(0);
-      return;
     }
   }, [product]);
 
@@ -405,6 +528,22 @@ export default function ProductDetail() {
       const opts = trimVariantOptions(ax.options);
       const opt = opts[flatOptionIndex];
       if (!opt) return;
+
+      const baseStock =
+        product.stockQuantity != null && product.stockQuantity !== ''
+          ? Math.max(0, Math.floor(Number(product.stockQuantity)))
+          : 0;
+      const available = isVariantOptionAvailable(
+        product.variantAxes,
+        variantPick,
+        axisKey,
+        flatOptionIndex,
+        baseStock
+      );
+      if (!available) {
+        toast.error('This option is out of stock');
+        return;
+      }
 
       setVariantPick((p) => ({ ...p, [axisKey]: [flatOptionIndex] }));
 
@@ -420,15 +559,21 @@ export default function ProductDetail() {
         setGalleryIndex(0);
       }
     },
-    [product, images]
+    [product, images, variantPick]
   );
 
   const stockMax = useMemo(() => {
     if (!product) return 1;
-    const s = product.stockQuantity;
-    if (s == null || !Number.isFinite(Number(s))) return 99;
-    return Math.max(0, Math.floor(Number(s)));
-  }, [product]);
+    if (selectionStock > 0) return selectionStock;
+    return 0;
+  }, [product, selectionStock]);
+
+  useEffect(() => {
+    setQty((q) => {
+      if (stockMax <= 0) return 1;
+      return Math.min(Math.max(1, q), stockMax);
+    });
+  }, [stockMax, variantPick]);
 
   const histogram = useMemo(() => {
     if (!product) return [];
@@ -467,9 +612,7 @@ export default function ProductDetail() {
     const short = getCleanShortDescription(product);
     const long = getCleanLongDescription(product);
     const desc = (short || long || String(product.name || '')).trim().slice(0, 8000);
-    const stockN =
-      product.stockQuantity != null && product.stockQuantity !== '' ? Number(product.stockQuantity) : null;
-    const inStock = Boolean(product.inStock) || (stockN != null && !Number.isNaN(stockN) && stockN > 0);
+    const inStock = selectionInStock;
     const { ratingValue, reviewCount } = getProductRatingForSchema(product, fake);
     const pageReviews = getProductPageReviews(product, fake);
     return buildProductSchema(product, {
@@ -480,9 +623,10 @@ export default function ProductDetail() {
       ratingValue,
       reviewCount,
       description: desc,
-      reviews: pageReviews
+      reviews: pageReviews,
+      storeSettings
     });
-  }, [product, images, price, canonicalUrl, fake]);
+  }, [product, images, price, canonicalUrl, fake, storeSettings, selectionInStock, selectionPrice]);
 
   const breadcrumbJsonLd = useMemo(() => {
     if (!product || product.unavailable) return null;
@@ -534,7 +678,7 @@ export default function ProductDetail() {
     }
   };
 
-  if (loading) {
+  if (loading && !product) {
     return (
       <>
         <SEO title="Product" description="Loading product details at Bazaar." />
@@ -669,6 +813,20 @@ export default function ProductDetail() {
             ) : null}
           </div>
         </div>
+
+        <div className="product-detail-sticky-bar" role="toolbar" aria-label="Product actions">
+          <Link to="/shop" className="product-detail-sticky-bar__buy product-detail-sticky-bar__link">
+            Browse Shop
+          </Link>
+          <button
+            type="button"
+            className="product-detail-sticky-bar__share"
+            onClick={handleShare}
+            aria-label="Share product"
+          >
+            <Share2 size={20} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        </div>
       </>
     );
   }
@@ -683,7 +841,7 @@ export default function ProductDetail() {
 
   const metaDesc = buildMetaDescription(
     product.name,
-    product.inStock ? 'Buy now with secure checkout and fast delivery.' : 'View details and get notified when back in stock.',
+    selectionInStock ? 'Buy now with secure checkout and fast delivery.' : 'View details and get notified when back in stock.',
     shortDescriptionClean.slice(0, 120) || getCleanLongDescription(product).slice(0, 120)
   );
 
@@ -761,11 +919,15 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            <p className={`product-detail-stock-badge ${product.inStock ? 'in' : 'out'}`}>
-              {product.inStock ? 'In stock' : 'Out of stock'}
+            <p className={`product-detail-stock-badge ${selectionInStock ? 'in' : 'out'}`}>
+              {selectionInStock
+                ? stockMax > 0 && stockMax <= 5
+                  ? `Only ${stockMax} left in stock`
+                  : 'In stock'
+                : 'Out of stock'}
             </p>
 
-            {!product.inStock ? (
+            {!selectionInStock ? (
               <form className="product-detail-notify" onSubmit={handleNotifyStock}>
                 <label className="form-label" htmlFor="notify-email">
                   Get notified when back in stock
@@ -795,10 +957,13 @@ export default function ProductDetail() {
             ) : null}
 
             <div className="product-detail-price-block">
+              {hasPerOptionPrice(product.variantAxes) ? (
+                <p className="product-detail-price-note">Price for your selected option</p>
+              ) : null}
               <span className="price-current product-detail-price-current">{formatPKR(price)}</span>
               {hasSale ? (
                 <>
-                  <span className="price-original">{formatPKR(Number(compareAt))}</span>
+                  <span className="price-original">{formatPKR(Number(selectionComparePrice))}</span>
                   {discountPct != null ? (
                     <span className="product-detail-discount-pill">−{discountPct}%</span>
                   ) : null}
@@ -817,6 +982,7 @@ export default function ProductDetail() {
                   if (!ax?.enabled || !ax.options?.length) return null;
                   const opts = ax.options.filter((o) => String(o.label || '').trim());
                   if (!opts.length) return null;
+                  const showPricesOnAxis = axisHasOptionPrice(ax);
                   return (
                     <div key={key} className="product-detail-variant-block">
                       <div className="product-detail-variant-head">
@@ -828,13 +994,43 @@ export default function ProductDetail() {
                           const sel = variantPick[key];
                           const cur = Array.isArray(sel) && sel.length ? sel : [0];
                           const isSelected = cur.includes(i);
+                          const baseStock =
+                            product.stockQuantity != null && product.stockQuantity !== ''
+                              ? Math.max(0, Math.floor(Number(product.stockQuantity)))
+                              : 0;
+                          const optionAvailable = isVariantOptionAvailable(
+                            product.variantAxes,
+                            variantPick,
+                            key,
+                            i,
+                            baseStock
+                          );
+                          const optionStock = resolveEffectiveStock(product, {
+                            ...variantPick,
+                            [key]: [i]
+                          });
+                          const optionPrice = showPricesOnAxis
+                            ? getOptionDisplayPrice(product.variantAxes, variantPick, key, i, product)
+                            : null;
+                          const optionCompare = showPricesOnAxis
+                            ? (() => {
+                                const testPick = { ...variantPick, [key]: [i] };
+                                return resolveEffectiveComparePrice(product, testPick);
+                              })()
+                            : null;
+                          const optionOnSale =
+                            optionCompare != null &&
+                            Number(optionCompare) > (optionPrice ?? 0) &&
+                            Number(optionCompare) > 0;
                           return (
                             <li key={`${key}-${i}-${o.label}`} role="none">
                               <button
                                 type="button"
-                                className={`product-detail-variant-chip${isSelected ? ' is-selected' : ''}`}
+                                className={`product-detail-variant-chip${isSelected ? ' is-selected' : ''}${!optionAvailable ? ' is-out-of-stock' : ''}${showPricesOnAxis ? ' has-price' : ''}`}
                                 aria-pressed={isSelected}
-                                aria-label={`${VARIANT_AXIS_LABELS[key]}: ${o.label}`}
+                                aria-disabled={!optionAvailable}
+                                disabled={!optionAvailable}
+                                aria-label={`${VARIANT_AXIS_LABELS[key]}: ${o.label}${optionPrice != null ? `, ${formatPKR(optionPrice)}` : ''}${!optionAvailable ? ' (out of stock)' : optionStock > 0 ? ` (${optionStock} available)` : ''}`}
                                 onClick={() => handleVariantOptionClick(key, i)}
                               >
                                 {o.image?.url ? (
@@ -850,7 +1046,22 @@ export default function ProductDetail() {
                                     />
                                   </span>
                                 ) : null}
-                                <span>{o.label}</span>
+                                <span className="product-detail-variant-chip-text">
+                                  <span className="product-detail-variant-chip-label">{o.label}</span>
+                                  {showPricesOnAxis && optionPrice != null ? (
+                                    <span className="product-detail-variant-price">
+                                      {formatPKR(optionPrice)}
+                                      {optionOnSale ? (
+                                        <span className="product-detail-variant-price-was">
+                                          {formatPKR(Number(optionCompare))}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                  ) : null}
+                                </span>
+                                {!optionAvailable ? (
+                                  <span className="product-detail-variant-oos">Sold out</span>
+                                ) : null}
                               </button>
                             </li>
                           );
@@ -892,7 +1103,7 @@ export default function ProductDetail() {
                   type="button"
                   className="qty-btn"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  disabled={!product.inStock}
+                  disabled={!selectionInStock}
                 >
                   −
                 </button>
@@ -901,12 +1112,12 @@ export default function ProductDetail() {
                   type="button"
                   className="qty-btn"
                   onClick={() => setQty((q) => Math.min(stockMax || 1, q + 1))}
-                  disabled={!product.inStock || qty >= (stockMax || 1)}
+                  disabled={!selectionInStock || qty >= (stockMax || 1)}
                 >
                   +
                 </button>
               </div>
-              {product.inStock && Number.isFinite(stockMax) ? (
+              {selectionInStock && Number.isFinite(stockMax) && stockMax > 0 ? (
                 <span className="stock-hint">{stockMax} available</span>
               ) : null}
             </div>
@@ -915,7 +1126,7 @@ export default function ProductDetail() {
               <button
                 type="button"
                 className="btn btn-add-cart-detail"
-                disabled={!product.inStock || adding}
+                disabled={!selectionInStock || adding}
                 onClick={handleAdd}
               >
                 {adding ? (
@@ -935,7 +1146,7 @@ export default function ProductDetail() {
                     className="product-detail-terms__input"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    disabled={!product.inStock}
+                    disabled={!selectionInStock}
                   />
                   <span className="product-detail-terms__text">
                     I agree to the{' '}
@@ -952,8 +1163,8 @@ export default function ProductDetail() {
                 <button
                   type="button"
                   className="btn btn-buy-now-detail"
-                  disabled={!product.inStock || buyingNow || !termsAccepted}
-                  aria-disabled={!product.inStock || buyingNow || !termsAccepted}
+                  disabled={!selectionInStock || buyingNow || !termsAccepted}
+                  aria-disabled={!selectionInStock || buyingNow || !termsAccepted}
                   onClick={handleBuyNow}
                 >
                   {buyingNow ? (
@@ -1041,10 +1252,9 @@ export default function ProductDetail() {
                 <div>
                   <dt>Availability</dt>
                   <dd>
-                    {product.inStock
-                      ? product.stockQuantity != null &&
-                        Number.isFinite(Number(product.stockQuantity))
-                        ? `In stock (${Math.floor(Number(product.stockQuantity))} units)`
+                    {selectionInStock
+                      ? stockMax > 0
+                        ? `In stock (${stockMax} units)`
                         : 'In stock'
                       : 'Out of stock'}
                   </dd>
@@ -1222,6 +1432,45 @@ export default function ProductDetail() {
           <RecommendationRow title="Similar items" products={similar} />
         </div>
       </div>
+
+      {product ? (
+        <div className="product-detail-sticky-bar" role="toolbar" aria-label="Quick purchase">
+          <button
+            type="button"
+            className="product-detail-sticky-bar__cart"
+            disabled={!selectionInStock || adding}
+            onClick={handleAdd}
+          >
+            {adding ? 'Adding…' : 'Add to Cart'}
+          </button>
+          <button
+            type="button"
+            className="product-detail-sticky-bar__buy"
+            disabled={!selectionInStock || buyingNow}
+            onClick={() => {
+              if (!termsAccepted) {
+                toast.error('Please accept Terms & Conditions first');
+                document.querySelector('.product-detail-terms')?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center'
+                });
+                return;
+              }
+              handleBuyNow();
+            }}
+          >
+            {buyingNow ? 'Processing…' : 'Buy Now'}
+          </button>
+          <button
+            type="button"
+            className="product-detail-sticky-bar__share"
+            onClick={handleShare}
+            aria-label="Share product"
+          >
+            <Share2 size={20} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

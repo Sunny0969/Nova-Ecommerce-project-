@@ -85,3 +85,8 @@ export function buildFakeReviews(product, forcedCount = null) {
   };
 }
 
+/** Always returns 3 deterministic seed reviews for Product JSON-LD. */
+export function buildFakeReviewsForSchema(product) {
+  return buildFakeReviews(product, 3).reviews;
+}
+

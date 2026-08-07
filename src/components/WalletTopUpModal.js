@@ -5,7 +5,7 @@ import { X, Lock, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatPKR } from '../utils/currency';
 import { apiMessage } from '../lib/api';
-import { walletAPI } from 'api';
+import { walletAPI } from '../api/wallet';
 
 const CARD_OPTIONS = {
   style: {

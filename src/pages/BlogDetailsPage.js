@@ -18,6 +18,7 @@ import SEO from '../components/SEO';
 import { getCanonicalUrl } from '../utils/seo';
 import { buildBlogDetailSchemas } from '../utils/jsonLd';
 import BlogCard from '../components/BlogCard';
+import ProductCard from '../components/ProductCard';
 import OptimizedImage from '../components/OptimizedImage';
 import { buildBlogImageAlt, buildCategoryImageAlt } from '../utils/imageAlt';
 import { optimizeImageUrl } from '../utils/optimizedImageUrl';
@@ -25,6 +26,37 @@ import toast from 'react-hot-toast';
 import { blogAPI } from '../api';
 import InternalLinksBlock from '../components/InternalLinksBlock';
 import { getBlogRelatedLinks } from '../data/seoInternalLinks';
+import { bodyHasFaqSection, extractFaqItemsFromHtml } from '../utils/blogContentUtils';
+
+function patchSchemaDescriptions(schemas, description) {
+  const desc = String(description || '').trim();
+  if (!desc || !schemas) return schemas;
+  const patch = (node) => {
+    if (!node || typeof node !== 'object') return;
+    const type = node['@type'];
+    if (type === 'BlogPosting' || type === 'Article' || type === 'WebPage') {
+      node.description = desc;
+    }
+  };
+  if (Array.isArray(schemas)) {
+    schemas.forEach(patch);
+    return schemas;
+  }
+  patch(schemas);
+  return schemas;
+}
+
+function shopCardTitle(label) {
+  const clean = String(label || '').trim().replace(/^shop\s+/i, '').trim();
+  if (!clean || /^shop\s*now$/i.test(clean)) return 'Shop related products';
+  return clean;
+}
+
+function shopCardButtonText(label) {
+  const name = shopCardTitle(label);
+  if (name === 'Shop related products') return 'Browse all products at Bazaar';
+  return `Browse ${name} at Bazaar`;
+}
 
 export default function BlogDetailsPage() {
   const { slug } = useParams();
@@ -32,7 +64,7 @@ export default function BlogDetailsPage() {
 
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [openFAQ, setOpenFAQ] = useState(null);
 
   useEffect(() => {
@@ -44,10 +76,15 @@ export default function BlogDetailsPage() {
       try {
         const res = await blogAPI.getBySlug(slug);
         if (!mounted) return;
-        setBlog(res?.data?.post || null);
+        const post = res?.data?.post || null;
+        setBlog(post);
+        if (Array.isArray(post?.relatedPosts) && post.relatedPosts.length) {
+          setRelatedBlogs(post.relatedPosts.filter((p) => p.slug !== slug));
+        } else {
+          setRelatedBlogs([]);
+        }
 
-        // If backend returns success but no post, keep null to trigger fallback UI
-        if (!res?.data?.post) {
+        if (!post) {
           setBlog(null);
         }
       } catch (e) {
@@ -66,13 +103,6 @@ export default function BlogDetailsPage() {
       mounted = false;
     };
   }, [slug, navigate]);
-
-  const relatedBlogs = useMemo(() => {
-    if (!blog) return [];
-    // Lightweight fallback: fetch same category list (first page)
-    // (UI only needs a few related cards.)
-    return [];
-  }, [blog]);
 
   const blogRelatedLinks = useMemo(
     () => (blog ? getBlogRelatedLinks(blog) : []),
@@ -127,6 +157,18 @@ export default function BlogDetailsPage() {
   const faqItems = useMemo(() => {
     if (!blog) return [];
 
+    if (blog.body && bodyHasFaqSection(blog.body)) {
+      const extracted = extractFaqItemsFromHtml(blog.body);
+      if (extracted.length) {
+        return extracted.map((item, idx) => ({
+          id: idx + 1,
+          question: item.question,
+          answer: item.answer
+        }));
+      }
+      return [];
+    }
+
     return [
       {
         id: 1,
@@ -173,11 +215,64 @@ export default function BlogDetailsPage() {
     }
   };
 
-  useEffect(() => {
-    if (blog) {
-      document.title = blog.title ? `${blog.title} | Bazaar` : 'Bazaar Blog';
-    }
+  const blogCanonicalUrl = useMemo(() => {
+    if (!blog?.slug) return getCanonicalUrl('/blog');
+    return getCanonicalUrl(`/blog/${encodeURIComponent(String(blog.slug))}`);
   }, [blog]);
+
+  const seoTitle = blog?.metaTitle || (blog?.title ? `${blog.title} | Bazaar` : '');
+  const seoDescription = blog?.metaDescription || blog?.description || '';
+  const seoKeywords = Array.isArray(blog?.tags) && blog.tags.length ? blog.tags.join(', ') : blog?.tag;
+
+  const shopPreview = blog?.shopCategory;
+  const shopProducts = Array.isArray(shopPreview?.products) ? shopPreview.products : [];
+  const shopCategoryName = shopCardTitle(blog?.destinationLabel || shopPreview?.name);
+  const shopHref = blog?.destinationUrl || (shopPreview?.slug ? `/${shopPreview.slug}` : '/shop');
+  const shopCardImage =
+    shopPreview?.imageUrl || blog?.featuredImage || '';
+
+  useEffect(() => {
+    if (!blog) return undefined;
+
+    const desc = String(seoDescription || '').trim();
+    const canonical = blogCanonicalUrl;
+
+    const setMeta = (selector, attr, value) => {
+      if (!value) return;
+      let el = document.querySelector(selector);
+      if (!el) {
+        el = document.createElement('meta');
+        const match = selector.match(/\[(.+?)=(?:'|")(.+?)(?:'|")\]$/);
+        if (match) {
+          el.setAttribute(match[1], match[2]);
+          document.head.appendChild(el);
+        }
+      }
+      if (el) el.setAttribute(attr, value);
+    };
+
+    if (desc) {
+      document.querySelectorAll('meta[name="description"]').forEach((node, i) => {
+        if (i === 0) node.setAttribute('content', desc);
+        else node.remove();
+      });
+      setMeta('meta[property="og:description"]', 'content', desc);
+      setMeta('meta[name="twitter:description"]', 'content', desc);
+    }
+
+    if (canonical) {
+      let link = document.querySelector('link[rel="canonical"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'canonical';
+        document.head.appendChild(link);
+      }
+      link.href = canonical;
+      setMeta('meta[property="og:url"]', 'content', canonical);
+    }
+
+    return undefined;
+  }, [blog, blogCanonicalUrl, seoDescription]);
 
   const formattedDate = blog?.dateISO
     ? new Date(blog.dateISO).toLocaleDateString('en-US', {
@@ -187,29 +282,80 @@ export default function BlogDetailsPage() {
       })
     : '';
 
-  const blogCanonicalUrl = useMemo(() => {
-    if (!blog?.slug) return getCanonicalUrl('/blog');
-    return getCanonicalUrl(`/blog/${encodeURIComponent(String(blog.slug))}`);
-  }, [blog]);
-
   const blogJsonLd = useMemo(() => {
     if (!blog) return null;
-    return buildBlogDetailSchemas({
+    const autoSchemas = buildBlogDetailSchemas({
       blog,
       canonicalUrl: blogCanonicalUrl,
       articleSections,
       faqItems
     });
-  }, [blog, blogCanonicalUrl, articleSections, faqItems]);
+
+    let storedArticle = null;
+    if (blog.schemaMarkup && String(blog.schemaMarkup).trim()) {
+      try {
+        storedArticle = JSON.parse(String(blog.schemaMarkup));
+      } catch {
+        storedArticle = null;
+      }
+    }
+
+    if (!autoSchemas && storedArticle) {
+      return patchSchemaDescriptions(storedArticle, seoDescription);
+    }
+    if (!autoSchemas) return null;
+
+    const list = Array.isArray(autoSchemas) ? [...autoSchemas] : [autoSchemas];
+    if (storedArticle) {
+      storedArticle.description = seoDescription || storedArticle.description;
+      const withoutArticle = list.filter(
+        (s) => s && s['@type'] !== 'BlogPosting' && s['@type'] !== 'Article'
+      );
+      return patchSchemaDescriptions([storedArticle, ...withoutArticle], seoDescription);
+    }
+    return patchSchemaDescriptions(list, seoDescription);
+  }, [blog, blogCanonicalUrl, articleSections, faqItems, seoDescription]);
+
+  const showFaqAccordion = Boolean(blog?.body && !bodyHasFaqSection(blog.body) && faqItems.length > 0);
+
+  const hasHtmlBody =
+    blog?.body &&
+    /<(h2|h3|p|ul|ol|li|strong|a)\b/i.test(String(blog.body));
+
+  const handleBodyClick = (e) => {
+    const anchor = e.target.closest('a');
+    if (!anchor) return;
+    const href = anchor.getAttribute('href');
+    if (href && href.startsWith('/') && !href.startsWith('//')) {
+      e.preventDefault();
+      navigate(href);
+    }
+  };
+
+  useEffect(() => {
+    if (!blog?.body || !hasHtmlBody) return undefined;
+    const root = document.querySelector('.blog-detail-body.blog-content');
+    if (!root) return undefined;
+    root.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('blog-table-wrap')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'blog-table-wrap';
+      table.parentNode?.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+    return undefined;
+  }, [blog, hasHtmlBody]);
 
   if (loading) return null;
   if (!blog) return null;
 
   return (
     <>
+      {/* react-helmet-async via SEO — title, meta description, canonical, OG, JSON-LD */}
       <SEO
-        title={blog.title}
-        description={blog.description}
+        title={seoTitle}
+        description={seoDescription}
+        keywords={seoKeywords}
         canonicalUrl={`/blog/${blog.slug}`}
         ogImage={blog.featuredImage}
         ogType="article"
@@ -294,22 +440,9 @@ export default function BlogDetailsPage() {
                 </div>
               </div>
 
-              <p className="blog-detail-hero__description">{blog.description}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="blog-detail-featured">
-          <div className="container">
-            <div className="blog-detail-featured__image">
-              <OptimizedImage
-                src={optimizeImageUrl(blog.featuredImage, { width: 1200, quality: 85 })}
-                alt={buildBlogImageAlt(blog)}
-                width={1200}
-                height={675}
-                priority
-                optimize={false}
-              />
+              <p className="blog-detail-hero__description">
+                {blog.metaDescription || blog.description}
+              </p>
             </div>
           </div>
         </section>
@@ -318,72 +451,100 @@ export default function BlogDetailsPage() {
           <div className="container">
             <div className="blog-detail-layout">
               <article className="blog-detail-article">
-                <div className="blog-detail-toc">
-                  <h2 className="blog-detail-toc__title">Table of contents</h2>
-                  <ol className="blog-detail-toc__list">
-                    {articleSections.map((section) => (
-                      <li key={section.id} className="blog-detail-toc__item">
-                        <a
-                          href={`#section-${section.id}`}
-                          className="blog-detail-toc__link"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            document
-                              .getElementById(`section-${section.id}`)
-                              ?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                        >
-                          <span className="blog-detail-toc__number">
-                            {String(section.id).padStart(2, '0')}
-                          </span>
-                          <span className="blog-detail-toc__text">{section.title}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+                {hasHtmlBody ? (
+                  <div
+                    className="blog-detail-body blog-content"
+                    dangerouslySetInnerHTML={{ __html: blog.body }}
+                    onClick={handleBodyClick}
+                  />
+                ) : (
+                  <>
+                    <div className="blog-detail-toc">
+                      <h2 className="blog-detail-toc__title">Table of contents</h2>
+                      <ol className="blog-detail-toc__list">
+                        {articleSections.map((section) => (
+                          <li key={section.id} className="blog-detail-toc__item">
+                            <a
+                              href={`#section-${section.id}`}
+                              className="blog-detail-toc__link"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                document
+                                  .getElementById(`section-${section.id}`)
+                                  ?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                            >
+                              <span className="blog-detail-toc__number">
+                                {String(section.id).padStart(2, '0')}
+                              </span>
+                              <span className="blog-detail-toc__text">{section.title}</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
 
-                {articleSections.map((section, index) => (
-                  <div key={section.id} id={`section-${section.id}`} className="blog-detail-section">
-                    <h2 className="blog-detail-section__title">
-                      {section.id}. {section.title}
-                    </h2>
-                    <p className="blog-detail-section__content">{section.content}</p>
-                    {index === 0 && (
-                      <p className="blog-detail-section__content">
-                        Whether you're looking to maintain your essentials, upgrade your daily routine, or discover new
-                        techniques, this guide provides practical advice that actually works. Let's dive into the details
-                        and transform your approach to {String(blog.category || '').toLowerCase()}.
-                      </p>
-                    )}
-                  </div>
-                ))}
+                    {articleSections.map((section, index) => (
+                      <div key={section.id} id={`section-${section.id}`} className="blog-detail-section">
+                        <h2 className="blog-detail-section__title">
+                          {section.id}. {section.title}
+                        </h2>
+                        <p className="blog-detail-section__content">{section.content}</p>
+                        {index === 0 && (
+                          <p className="blog-detail-section__content">
+                            Whether you're looking to maintain your essentials, upgrade your daily routine, or discover
+                            new techniques, this guide provides practical advice that actually works. Let's dive into the
+                            details and transform your approach to {String(blog.category || '').toLowerCase()}.
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
 
                 <div className="blog-detail-shop-card">
-                  <div className="blog-detail-shop-card__image">
-                    <OptimizedImage
-                      src={optimizeImageUrl(blog.featuredImage, { width: 600, quality: 80 })}
-                      alt={`Shop ${blog.destinationLabel} — ${blog.title}`}
-                      width={600}
-                      height={400}
-                      optimize={false}
-                    />
+                  <div className="blog-detail-shop-card__head">
+                    <div className="blog-detail-shop-card__intro">
+                      <div className="blog-detail-shop-card__tag">
+                        {blog.category || blog.tag || 'Bazaar picks'}
+                      </div>
+                      <h3 className="blog-detail-shop-card__title">{shopCategoryName}</h3>
+                      <p className="blog-detail-shop-card__description">
+                        {shopPreview?.productCount
+                          ? `${shopPreview.productCount}+ products in this category — order online with fast delivery across Pakistan.`
+                          : 'Discover curated products that match this guide — secure checkout and nationwide delivery.'}
+                      </p>
+                      <Link to={shopHref} className="blog-detail-shop-card__btn">
+                        {shopCardButtonText(blog?.destinationLabel || shopPreview?.name)}
+                        <ChevronRight size={18} />
+                      </Link>
+                    </div>
+                    {shopCardImage ? (
+                      <div className="blog-detail-shop-card__image">
+                        <OptimizedImage
+                          src={optimizeImageUrl(shopCardImage, { width: 600, quality: 80 })}
+                          alt={`${shopCategoryName} — Bazaar`}
+                          width={600}
+                          height={400}
+                          optimize={false}
+                        />
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="blog-detail-shop-card__content">
-                    <div className="blog-detail-shop-card__tag">{blog.tag}</div>
-                    <h3 className="blog-detail-shop-card__title">Shop {blog.destinationLabel}</h3>
-                    <p className="blog-detail-shop-card__description">
-                      Discover our curated collection of products perfect for this guide
-                    </p>
-                    <Link to={blog.destinationUrl} className="blog-detail-shop-card__btn">
-                      {blog.destinationLabel
-                        ? `Shop ${blog.destinationLabel} online at Bazaar`
-                        : 'Shop related products online'}
-                      <ChevronRight size={18} />
-                    </Link>
-                  </div>
+
+                  {shopProducts.length > 0 ? (
+                    <div className="blog-detail-shop-card__products">
+                      <h4 className="blog-detail-shop-card__products-title">Popular in this category</h4>
+                      <div className="blog-detail-shop-card__grid">
+                        {shopProducts.map((product) => (
+                          <ProductCard key={product._id || product.id || product.slug} product={product} />
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
+                {showFaqAccordion ? (
                 <div className="blog-detail-faq">
                   <h2 className="blog-detail-faq__title">Frequently Asked Questions</h2>
                   <p className="blog-detail-faq__subtitle">
@@ -406,6 +567,7 @@ export default function BlogDetailsPage() {
                     ))}
                   </div>
                 </div>
+                ) : null}
 
                 <InternalLinksBlock
                   title="Related shopping guides & categories"

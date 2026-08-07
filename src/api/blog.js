@@ -1,4 +1,4 @@
-import { api } from './axios';
+import api from './client';
 
 /** Public blog APIs (no auth required) */
 export const blogAPI = {

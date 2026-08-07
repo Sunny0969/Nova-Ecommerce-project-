@@ -4,7 +4,8 @@ import { Search } from 'lucide-react';
 import SEO from '../components/SEO';
 import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import RecommendationRow from '../components/RecommendationRow';
-import api, { recommendationsAPI } from 'api';
+import api from '../api/client';
+import { recommendationsAPI } from '../api/storefront';
 import { businessDisplayName } from '../utils/businessContact';
 import { buildCategoryPath } from '../utils/urls';
 

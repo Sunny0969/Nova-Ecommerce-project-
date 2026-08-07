@@ -5,11 +5,12 @@ import { buildMetaDescription, buildPageTitle } from '../utils/pageSeo';
 import BlogHero from '../components/BlogHero';
 import BlogCard from '../components/BlogCard';
 import FilterDropdown from '../components/FilterDropdown';
-import SecondaryCarouselRow from '../components/SecondaryCarouselRow';
-import NewsletterCTA from '../components/NewsletterCTA';
+// import NewsletterCTA from '../components/NewsletterCTA';
 import QuickLinksGrid from '../components/QuickLinksGrid';
 import { blogAPI } from '../api';
-import { buildCategoryPath } from '../utils/urls';
+import api from '../api/client';
+import { unwrapCategoriesResponse } from '../lib/api';
+import { BLOG_QUICK_LINK_SPECS, resolveBlogQuickLinks } from '../data/blogQuickLinks';
 import './Blog.css';
 import toast from 'react-hot-toast';
 
@@ -52,6 +53,24 @@ export default function Blog() {
   const [error, setError] = useState(null);
 
   const [posts, setPosts] = useState([]);
+  const [shopCategories, setShopCategories] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get('/api/categories')
+      .then((res) => {
+        if (!mounted) return;
+        setShopCategories(unwrapCategoriesResponse(res));
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setShopCategories([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -109,41 +128,11 @@ export default function Blog() {
   }, [posts, searchValue, category, sort]);
 
   const visibleBlogs = filtered.slice(0, 9);
-  const secondaryBlogs = filtered.slice(0, 8).slice(0, 4);
 
-
-  const quickLinks = useMemo(() => {
-    // 24 buttons; original destinations for theme.
-    const cat = (slug) => buildCategoryPath(slug);
-    const base = [
-      { id: 'ql1', label: 'Shoe Care', url: cat('home') },
-      { id: 'ql2', label: 'Laundry Essentials', url: cat('home') },
-      { id: 'ql3', label: 'Device Care', url: cat('electronics') },
-      { id: 'ql4', label: 'Chargers & Cables', url: cat('electronics') },
-      { id: 'ql5', label: 'Ambient Lighting', url: cat('home') },
-      { id: 'ql6', label: 'Home Storage', url: cat('home') },
-      { id: 'ql7', label: 'Skincare Picks', url: cat('beauty') },
-      { id: 'ql8', label: 'Hair Essentials', url: cat('beauty') },
-      { id: 'ql9', label: 'Run Essentials', url: cat('sport') },
-      { id: 'ql10', label: 'Fitness Comfort', url: cat('sport') },
-      { id: 'ql11', label: 'Everyday Style', url: cat('fashion') },
-      { id: 'ql12', label: 'Seasonal Layers', url: cat('fashion') },
-
-      { id: 'ql13', label: 'Fresh Home Cleaning', url: cat('home') },
-      { id: 'ql14', label: 'Air Care Devices', url: cat('electronics') },
-      { id: 'ql15', label: 'Focus Desk Setup', url: cat('electronics') },
-      { id: 'ql16', label: 'Coffee Corner Refresh', url: cat('home') },
-      { id: 'ql17', label: 'Morning Rituals', url: cat('home') },
-      { id: 'ql18', label: 'Wardrobe Reset', url: cat('fashion') },
-      { id: 'ql19', label: 'Styling Basics', url: cat('fashion') },
-      { id: 'ql20', label: 'Glow Routines', url: cat('beauty') },
-      { id: 'ql21', label: 'Recovery Essentials', url: cat('sport') },
-      { id: 'ql22', label: 'Checklist Gear', url: cat('sport') },
-      { id: 'ql23', label: 'Care That Lasts', url: cat('home') },
-      { id: 'ql24', label: 'Tech Simplified', url: cat('electronics') }
-    ];
-    return base;
-  }, []);
+  const quickLinks = useMemo(
+    () => resolveBlogQuickLinks(BLOG_QUICK_LINK_SPECS, shopCategories),
+    [shopCategories]
+  );
 
   const handleRetry = () => {
     toast.success('Retrying…');
@@ -165,7 +154,7 @@ export default function Blog() {
       />
 
       {/* Breadcrumb only — single H1 lives in BlogHero for SEO hierarchy */}
-      <header className="page-header page-header--compact">
+      <header className="page-header page-header--compact page-header--blog">
         <div className="container">
           <ol className="breadcrumb" aria-label="Breadcrumb">
             <li>
@@ -250,17 +239,9 @@ export default function Blog() {
         </div>
       </div>
 
-      <SecondaryCarouselRow title="Trending this week">
-        {secondaryBlogs.map((b) => (
-          <div key={b.id} className="blog-carousel__item">
-            <BlogCard blog={b} variant="carousel" />
-          </div>
-        ))}
-      </SecondaryCarouselRow>
+      {/* <NewsletterCTA /> */}
 
-      <NewsletterCTA />
-
-      <QuickLinksGrid links={quickLinks} />
+      {quickLinks.length > 0 ? <QuickLinksGrid links={quickLinks} /> : null}
 
       {/* Preload removed to avoid browser warning when the hero image isn't consumed immediately. */}
     </>

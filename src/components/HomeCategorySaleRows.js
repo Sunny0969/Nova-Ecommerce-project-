@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
-import { productsAPI } from 'api';
+import { productsAPI } from '../api/storefront';
 import { apiMessage } from '../lib/api';
 import CategorySaleRow from './CategorySaleRow';
 import './HomeCategorySaleRows.css';

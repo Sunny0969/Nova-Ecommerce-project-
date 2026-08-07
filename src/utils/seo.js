@@ -4,6 +4,9 @@
  * public origin (no trailing slash), e.g. https://www.example.com
  */
 
+/** Canonical production origin (no trailing slash). Used when env/browser origin is unavailable. */
+export const productionSiteUrl = 'https://www.bazaar-pk.com';
+
 /** @type {string} Human-readable site name (brand) */
 export const siteName = 'Bazaar';
 
@@ -26,16 +29,85 @@ export const authLoginBgUrl =
 export function getSiteUrl() {
   const env = typeof process !== 'undefined' && process.env && process.env.REACT_APP_SITE_URL;
   if (env != null && String(env).trim() !== '') {
-    return normalizeBaseUrl(String(env).trim());
+    return normalizeSiteOrigin(String(env).trim());
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
-    return normalizeBaseUrl(window.location.origin);
+    return normalizeSiteOrigin(window.location.origin);
   }
-  return '';
+  return productionSiteUrl;
 }
 
 function normalizeBaseUrl(url) {
   return String(url).replace(/\/+$/, '');
+}
+
+/** Prefer www on apex bazaar-pk.com (matches sitemap + .htaccess). */
+function normalizeSiteOrigin(origin) {
+  const base = normalizeBaseUrl(String(origin || '').trim());
+  if (!base) return productionSiteUrl;
+  try {
+    const u = new URL(base);
+    if (u.hostname === 'bazaar-pk.com') {
+      u.hostname = 'www.bazaar-pk.com';
+    }
+    return normalizeBaseUrl(u.origin);
+  } catch {
+    return productionSiteUrl;
+  }
+}
+
+function collapsePathSlashes(pathname) {
+  const p = String(pathname || '/');
+  if (p === '/') return '/';
+  return `/${p.replace(/^\/+/, '').replace(/\/{2,}/g, '/')}`;
+}
+
+/**
+ * Always returns a valid absolute https? URL for JSON-LD / canonical use.
+ * Accepts absolute URLs, site-relative paths, or path+query strings.
+ */
+export function resolveAbsoluteUrl(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw || raw === 'undefined' || raw === 'null') {
+    return `${getSiteUrl()}/`;
+  }
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      if (u.hostname === 'bazaar-pk.com') u.hostname = 'www.bazaar-pk.com';
+      u.pathname = collapsePathSlashes(u.pathname);
+      return u.href;
+    } catch {
+      return `${productionSiteUrl}/`;
+    }
+  }
+
+  const base = getSiteUrl();
+  let pathPart = raw;
+  let search = '';
+  let hash = '';
+
+  const hashIdx = pathPart.indexOf('#');
+  if (hashIdx >= 0) {
+    hash = pathPart.slice(hashIdx);
+    pathPart = pathPart.slice(0, hashIdx);
+  }
+
+  const queryIdx = pathPart.indexOf('?');
+  if (queryIdx >= 0) {
+    search = pathPart.slice(queryIdx);
+    pathPart = pathPart.slice(0, queryIdx) || '/';
+  }
+
+  const path = collapsePathSlashes(pathPart.startsWith('/') ? pathPart : `/${pathPart}`);
+  try {
+    const u = new URL(`${base}${path}${search}${hash}`);
+    if (u.hostname === 'bazaar-pk.com') u.hostname = 'www.bazaar-pk.com';
+    return u.href;
+  } catch {
+    return `${productionSiteUrl}${path === '/' ? '' : path}${search}${hash}`;
+  }
 }
 
 /**
@@ -124,14 +196,13 @@ export function formatPageTitle(titleSegment) {
  * @returns {string}
  */
 export function getCanonicalUrl(pathname, options = {}) {
-  const base = getSiteUrl();
-  const path = !pathname || pathname === '' ? '/' : pathname.startsWith('/') ? pathname : `/${pathname}`;
-  let url = base ? `${base}${path === '//' ? '/' : path}` : path;
+  const raw = pathname == null || String(pathname).trim() === '' ? '/' : String(pathname).trim();
   if (options.search && String(options.search)) {
     const s = String(options.search);
-    url += s.startsWith('?') ? s : `?${s}`;
+    const withQuery = raw.includes('?') ? raw : `${raw}${s.startsWith('?') ? s : `?${s}`}`;
+    return resolveAbsoluteUrl(withQuery);
   }
-  return url;
+  return resolveAbsoluteUrl(raw);
 }
 
 /**
@@ -200,29 +271,29 @@ export function buildWebSiteWithSearchActionSchema(baseUrl, searchParam = 'searc
  */
 export function buildBreadcrumbListSchema(items) {
   if (!Array.isArray(items) || !items.length) return null;
-  const itemListElement = items.map((it, i) => {
-    const name = (it && String(it.name || '').trim()) || 'Page';
-    let item;
-    if (it.url != null && String(it.url).trim() !== '') {
-      const u = String(it.url).trim();
-      if (u.startsWith('http://') || u.startsWith('https://')) item = u;
-      else {
-        const path = u.startsWith('/') ? u : `/${u}`;
-        item = getCanonicalUrl(path);
+  const itemListElement = items
+    .map((it, i) => {
+      const name = (it && String(it.name || '').trim()) || 'Page';
+      let itemUrl;
+      if (it?.url != null && String(it.url).trim() !== '') {
+        itemUrl = resolveAbsoluteUrl(it.url);
+      } else {
+        const p = it?.path != null && String(it.path).trim() !== '' ? String(it.path).trim() : '/';
+        itemUrl = resolveAbsoluteUrl(p);
       }
-    } else {
-      const p = it.path != null && String(it.path).trim() !== '' ? String(it.path).trim() : '/';
-      const path = p.startsWith('/') ? p : `/${p}`;
-      item = getCanonicalUrl(path);
-    }
-    return {
-      '@type': 'ListItem',
-      '@id': `${item}#breadcrumb`,
-      position: i + 1,
-      name,
-      item
-    };
-  });
+      if (!/^https?:\/\//i.test(itemUrl)) {
+        itemUrl = resolveAbsoluteUrl('/');
+      }
+      return {
+        '@type': 'ListItem',
+        '@id': `${itemUrl}#breadcrumb`,
+        position: i + 1,
+        name,
+        item: itemUrl
+      };
+    })
+    .filter(Boolean);
+  if (!itemListElement.length) return null;
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',

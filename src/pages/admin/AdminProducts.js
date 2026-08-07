@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Trash2, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Trash2, CheckCircle, XCircle, ChevronLeft, ChevronRight, SlidersHorizontal, FileDown } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 import { useAuth } from '../../context/AuthContext';
-import { apiMessage, unwrapCategoriesResponse } from '../../lib/api';
+import { apiMessage, fetchAdminCategories } from '../../lib/api';
+import { downloadProductsCatalogPdf } from '../../lib/downloadProductsCatalogPdf';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Modal from '../../components/Modal';
 import { formatPKR } from '../../utils/currency';
@@ -14,6 +15,14 @@ const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
   { value: 'published', label: 'Published' },
   { value: 'draft', label: 'Unpublished' }
+];
+
+const ADJUST_FIELDS = [
+  { value: 'price', label: 'Selling price' },
+  { value: 'comparePrice', label: 'Actual / list price (compare at)' },
+  { value: 'costPrice', label: 'Cost price' },
+  { value: 'stock', label: 'Stock quantity' },
+  { value: 'weightKg', label: 'Weight (kg)' }
 ];
 
 export default function AdminProducts() {
@@ -33,6 +42,16 @@ export default function AdminProducts() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteBulk, setDeleteBulk] = useState(false);
+  const [selectAllMatching, setSelectAllMatching] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustField, setAdjustField] = useState('price');
+  const [adjustMode, setAdjustMode] = useState('percent');
+  const [adjustDirection, setAdjustDirection] = useState('increase');
+  const [adjustValue, setAdjustValue] = useState('');
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfScope, setPdfScope] = useState('all');
+  const [pdfCategoryIds, setPdfCategoryIds] = useState(() => new Set());
   const headerCheckRef = useRef(null);
   const isAdmin = user?.role === 'admin';
 
@@ -43,12 +62,22 @@ export default function AdminProducts() {
 
   useEffect(() => {
     setPage(1);
+    setSelected(new Set());
+    setSelectAllMatching(false);
+  }, [debouncedSearch, category, status]);
+
+  const listFilterParams = useMemo(() => {
+    const params = {};
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    if (category && category !== 'all') params.category = category;
+    if (status !== 'all') params.status = status;
+    return params;
   }, [debouncedSearch, category, status]);
 
   const loadCategories = useCallback(async () => {
     try {
-      const res = await adminAPI.categories.list();
-      setCategories(unwrapCategoriesResponse(res));
+      const list = await fetchAdminCategories(adminAPI);
+      setCategories(list);
     } catch (e) {
       console.error(e);
       setCategories([]);
@@ -90,6 +119,8 @@ export default function AdminProducts() {
   const pageIds = useMemo(() => products.map((p) => String(p._id)), [products]);
   const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const someOnPage = pageIds.some((id) => selected.has(id));
+  const selectedCount = selectAllMatching ? totalCount : selected.size;
+  const canSelectAllMatching = totalCount > pageIds.length && allOnPage && !selectAllMatching;
 
   useEffect(() => {
     if (headerCheckRef.current) {
@@ -98,6 +129,7 @@ export default function AdminProducts() {
   }, [someOnPage, allOnPage]);
 
   const toggleSelectAll = () => {
+    setSelectAllMatching(false);
     setSelected((prev) => {
       const next = new Set(prev);
       if (allOnPage) {
@@ -110,6 +142,7 @@ export default function AdminProducts() {
   };
 
   const toggleRow = (id) => {
+    setSelectAllMatching(false);
     setSelected((prev) => {
       const next = new Set(prev);
       const s = String(id);
@@ -119,14 +152,25 @@ export default function AdminProducts() {
     });
   };
 
+  const resolveSelectedIds = async () => {
+    if (!selectAllMatching) return [...selected];
+    const res = await adminAPI.products.listIds(listFilterParams);
+    const ids = res.data?.data?.ids;
+    return Array.isArray(ids) ? ids.map(String) : [];
+  };
+
   const runBulk = async (action) => {
-    const ids = [...selected];
-    if (!ids.length) {
+    if (!selectAllMatching && selected.size === 0) {
       toast.error('Select at least one product');
       return;
     }
     setBulkBusy(true);
     try {
+      const ids = await resolveSelectedIds();
+      if (!ids.length) {
+        toast.error('No products matched your filters');
+        return;
+      }
       const res = await adminAPI.products.bulk({ action, ids });
       const n = res.data?.data?.modified ?? res.data?.data?.deleted ?? 0;
       if (action === 'delete' || action === 'deleteHard') {
@@ -139,12 +183,66 @@ export default function AdminProducts() {
         toast.success(`Updated ${n} product(s)`);
       }
       setSelected(new Set());
+      setSelectAllMatching(false);
       await load();
     } catch (e) {
       toast.error(apiMessage(e, 'Bulk action failed'));
     } finally {
       setBulkBusy(false);
       setDeleteBulk(false);
+    }
+  };
+
+  const handleSelectAllMatching = () => {
+    setSelectAllMatching(true);
+    setSelected(new Set(pageIds));
+  };
+
+  const runBulkAdjust = async () => {
+    const value = Number(adjustValue);
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error('Enter a value greater than 0');
+      return;
+    }
+    if (adjustMode === 'percent' && value > 1000) {
+      toast.error('Percent cannot exceed 1000');
+      return;
+    }
+    if (!selectAllMatching && selected.size === 0) {
+      toast.error('Select at least one product');
+      return;
+    }
+
+    setBulkBusy(true);
+    try {
+      const ids = await resolveSelectedIds();
+      if (!ids.length) {
+        toast.error('No products matched your filters');
+        return;
+      }
+
+      const res = await adminAPI.products.bulk({
+        action: 'adjust',
+        ids,
+        adjustment: {
+          field: adjustField,
+          mode: adjustMode,
+          direction: adjustDirection,
+          value
+        }
+      });
+      const n = res.data?.data?.modified ?? 0;
+      const fieldLabel = ADJUST_FIELDS.find((f) => f.value === adjustField)?.label || adjustField;
+      toast.success(`Updated ${fieldLabel} on ${n} product(s)`);
+      setAdjustOpen(false);
+      setAdjustValue('');
+      setSelected(new Set());
+      setSelectAllMatching(false);
+      await load();
+    } catch (e) {
+      toast.error(apiMessage(e, 'Bulk adjust failed'));
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -182,6 +280,83 @@ export default function AdminProducts() {
     }
   };
 
+  const handleDownloadCatalogPdf = async () => {
+    setPdfBusy(true);
+    try {
+      let params = {};
+      let label = 'All products';
+
+      let categoryOrder;
+      if (pdfScope === 'selected') {
+        const ids = await resolveSelectedIds();
+        if (!ids.length) {
+          toast.error('Select at least one product');
+          return;
+        }
+        params = { ids: ids.join(',') };
+        label = `${ids.length} selected product(s)`;
+      } else if (pdfScope === 'category') {
+        if (!pdfCategoryIds.size) {
+          toast.error('Choose at least one category');
+          return;
+        }
+        params = { categories: [...pdfCategoryIds].join(',') };
+        const picked = categories.filter((c) => pdfCategoryIds.has(String(c._id)));
+        categoryOrder = picked.map((c) => ({ id: String(c._id), name: c.name }));
+        label =
+          picked.length <= 2
+            ? `Categories: ${picked.map((c) => c.name).join(', ')}`
+            : `${picked.length} categories`;
+      }
+
+      const res = await adminAPI.products.exportCatalog(params);
+      const rows = res.data?.data?.products;
+      if (!Array.isArray(rows) || !rows.length) {
+        toast.error('No products to export for this selection');
+        return;
+      }
+
+      const pdfOpts = {
+        subtitle: `${label} · ${rows.length} item(s) · ${new Date().toLocaleString('en-PK')}`
+      };
+      if (categoryOrder?.length) {
+        pdfOpts.categoryOrder = categoryOrder;
+      }
+
+      await downloadProductsCatalogPdf(rows, pdfOpts);
+      toast.success(`PDF downloaded (${rows.length} products)`);
+      setPdfModalOpen(false);
+    } catch (e) {
+      toast.error(apiMessage(e, 'Could not download product PDF'));
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
+  const openPdfModal = () => {
+    setPdfScope(selectedCount > 0 ? 'selected' : 'all');
+    setPdfCategoryIds(new Set());
+    setPdfModalOpen(true);
+  };
+
+  const togglePdfCategory = (categoryId) => {
+    const id = String(categoryId);
+    setPdfCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllPdfCategories = () => {
+    setPdfCategoryIds(new Set(categories.map((c) => String(c._id))));
+  };
+
+  const clearPdfCategories = () => {
+    setPdfCategoryIds(new Set());
+  };
+
   return (
     <div className="admin-products">
       <div className="admin-products__head">
@@ -191,9 +366,22 @@ export default function AdminProducts() {
             Manage catalog, pricing, and availability.
           </p>
         </div>
-        <Link to="/admin/products/new" className="btn admin-products__add">
-          + Add product
-        </Link>
+        <div className="admin-products__head-actions">
+          {isAdmin ? (
+            <button
+              type="button"
+              className="btn admin-products__pdf-btn"
+              disabled={pdfBusy}
+              onClick={openPdfModal}
+            >
+              <FileDown size={18} aria-hidden />
+              Download PDF
+            </button>
+          ) : null}
+          <Link to="/admin/products/new" className="btn admin-products__add">
+            + Add product
+          </Link>
+        </div>
       </div>
 
       <div className="admin-products__toolbar">
@@ -216,7 +404,7 @@ export default function AdminProducts() {
         >
           <option value="all">All categories</option>
           {categories.map((c) => (
-            <option key={c._id} value={c.slug || c._id}>
+            <option key={c._id} value={c._id}>
               {c.name}
             </option>
           ))}
@@ -235,11 +423,20 @@ export default function AdminProducts() {
         </select>
       </div>
 
-      {isAdmin && selected.size > 0 && (
+      {isAdmin && selectedCount > 0 && (
         <div className="admin-products__bulk" role="region" aria-label="Bulk actions">
           <span className="admin-products__bulk-count">
-            {selected.size} selected
+            {selectedCount} selected
+            {selectAllMatching ? ' (all matching filters)' : ''}
           </span>
+          <button
+            type="button"
+            className="btn admin-products__bulk-btn admin-products__bulk-btn--accent"
+            disabled={bulkBusy}
+            onClick={() => setAdjustOpen(true)}
+          >
+            <SlidersHorizontal size={16} /> Adjust price / stock
+          </button>
           <button
             type="button"
             className="btn admin-products__bulk-btn"
@@ -263,6 +460,19 @@ export default function AdminProducts() {
             onClick={() => setDeleteBulk(true)}
           >
             <Trash2 size={16} /> Delete
+          </button>
+        </div>
+      )}
+
+      {isAdmin && canSelectAllMatching && (
+        <div className="admin-products__select-all-banner">
+          All {pageIds.length} on this page are selected.{' '}
+          <button
+            type="button"
+            className="admin-products__select-all-link"
+            onClick={handleSelectAllMatching}
+          >
+            Select all {totalCount} products matching filters
           </button>
         </div>
       )}
@@ -438,7 +648,7 @@ export default function AdminProducts() {
           <Modal
             isOpen={deleteBulk}
             onClose={() => !bulkBusy && setDeleteBulk(false)}
-            title={`Unpublish ${selected.size} product(s)?`}
+            title={`Unpublish ${selectedCount} product(s)?`}
             danger
             confirmLabel={bulkBusy ? 'Working…' : 'Unpublish selected'}
             onConfirm={() => {
@@ -447,6 +657,199 @@ export default function AdminProducts() {
           >
             <p>Selected products will be removed from the shop (unpublished). This matches the
               single-product delete action.</p>
+          </Modal>
+
+          <Modal
+            isOpen={adjustOpen}
+            onClose={() => !bulkBusy && setAdjustOpen(false)}
+            title={`Adjust ${selectedCount} product(s)`}
+            confirmLabel={bulkBusy ? 'Applying…' : 'Apply to selected'}
+            className="admin-products__adjust-modal"
+            onConfirm={() => {
+              if (!bulkBusy) runBulkAdjust();
+            }}
+          >
+            <div className="admin-products__adjust-form">
+              <p className="admin-products__adjust-lede">
+                Change applies to every selected product
+                {selectAllMatching ? ' matching your current filters' : ''}.
+                Variant option prices are not changed — only the main product fields.
+              </p>
+              <label className="admin-products__adjust-label">
+                Field
+                <select
+                  className="admin-products__adjust-input"
+                  value={adjustField}
+                  onChange={(e) => setAdjustField(e.target.value)}
+                >
+                  {ADJUST_FIELDS.map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="admin-products__adjust-row">
+                <label className="admin-products__adjust-label">
+                  Direction
+                  <select
+                    className="admin-products__adjust-input"
+                    value={adjustDirection}
+                    onChange={(e) => setAdjustDirection(e.target.value)}
+                  >
+                    <option value="increase">Increase</option>
+                    <option value="decrease">Decrease</option>
+                  </select>
+                </label>
+                <label className="admin-products__adjust-label">
+                  By
+                  <select
+                    className="admin-products__adjust-input"
+                    value={adjustMode}
+                    onChange={(e) => setAdjustMode(e.target.value)}
+                  >
+                    <option value="percent">Percent (%)</option>
+                    <option value="fixed">Fixed amount</option>
+                  </select>
+                </label>
+              </div>
+              <label className="admin-products__adjust-label">
+                {adjustMode === 'percent' ? 'Percent' : 'Amount'}
+                <input
+                  type="number"
+                  min="0.01"
+                  step={adjustMode === 'percent' ? '0.1' : '1'}
+                  className="admin-products__adjust-input"
+                  value={adjustValue}
+                  onChange={(e) => setAdjustValue(e.target.value)}
+                  placeholder={adjustMode === 'percent' ? 'e.g. 20 for 20%' : 'e.g. 500'}
+                />
+              </label>
+              {adjustMode === 'percent' && adjustValue && Number(adjustValue) > 0 && (
+                <p className="admin-products__adjust-preview">
+                  Example: {formatPKR(1000)} →{' '}
+                  {formatPKR(
+                    adjustDirection === 'decrease'
+                      ? Math.max(0, 1000 - 1000 * (Number(adjustValue) / 100))
+                      : 1000 + 1000 * (Number(adjustValue) / 100)
+                  )}
+                </p>
+              )}
+            </div>
+          </Modal>
+
+          <Modal
+            isOpen={pdfModalOpen}
+            onClose={() => !pdfBusy && setPdfModalOpen(false)}
+            title="Download product PDF"
+            confirmLabel={pdfBusy ? 'Preparing PDF…' : 'Download PDF'}
+            className="admin-products__pdf-modal"
+            onConfirm={() => {
+              if (!pdfBusy) handleDownloadCatalogPdf();
+            }}
+          >
+            <div className="admin-products__pdf-form">
+              <p className="admin-products__pdf-lede">
+                Choose products for the A4 PDF. Only name and qty are filled; Actual rate,
+                Selling rate, Rate, and Weight columns are left blank for manual entry.
+              </p>
+
+              <fieldset className="admin-products__pdf-options">
+                <legend className="admin-products__pdf-legend">Export scope</legend>
+
+                <label className="admin-products__pdf-option">
+                  <input
+                    type="radio"
+                    name="pdfScope"
+                    value="all"
+                    checked={pdfScope === 'all'}
+                    onChange={() => setPdfScope('all')}
+                  />
+                  <span>
+                    <strong>All products</strong>
+                    <small>Full catalog ({totalCount} products)</small>
+                  </span>
+                </label>
+
+                <label
+                  className={`admin-products__pdf-option${selectedCount === 0 ? ' is-disabled' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="pdfScope"
+                    value="selected"
+                    checked={pdfScope === 'selected'}
+                    disabled={selectedCount === 0}
+                    onChange={() => setPdfScope('selected')}
+                  />
+                  <span>
+                    <strong>Selected only</strong>
+                    <small>
+                      {selectedCount > 0
+                        ? `${selectedCount} product(s) checked${
+                            selectAllMatching ? ' (all matching filters)' : ''
+                          }`
+                        : 'Select products from the table first'}
+                    </small>
+                  </span>
+                </label>
+
+                <label className="admin-products__pdf-option">
+                  <input
+                    type="radio"
+                    name="pdfScope"
+                    value="category"
+                    checked={pdfScope === 'category'}
+                    onChange={() => setPdfScope('category')}
+                  />
+                  <span>
+                    <strong>By category</strong>
+                    <small>Select one or more categories — products are combined in one PDF</small>
+                  </span>
+                </label>
+              </fieldset>
+
+              {pdfScope === 'category' ? (
+                <div className="admin-products__pdf-categories">
+                  <div className="admin-products__pdf-categories-head">
+                    <span className="admin-products__pdf-categories-label">
+                      Categories ({pdfCategoryIds.size} selected)
+                    </span>
+                    <div className="admin-products__pdf-categories-actions">
+                      <button type="button" className="admin-products__pdf-link-btn" onClick={selectAllPdfCategories}>
+                        Select all
+                      </button>
+                      <button type="button" className="admin-products__pdf-link-btn" onClick={clearPdfCategories}>
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  <div className="admin-products__pdf-category-list" role="group" aria-label="Categories">
+                    {categories.length === 0 ? (
+                      <p className="admin-products__pdf-categories-empty">No categories loaded</p>
+                    ) : (
+                      categories.map((c) => {
+                        const id = String(c._id);
+                        const checked = pdfCategoryIds.has(id);
+                        return (
+                          <label
+                            key={c._id}
+                            className={`admin-products__pdf-category-item${checked ? ' is-checked' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => togglePdfCategory(id)}
+                            />
+                            <span>{c.name}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </Modal>
         </>
       ) : null}

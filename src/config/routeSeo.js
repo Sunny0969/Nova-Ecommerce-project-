@@ -93,6 +93,24 @@ export const ROUTE_SEO_BY_PATH = {
       'Terms and conditions for shopping at Bazaar online.'
     ),
     keywords: buildMetaKeywords('terms and conditions', 'Bazaar', 'online shopping')
+  },
+  '/returns-and-refunds': {
+    title: buildPageTitle('Returns and Refunds', 'Bazaar'),
+    description: buildMetaDescription(
+      'Bazaar returns policy',
+      'How to return items, request refunds, and report order issues in Pakistan.',
+      'Returns and refunds policy for Bazaar online orders.'
+    ),
+    keywords: buildMetaKeywords('returns policy', 'refunds', 'Bazaar', 'online grocery Pakistan')
+  },
+  '/shipping-policy': {
+    title: buildPageTitle('Shipping Policy', 'Bazaar'),
+    description: buildMetaDescription(
+      'Bazaar shipping policy',
+      'Delivery areas, shipping fees, express options, and service standards.',
+      'Shipping and delivery policy for Bazaar Pakistan.'
+    ),
+    keywords: buildMetaKeywords('shipping policy', 'delivery', 'Bazaar', 'Hyderabad')
   }
 };
 
@@ -102,5 +120,7 @@ export const ROUTE_SEO_BY_PATH = {
  */
 export function getRouteSeo(pathname = '') {
   const path = String(pathname || '').replace(/\/+$/, '') || '/';
+  // Dynamic blog posts set their own meta via BlogDetailsPage + SEO component.
+  if (/^\/blog\/[^/]+$/i.test(path)) return null;
   return ROUTE_SEO_BY_PATH[path] || null;
 }

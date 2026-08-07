@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { authAPI, productsAPI } from 'api';
+import { authAPI } from '../../api/auth';
+import { productsAPI } from '../../api/storefront';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
 import Modal from '../../components/Modal';
+import { REVIEW_TOPICS, reviewTopicLabel } from '../../lib/reviewTopics';
 import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
 
 export default function MyReviews() {
@@ -13,6 +15,7 @@ export default function MyReviews() {
   const [loading, setLoading] = useState(true);
   const [editReview, setEditReview] = useState(null);
   const [rating, setRating] = useState(5);
+  const [topic, setTopic] = useState('');
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleteReview, setDeleteReview] = useState(null);
@@ -38,6 +41,7 @@ export default function MyReviews() {
   const openEdit = (r) => {
     setEditReview(r);
     setRating(Number(r.rating) || 5);
+    setTopic(r.topic || '');
     setComment(r.comment || '');
   };
 
@@ -49,7 +53,7 @@ export default function MyReviews() {
         : editReview.product;
     setSaving(true);
     try {
-      await productsAPI.updateReview(productId, editReview._id, { rating, comment });
+      await productsAPI.updateReview(productId, editReview._id, { rating, topic, comment });
       toast.success('Review updated');
       setEditReview(null);
       await load();
@@ -145,6 +149,7 @@ export default function MyReviews() {
                             day: 'numeric'
                           })
                         : ''}
+                      {r.topic ? ` · ${reviewTopicLabel(r.topic)}` : ''}
                     </time>
                   </div>
                 </div>
@@ -155,6 +160,24 @@ export default function MyReviews() {
                     No written comment.
                   </p>
                 )}
+                {Array.isArray(r.images) && r.images.length > 0 ? (
+                  <div className="account-review-card__images">
+                    {r.images.map((img, idx) =>
+                      img?.url ? (
+                        <img
+                          key={`${r._id}-img-${idx}`}
+                          src={img.url}
+                          alt=""
+                          className="account-review-card__photo"
+                          width={72}
+                          height={72}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : null
+                    )}
+                  </div>
+                ) : null}
                 <div className="account-review-card__actions">
                   <button
                     type="button"
@@ -196,6 +219,19 @@ export default function MyReviews() {
             {[5, 4, 3, 2, 1].map((n) => (
               <option key={n} value={n}>
                 {n} stars
+              </option>
+            ))}
+          </select>
+          <label className="account-form__label">Topic</label>
+          <select
+            className="account-form__input"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+          >
+            <option value="">Select an option</option>
+            {REVIEW_TOPICS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>

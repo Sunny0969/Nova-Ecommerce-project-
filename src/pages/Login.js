@@ -29,7 +29,7 @@ const Login = ({ defaultTab = 'login' }) => {
     marketing: false
   });
   const [errors, setErrors] = useState({});
-  const { login, register } = useAuth();
+  const { login, register, loading, isAuthenticated, hasRole, firstStaffPath } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -48,6 +48,37 @@ const Login = ({ defaultTab = 'login' }) => {
       setActiveTab('register');
     }
   }, [searchParams, guestActivate]);
+
+  useEffect(() => {
+    if (loading || !isAuthenticated) return;
+
+    if (hasRole('admin')) {
+      const adminDest =
+        nextPath && nextPath.startsWith('/admin') ? nextPath : '/admin/dashboard';
+      navigate(adminDest, { replace: true });
+      return;
+    }
+
+    if (hasRole('staff')) {
+      const staffDest =
+        nextPath && nextPath.startsWith('/staff')
+          ? nextPath
+          : firstStaffPath || '/home';
+      navigate(staffDest, { replace: true });
+      return;
+    }
+
+    if (nextPath && !nextPath.startsWith('/admin') && !nextPath.startsWith('/staff')) {
+      navigate(nextPath, { replace: true });
+    }
+  }, [
+    loading,
+    isAuthenticated,
+    hasRole,
+    nextPath,
+    firstStaffPath,
+    navigate
+  ]);
 
   const validateLogin = () => {
     const newErrors = {};

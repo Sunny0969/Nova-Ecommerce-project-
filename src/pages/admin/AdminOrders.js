@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 import { apiMessage } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import AdminOrderReviewsModal from '../../components/admin/AdminOrderReviewsModal';
 import { formatPKR } from '../../utils/currency';
 import { resolvePaymentProof, isBankTransferOrder } from '../../utils/orderPaymentProof';
 
@@ -48,6 +49,17 @@ function orderIdLabel(id) {
   return `…${s.slice(-8)}`;
 }
 
+function reviewCellLabel(summary) {
+  if (!summary?.reviewCount) return null;
+  const avg = summary.avgRating;
+  if (avg != null && Number.isFinite(avg)) {
+    const rounded = Math.round(avg * 10) / 10;
+    return `${rounded}/5`;
+  }
+  const first = summary.ratings?.[0];
+  return first != null ? `${first}/5` : 'Reviewed';
+}
+
 export default function AdminOrders({ basePath = '/admin' }) {
   const [orders, setOrders] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -59,6 +71,7 @@ export default function AdminOrders({ basePath = '/admin' }) {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [reviewModalOrderId, setReviewModalOrderId] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -186,6 +199,7 @@ export default function AdminOrders({ basePath = '/admin' }) {
                 <th>Total</th>
                 <th>Payment</th>
                 <th>Status</th>
+                <th>Review</th>
                 <th>Items</th>
               </tr>
             </thead>
@@ -197,6 +211,7 @@ export default function AdminOrders({ basePath = '/admin' }) {
                 const email = typeof u === 'object' && u != null ? u.email || '' : '';
                 const units = countOrderUnits(o.orderItems);
                 const lineCount = Array.isArray(o.orderItems) ? o.orderItems.length : 0;
+                const reviewLabel = reviewCellLabel(o.reviewSummary);
                 return (
                   <tr key={String(id)}>
                     <td>
@@ -226,6 +241,23 @@ export default function AdminOrders({ basePath = '/admin' }) {
                       </span>
                     </td>
                     <td>
+                      {reviewLabel ? (
+                        <button
+                          type="button"
+                          className="admin-orders__review-btn"
+                          title={`${o.reviewSummary.reviewCount} review${
+                            o.reviewSummary.reviewCount === 1 ? '' : 's'
+                          }`}
+                          onClick={() => setReviewModalOrderId(String(id))}
+                        >
+                          <Star size={14} aria-hidden />
+                          {reviewLabel}
+                        </button>
+                      ) : (
+                        <span className="admin-orders__review-none">—</span>
+                      )}
+                    </td>
+                    <td>
                       <span
                         className="admin-orders__items"
                         title={
@@ -246,6 +278,13 @@ export default function AdminOrders({ basePath = '/admin' }) {
           </table>
         </div>
       )}
+
+      <AdminOrderReviewsModal
+        orderId={reviewModalOrderId}
+        isOpen={Boolean(reviewModalOrderId)}
+        onClose={() => setReviewModalOrderId(null)}
+        onChanged={load}
+      />
 
       {!loading && totalPages > 1 && (
         <div className="admin-orders__pagination">

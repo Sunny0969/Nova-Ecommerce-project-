@@ -17,13 +17,13 @@ export default function RecommendationRow({ title, products, viewAllTo }) {
           </Link>
         ) : null}
       </div>
-      <div className="rec-row__scroll" role="list">
+      <ul className="rec-row__scroll">
         {list.map((p) => (
-          <div key={p._id || p.slug} className="rec-row__item" role="listitem">
+          <li key={p._id || p.slug} className="rec-row__item">
             <ProductCard product={p} />
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

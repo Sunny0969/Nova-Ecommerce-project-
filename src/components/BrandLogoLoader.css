@@ -1,0 +1,67 @@
+/* Centered Bazaar logo — main content only (header/footer/nav stay visible). */
+
+.brand-logo-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: min(
+    52vh,
+    calc(
+      100dvh - var(--site-header-height-mobile, 5.75rem) - var(--mobile-bottom-nav-height, 3.75rem) -
+        env(safe-area-inset-bottom, 0px) - 2.5rem
+    )
+  );
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .brand-logo-loader {
+    min-height: min(58vh, calc(100dvh - var(--site-header-height, 3.25rem) - 4rem));
+  }
+}
+
+.brand-logo-loader--compact {
+  min-height: 12rem;
+  padding: 1.5rem 1rem;
+}
+
+.brand-logo-loader__mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  animation: brandLogoPulse 1.15s ease-in-out infinite;
+}
+
+.brand-logo-loader__word {
+  font-family: var(--font-brand-logo, 'Taskor', 'DM Sans', system-ui, sans-serif);
+  font-size: clamp(1.65rem, 5vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--navy, #1a1a2e);
+  line-height: 1;
+}
+
+.brand-logo-loader__dot {
+  color: var(--gold, #c9a227);
+}
+
+@keyframes brandLogoPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo-loader__mark {
+    animation: none;
+  }
+}

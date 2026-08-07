@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from 'api';
-import { apiMessage, unwrapCategoriesResponse } from '../../lib/api';
+import { adminAPI } from '../../api/adminApi';
+import { apiMessage, fetchAdminCategories, unwrapAdminCategoriesResponse } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Modal from '../../components/Modal';
 
@@ -43,14 +43,14 @@ export default function AdminCategories() {
     setLoading(true);
     try {
       const res = await adminAPI.categories.listAll();
-      setRaw(unwrapCategoriesResponse(res));
+      setRaw(unwrapAdminCategoriesResponse(res));
     } catch (e) {
       const status = e?.response?.status;
       // Older API processes (node without restart) do not have GET /api/admin/categories yet
       if (status === 404) {
         try {
           const res = await adminAPI.categories.list();
-          setRaw(unwrapCategoriesResponse(res));
+          setRaw(unwrapAdminCategoriesResponse(res));
           toast(
             'Loaded active categories only. Restart the backend so GET /api/admin/categories is registered (full list + inactive).',
             { icon: 'ℹ️', duration: 6000 }
@@ -219,7 +219,8 @@ export default function AdminCategories() {
       </div>
 
       <p className="admin-categories__note">
-        Public API returns <strong>active</strong> categories only. This view shows <strong>all</strong> categories.
+        Public API returns <strong>active</strong> categories only. This view shows <strong>all</strong> categories.{' '}
+        <Link to="/admin/subcategories">Manage shop subcategories (filters per category)</Link>
       </p>
 
       {loading ? (

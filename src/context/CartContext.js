@@ -7,8 +7,8 @@ import React, {
   useMemo,
   useRef
 } from 'react';
-import toast, { showAddedToCartToast } from '../components/Toast';
-import { cartAPI } from 'api';
+import { toast, showAddedToCartToast } from '../components/Toast';
+import { cartAPI, publicAPI } from '../api/storefront';
 import { useAuth } from './AuthContext';
 
 function trackMetaAddToCart(product, quantity, user) {
@@ -59,13 +59,21 @@ function minimalProduct(p, opts = {}) {
   const note = noteFromOpts || noteFromP;
   const id = p._id != null ? String(p._id) : '';
   const cartLineKey = note ? `${id}::${encodeURIComponent(note)}` : id;
+  const stock =
+    opts.effectiveStock != null
+      ? opts.effectiveStock
+      : p.stock ?? p.stockQuantity;
+  const price =
+    opts.effectivePrice != null
+      ? Number(opts.effectivePrice)
+      : Number(p.price) || 0;
   return {
     _id: p._id,
     slug: p.slug,
     name: p.name,
-    price: Number(p.price) || 0,
+    price,
     images: Array.isArray(p.images) ? p.images : [],
-    stock: p.stock ?? p.stockQuantity,
+    stock,
     shortDescription: p.shortDescription,
     category: p.category,
     cartVariantNote: note,
@@ -151,6 +159,40 @@ function buildGuestNormalized(items, coupon = null, discountAmount = 0) {
     storeSettings: null,
     pricingPreview: null
   };
+}
+
+function guestItemsPayload(items) {
+  return (items || [])
+    .map((line) => ({
+      productId: line.product?._id || line.product,
+      quantity: Number(line.quantity) || 1,
+      price: line.price != null ? Number(line.price) : undefined
+    }))
+    .filter((line) => line.productId);
+}
+
+async function validateGuestCoupon(code, items) {
+  const res = await publicAPI.validateCoupon({ code, items: guestItemsPayload(items) });
+  const data = res?.data?.data;
+  if (!data?.coupon) {
+    throw new Error('Invalid coupon');
+  }
+  return {
+    coupon: data.coupon,
+    discountAmount: Number(data.discountAmount) || 0
+  };
+}
+
+async function refreshGuestCouponOnLines(lines, couponCode) {
+  if (!couponCode) {
+    return buildGuestNormalized(lines, null, 0);
+  }
+  try {
+    const { coupon, discountAmount } = await validateGuestCoupon(couponCode, lines);
+    return buildGuestNormalized(lines, coupon, discountAmount);
+  } catch {
+    return buildGuestNormalized(lines, null, 0);
+  }
 }
 
 export const useCart = () => {
@@ -304,8 +346,12 @@ export const CartProvider = ({ children }) => {
             String(l.product?._id || '') === pid &&
             String(l.product?.cartVariantNote || '').trim() === cartVariantNote
         );
-        const unit = Number(product.price) || 0;
-        const stock = product.stock ?? product.stockQuantity;
+        const unit =
+          options.effectivePrice != null
+            ? Number(options.effectivePrice)
+            : Number(product.price) || 0;
+        const stock =
+          options.effectiveStock ?? product.stock ?? product.stockQuantity;
         if (Number.isFinite(stock) && stock >= 0) {
           const existingQty = idx >= 0 ? lines[idx].quantity || 0 : 0;
           if (existingQty + qty > stock) {
@@ -323,7 +369,11 @@ export const CartProvider = ({ children }) => {
           };
         } else {
           lines.push({
-            product: minimalProduct(product, { cartVariantNote }),
+            product: minimalProduct(product, {
+              cartVariantNote,
+              effectiveStock: options.effectiveStock,
+              effectivePrice: options.effectivePrice
+            }),
             quantity: qty,
             price: unit,
             lineTotal: Math.round(unit * qty * 100) / 100
@@ -380,11 +430,7 @@ export const CartProvider = ({ children }) => {
             };
           })
           .filter(Boolean);
-        const norm = buildGuestNormalized(
-          lines,
-          prev.coupon,
-          prev.discountAmount || 0
-        );
+        const norm = await refreshGuestCouponOnLines(lines, prev.coupon?.code);
         writeGuestNormalized(norm);
         applyNormalized(norm);
         toast.success(q <= 0 ? 'Item removed' : 'Cart updated');
@@ -416,11 +462,7 @@ export const CartProvider = ({ children }) => {
           const lineRef = String(line.product?.cartLineKey || line.product?._id || '');
           return lineRef !== String(productRef);
         });
-        const norm = buildGuestNormalized(
-          filtered,
-          prev.coupon,
-          prev.discountAmount || 0
-        );
+        const norm = await refreshGuestCouponOnLines(filtered, prev.coupon?.code);
         writeGuestNormalized(norm);
         applyNormalized(norm);
         toast.success('Removed from cart');
@@ -470,8 +512,23 @@ export const CartProvider = ({ children }) => {
       }
 
       if (!customerUser) {
-        toast.error('Sign in to apply coupon codes');
-        return { success: false, error: 'Sign in to apply coupon codes' };
+        const prev = readGuestFromStorage();
+        if (!prev.items?.length) {
+          toast.error('Your cart is empty');
+          return { success: false, error: 'Your cart is empty' };
+        }
+        try {
+          const { coupon, discountAmount } = await validateGuestCoupon(trimmed, prev.items);
+          const norm = buildGuestNormalized(prev.items, coupon, discountAmount);
+          writeGuestNormalized(norm);
+          applyNormalized(norm);
+          toast.success('Coupon applied');
+          return { success: true };
+        } catch (error) {
+          const msg = apiErrorMessage(error, 'Invalid coupon');
+          toast.error(msg);
+          return { success: false, error: msg };
+        }
       }
 
       try {
@@ -485,13 +542,17 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: msg };
       }
     },
-    [customerUser, fetchCart]
+    [customerUser, applyNormalized, fetchCart]
   );
 
   const removeCoupon = useCallback(async () => {
     if (!customerUser) {
-      toast.info('Sign in to use coupons');
-      return { success: false, error: 'Sign in to use coupons' };
+      const prev = readGuestFromStorage();
+      const norm = buildGuestNormalized(prev.items, null, 0);
+      writeGuestNormalized(norm);
+      applyNormalized(norm);
+      toast.success('Coupon removed');
+      return { success: true };
     }
 
     try {
@@ -504,7 +565,7 @@ export const CartProvider = ({ children }) => {
       toast.error(msg);
       return { success: false, error: msg };
     }
-  }, [customerUser, fetchCart]);
+  }, [customerUser, applyNormalized, fetchCart]);
 
   const getCartCount = useCallback(() => itemCount, [itemCount]);
 

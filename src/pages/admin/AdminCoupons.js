@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from 'api';
-import { apiMessage, unwrapCategoriesResponse, unwrapProductListResponse } from '../../lib/api';
+import { adminAPI } from '../../api/adminApi';
+import { apiMessage, fetchAdminCategories, unwrapProductListResponse } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Modal from '../../components/Modal';
 import { formatPKR } from '../../utils/currency';
@@ -154,12 +154,12 @@ export default function AdminCoupons() {
     let cancelled = false;
     (async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
-          adminAPI.categories.listAll().catch(() => adminAPI.categories.list()),
+        const [catList, prodRes] = await Promise.all([
+          fetchAdminCategories(adminAPI),
           adminAPI.products.listAdmin({ page: 1, limit: 100 })
         ]);
         if (cancelled) return;
-        setCategories(unwrapCategoriesResponse(catRes));
+        setCategories(catList);
         setProducts(unwrapProductListResponse(prodRes).products);
       } catch {
         if (!cancelled) {

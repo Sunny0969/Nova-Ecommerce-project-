@@ -113,7 +113,7 @@ export default function SEO({
   }, [preload]);
 
   return (
-    <Helmet htmlAttributes={{ lang: 'en' }}>
+    <Helmet prioritizeSeoTags htmlAttributes={{ lang: 'en' }}>
       {preloadLinks}
       <title>{fullTitle}</title>
       <meta name="description" content={desc} />

@@ -13,6 +13,8 @@ import { optimizeImageUrl } from '../utils/optimizedImageUrl';
  * @param {boolean} [props.priority] — LCP: eager + fetchPriority high
  * @param {boolean} [props.optimize] — run optimizeImageUrl (WebP-friendly CDN params)
  * @param {number} [props.optimizeWidth] — resize hint passed to optimizeImageUrl
+ * @param {string} [props.srcSet]
+ * @param {string} [props.sizes]
  */
 export default function OptimizedImage({
   src,
@@ -23,6 +25,7 @@ export default function OptimizedImage({
   priority = false,
   optimize = true,
   optimizeWidth,
+  srcSet,
   sizes,
   className,
   decoding = 'async',
@@ -31,8 +34,8 @@ export default function OptimizedImage({
   if (!src) return null;
 
   const resolvedSrc =
-    optimize && typeof src === 'string'
-      ? optimizeImageUrl(src, { width: optimizeWidth || width || 800 })
+    optimize && typeof src === 'string' && !srcSet
+      ? optimizeImageUrl(src, { width: optimizeWidth || width || 400 })
       : src;
 
   const loadMode = priority ? 'eager' : loading || 'lazy';
@@ -40,13 +43,13 @@ export default function OptimizedImage({
   return (
     <img
       src={resolvedSrc}
+      {...(srcSet ? { srcSet, sizes } : {})}
       alt={alt}
       width={width}
       height={height}
       loading={loadMode}
       decoding={decoding}
-      {...(priority ? { fetchpriority: 'high' } : {})}
-      sizes={sizes}
+      {...(priority ? { fetchPriority: 'high' } : {})}
       className={className}
       {...rest}
     />

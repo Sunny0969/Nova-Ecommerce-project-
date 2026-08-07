@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { businessDisplayName, businessPhoneE164 } from '../utils/businessContact';
+import './WhatsAppFloatingButton.css';
 
 function WhatsAppIcon({ size = 28 }) {
   return (

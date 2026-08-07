@@ -1,10 +1,12 @@
 /**
  * GA4 (gtag.js) ecommerce + SPA page views.
- * Measurement ID: G-S6GWN1X1JT (loaded from public/index.html).
+ * Measurement ID: G-S6GWN1X1JT (deferred via src/lib/thirdPartyScripts.js).
  *
  * Do NOT also add a GA4 Configuration tag in GTM for the same ID — that double-counts.
  * GTM (GTM-MMBMKP9R) can still be used for other tags (Ads, etc.).
  */
+
+import { resolveOrderPurchaseValue } from './orderPurchaseValue';
 
 export const GA4_MEASUREMENT_ID = 'G-S6GWN1X1JT';
 
@@ -75,9 +77,7 @@ function orderToItems(order) {
 }
 
 function purchaseValue(order) {
-  const total = Number(order?.totalPrice) || 0;
-  const wallet = Number(order?.walletAmountUsed) || 0;
-  return Math.round((total + wallet) * 100) / 100;
+  return resolveOrderPurchaseValue(order);
 }
 
 function shouldSkipPurchase(orderId) {
@@ -91,7 +91,7 @@ function shouldSkipPurchase(orderId) {
   return false;
 }
 
-/** SPA route change — initial page_view comes from gtag config in index.html */
+/** SPA route change — initial page_view comes from deferred gtag config. */
 export function gtmPageView() {
   if (typeof window === 'undefined') return;
   sendEvent('page_view', {
@@ -146,11 +146,14 @@ export function gtmPurchase(order) {
   const orderId = String(order?._id || '').trim();
   if (!orderId || shouldSkipPurchase(orderId)) return;
 
+  const value = purchaseValue(order);
+  if (value <= 0) return;
+
   const items = orderToItems(order);
   sendEvent('purchase', {
     transaction_id: orderId,
     currency: CURRENCY,
-    value: purchaseValue(order),
+    value,
     items,
     num_items: items.reduce((n, i) => n + i.quantity, 0)
   });

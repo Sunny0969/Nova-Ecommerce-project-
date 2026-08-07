@@ -1,59 +1,88 @@
-# Hostinger / Apache — Bazaar (bazaar-pk.com)
-# Canonical origin: https://www.bazaar-pk.com (301, path + query preserved)
+# Bazaar PK (bazaar-pk.com) — Prerender-first deploy on Hostinger Apache / LiteSpeed
+#
+# Build: cd frontend && npm run build:hostinger
+# Upload entire frontend/build/ to public_html.
+
+# --- LiteSpeed / Apache: HTML always fresh after deploy; hashed assets stay cached ---
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+Options -MultiViews
+DirectoryIndex index.html
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # --- 1) HTTP → HTTPS (apex + www) ---
-  RewriteCond %{HTTP_HOST} ^(www\.)?bazaar-pk\.com$ [NC]
-  RewriteCond %{HTTPS} off
-  RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
-
-  # --- 2) HTTPS non-www → HTTPS www ---
-  RewriteCond %{HTTP_HOST} ^bazaar-pk\.com$ [NC]
-  RewriteRule ^ https://www.bazaar-pk.com%{REQUEST_URI} [R=301,L]
-
-  # --- 3) Legacy URL 301s (match old inbound links / sitemap URLs) ---
-  RewriteRule ^products/?$ /shop [R=301,L,NC]
-  RewriteRule ^products/.+ /shop [R=301,L,NC]
-  RewriteRule ^product/([^/]+)/?$ /shop/$1 [R=301,L,NC]
-  RewriteRule ^shop/category/([^/]+)/([^/]+)/?$ /$1/$2 [R=301,L,NC]
-  RewriteRule ^shop/category/([^/]+)/?$ /$1 [R=301,L,NC]
-  RewriteRule ^category/([^/]+)/?$ /$1 [R=301,L,NC]
-  RewriteRule ^home/?$ / [R=301,L,NC]
-
-  RewriteCond %{QUERY_STRING} (^|&)category=([^&]+) [NC]
-  RewriteCond %{QUERY_STRING} !(^|&)brand= [NC]
-  RewriteRule ^shop/?$ /%2? [R=301,L,NE]
-
-  RewriteCond %{QUERY_STRING} (^|&)brand=([^&]+) [NC]
-  RewriteCond %{QUERY_STRING} !(^|&)category= [NC]
-  RewriteRule ^shop/?$ /brand/%2? [R=301,L,NE]
-
-  # --- React SPA: non-file routes → index.html (flag for no-cache header below) ---
   RewriteRule ^index\.html$ - [L]
+
+  # --- Static assets (absolute /static/ paths in build HTML) ---
+  RewriteCond %{REQUEST_URI} ^/static/ [OR]
+  RewriteCond %{REQUEST_URI} ^/(fonts|images)/ [OR]
+  RewriteCond %{REQUEST_URI} ^/(api-config\.js|robots\.txt|sitemap\.xml|llms\.txt|favicon\.svg|manifest\.json|service-worker\.js|404\.html)$ [NC]
+  RewriteRule ^ - [L]
+
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # PRERENDER-FIRST — serve build-time HTML before SPA shell
+  # /baby-care  OR  /baby-care/  OR  /baby-care/product-slug  → serve …/index.html
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  RewriteRule . /index.html [L,E=SPA:1]
+  RewriteCond %{REQUEST_FILENAME}/index.html -f
+  RewriteRule ^(.*)$ $1/index.html [L]
+
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # --- Client-only SPA routes ---
+  RewriteRule ^(cart|checkout|order-confirmation|login|register|forgot-password|reset-password|verify-email|wishlist|account|admin|staff)(/.*)?$ /index.html [L,NC]
+
+  RewriteRule ^ /index.html [L]
+</IfModule>
+
+ErrorDocument 404 /404.html
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType font/woff2 .woff2
+  AddType font/woff .woff
+  AddType font/ttf .ttf
+  AddType application/vnd.ms-fontobject .eot
+  AddType font/otf .otf
 </IfModule>
 
 <IfModule mod_headers.c>
-  # HTML shell + SPA fallback — always revalidate after deploy
-  <Files "index.html">
-    Header set Cache-Control "no-cache, must-revalidate"
-  </Files>
-  Header always set Cache-Control "no-cache, must-revalidate" env=SPA
-
-  # Push / service workers — do not cache long-term
-  <FilesMatch "^(OneSignalSDKWorker\.js|OneSignalSDK\.page\.js|service-worker\.js|sw\.js)$">
-    Header set Cache-Control "no-cache, must-revalidate"
+  # Hashed JS/CSS/fonts — long cache
+  <FilesMatch "\.(woff2|woff|ttf|otf|eot)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
-  # Static assets — exactly 6 months (15552000 seconds), immutable
-  <FilesMatch "\.(js|mjs|cjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|otf|webp|map|webmanifest)$">
-    Header set Cache-Control "public, max-age=15552000, immutable"
+  <FilesMatch "\.(js|css|webp|avif|jpg|jpeg|png|gif|ico|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # All HTML (root + prerendered subfolders) — never stale after deploy
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "^(api-config\.js|sitemap.*\.xml|robots\.txt)$">
+    Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 </IfModule>

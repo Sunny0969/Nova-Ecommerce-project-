@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Leaf, PartyPopper, RefreshCw } from 'lucide-react';
-import { publicAPI, productsAPI } from 'api';
+import { publicAPI, productsAPI } from '../api/storefront';
 import { unwrapFeaturedResponse } from '../lib/api';
 import { getMaxProductDiscountPercent } from '../lib/productSale';
 import './HomeHero.css';
@@ -123,9 +123,9 @@ export default function HomeHero() {
             </div>
           </div>
 
-          <div className="rozana-hero__features" role="list">
+          <ul className="rozana-hero__features">
             {FEATURES.map(({ icon: Icon, title, sub }) => (
-              <div key={title} className="rozana-hero__feature" role="listitem">
+              <li key={title} className="rozana-hero__feature">
                 <span className="rozana-hero__feature-icon" aria-hidden>
                   <Icon size={20} strokeWidth={2} />
                 </span>
@@ -133,9 +133,9 @@ export default function HomeHero() {
                   <p className="rozana-hero__feature-title">{title}</p>
                   <p className="rozana-hero__feature-sub">{sub}</p>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </section>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ordersAPI } from 'api';
+import { ordersAPI } from '../../api/orders';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { productImageUrl } from '../../lib/productImage';
@@ -143,8 +143,9 @@ export default function AccountDashboard() {
             </Link>
           </p>
         ) : (
-          <div className="account-table-wrap">
-            <table className="account-table">
+          <>
+            <div className="account-table-wrap account-orders__table-desktop">
+              <table className="account-table">
               <thead>
                 <tr>
                   <th>Order</th>
@@ -207,6 +208,59 @@ export default function AccountDashboard() {
               </tbody>
             </table>
           </div>
+
+          <ul className="account-orders__cards account-dashboard__order-cards">
+            {recent.map((order) => (
+              <li key={order._id} className="account-orders__card card-like">
+                <div className="account-orders__card-head">
+                  <span className="account-orders__card-id">#{orderShortId(order)}</span>
+                  <span className={statusClass(order.status)}>{order.status}</span>
+                </div>
+                <div className="account-orders__card-meta">
+                  <span>
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleDateString()
+                      : '—'}
+                  </span>
+                  <span className="account-orders__card-total">
+                    {formatPKR(Number(order.totalPrice || 0))}
+                  </span>
+                </div>
+                <div className="account-orders__thumbs">
+                  {(order.orderItems || []).slice(0, 4).map((line, i) => {
+                    const src = lineThumb(line);
+                    return src ? (
+                      <img
+                        key={`${order._id}-m-${i}`}
+                        src={src}
+                        alt=""
+                        className="account-orders__thumb"
+                        width={48}
+                        height={48}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span
+                        key={`${order._id}-mp-${i}`}
+                        className="account-orders__thumb account-orders__thumb--placeholder"
+                        aria-hidden
+                      >
+                        ·
+                      </span>
+                    );
+                  })}
+                </div>
+                <Link
+                  to={`/account/orders/${order._id}`}
+                  className="btn btn-outline btn-sm account-orders__card-view"
+                >
+                  View order
+                </Link>
+              </li>
+            ))}
+          </ul>
+          </>
         )}
       </section>
     </div>

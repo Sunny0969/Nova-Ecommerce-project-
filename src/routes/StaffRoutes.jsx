@@ -3,17 +3,39 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import StaffRoute from '../components/StaffRoute';
 import RouteFallback from '../components/RouteFallback';
 
-const StaffLayout = lazy(() => import('../pages/staff/StaffLayout'));
-const StaffDashboard = lazy(() => import('../pages/staff/StaffDashboard'));
-const StaffProducts = lazy(() => import('../pages/staff/StaffProducts'));
-const StaffCategories = lazy(() => import('../pages/staff/StaffCategories'));
-const StaffOrders = lazy(() => import('../pages/staff/StaffOrders'));
-const ProductForm = lazy(() => import('../pages/admin/ProductForm'));
-const AdminOrderDetail = lazy(() => import('../pages/admin/AdminOrderDetail'));
-const AdminCustomers = lazy(() => import('../pages/admin/AdminCustomers'));
-const AdminAnalytics = lazy(() => import('../pages/admin/AdminAnalytics'));
-const AdminCoupons = lazy(() => import('../pages/admin/AdminCoupons'));
-const AdminPlaceholder = lazy(() => import('../pages/admin/AdminPlaceholder'));
+const StaffLayout = lazy(() =>
+  import(/* webpackChunkName: "staff-layout" */ '../pages/staff/StaffLayout')
+);
+const StaffDashboard = lazy(() =>
+  import(/* webpackChunkName: "staff-dashboard-page" */ '../pages/staff/StaffDashboard')
+);
+const StaffProducts = lazy(() =>
+  import(/* webpackChunkName: "staff-products-page" */ '../pages/staff/StaffProducts')
+);
+const StaffCategories = lazy(() =>
+  import(/* webpackChunkName: "staff-categories-page" */ '../pages/staff/StaffCategories')
+);
+const StaffOrders = lazy(() =>
+  import(/* webpackChunkName: "staff-orders-page" */ '../pages/staff/StaffOrders')
+);
+const ProductForm = lazy(() =>
+  import(/* webpackChunkName: "admin-product-form" */ '../pages/admin/ProductForm')
+);
+const AdminOrderDetail = lazy(() =>
+  import(/* webpackChunkName: "admin-order-detail-page" */ '../pages/admin/AdminOrderDetail')
+);
+const AdminCustomers = lazy(() =>
+  import(/* webpackChunkName: "admin-customers-page" */ '../pages/admin/AdminCustomers')
+);
+const AdminAnalytics = lazy(() =>
+  import(/* webpackChunkName: "admin-analytics-page" */ '../pages/admin/AdminAnalytics')
+);
+const AdminCoupons = lazy(() =>
+  import(/* webpackChunkName: "admin-coupons-page" */ '../pages/admin/AdminCoupons')
+);
+const AdminPlaceholder = lazy(() =>
+  import(/* webpackChunkName: "admin-placeholder-page" */ '../pages/admin/AdminPlaceholder')
+);
 
 /** Staff portal — loaded only when visiting /staff/* */
 export default function StaffRoutes() {
@@ -120,8 +142,8 @@ export default function StaffRoutes() {
               </StaffRoute>
             }
           />
+          <Route path="*" element={<Navigate to="/staff/dashboard" replace />} />
         </Route>
-        <Route path="*" element={<Navigate to="/staff/dashboard" replace />} />
       </Routes>
     </Suspense>
   );

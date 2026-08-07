@@ -14,8 +14,11 @@ import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { apiMessage } from '../lib/api';
-import { authAPI, ordersAPI, publicAPI, walletAPI } from 'api';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { authAPI } from '../api/auth';
+import { publicAPI } from '../api/storefront';
+import { ordersAPI } from '../api/orders';
+import { walletAPI } from '../api/wallet';
+import BrandLogoLoader from '../components/BrandLogoLoader';
 import { formatPKR } from '../utils/currency';
 import { buildProductPath, getProductCategorySlug } from '../utils/urls';
 import { trackInitiateCheckout } from '../lib/metaPixel';
@@ -96,7 +99,7 @@ const shippingSchema = object({
     .matches(/^\d{5}$/, 'Enter a valid 5-digit postcode'),
   country: string().trim().required().max(100),
   deliveryOption: string().oneOf(['standard', 'express', 'nextday']).required(),
-  saveAddress: boolean().default(false)
+  saveAddress: boolean().default(true)
 });
 
 const DEFAULT_SHIPPING_VALUES = {
@@ -110,7 +113,7 @@ const DEFAULT_SHIPPING_VALUES = {
   zipCode: '',
   country: 'Pakistan',
   deliveryOption: 'standard',
-  saveAddress: false
+  saveAddress: true
 };
 
 function splitName(name) {
@@ -138,7 +141,8 @@ function defaultsFromUser(user) {
     city: saved.city || '',
     state: normalizeProvinceName(saved.state || ''),
     zipCode: digitsOnly(saved.zipCode || '', 5),
-    country: saved.country || 'Pakistan'
+    country: saved.country || 'Pakistan',
+    saveAddress: true
   };
 }
 
@@ -208,7 +212,7 @@ export default function Checkout() {
   if (!stripeReady) {
     return (
       <div className="section checkout-page">
-        <LoadingSpinner size="lg" label="Loading checkout" />
+        <BrandLogoLoader label="Loading checkout" />
       </div>
     );
   }
@@ -282,15 +286,15 @@ function CheckoutFlow({ stripeEnabled }) {
     ];
     if (!storeSettings) return base;
     return base.map(([val, label]) => {
-      const price = calculateShipping(subtotal, val, storeSettings, cartWeightKg);
+      const price = calculateShipping(subtotal, val, storeSettings, cartWeightKg, cart);
       return [val, `${label} — ${formatPKR(price)}`];
     });
-  }, [storeSettings, subtotal, cartWeightKg]);
+  }, [storeSettings, subtotal, cartWeightKg, cart]);
 
   const checkoutSummary = useMemo(() => {
     if (!storeSettings || !cart.length) return null;
-    return computeTotalsPreview(subtotal, discountAmount, activeDelivery, storeSettings, cartWeightKg);
-  }, [storeSettings, cart.length, subtotal, discountAmount, activeDelivery, cartWeightKg]);
+    return computeTotalsPreview(subtotal, discountAmount, activeDelivery, storeSettings, cartWeightKg, cart);
+  }, [storeSettings, cart, subtotal, discountAmount, activeDelivery, cartWeightKg]);
 
   const orderTotal = Number(checkoutSummary?.totalPrice ?? totals?.total ?? subtotal);
   const payTotal = Number(walletPreview?.totalAfterWallet ?? orderTotal);
@@ -448,7 +452,8 @@ function CheckoutFlow({ stripeEnabled }) {
     const placeRequest = isGuestCheckout
       ? ordersAPI.guestPlace({
           ...placeOrderPayload(),
-          items: guestCartPayload(cart)
+          items: guestCartPayload(cart),
+          couponCode: cartState.coupon?.code || undefined
         })
       : ordersAPI.place(placeOrderPayload());
 
@@ -464,7 +469,7 @@ function CheckoutFlow({ stripeEnabled }) {
   if (loading || authLoading) {
     return (
       <div className="section container checkout-page">
-        <LoadingSpinner size="lg" label="Loading checkout" />
+        <BrandLogoLoader label="Loading checkout" />
       </div>
     );
   }
@@ -483,6 +488,7 @@ function CheckoutFlow({ stripeEnabled }) {
           isGuestCheckout={isGuestCheckout}
           useGuestStripeApi={useGuestStripeApi}
           guestItems={guestCartPayload(cart)}
+          guestCouponCode={cartState.coupon?.code || ''}
           onSuccess={(res) => finalizePlacement(res, { guest: isGuestCheckout })}
           submitting={placing}
           setSubmitting={setPlacing}
@@ -625,7 +631,7 @@ function CheckoutFlow({ stripeEnabled }) {
                 {user ? (
                   <label className="checkout-checkbox checkout-checkbox--margin">
                     <input type="checkbox" {...register('saveAddress')} />
-                    <span>Save address to my account</span>
+                    <span>Save this address to my account for next time</span>
                   </label>
                 ) : null}
 

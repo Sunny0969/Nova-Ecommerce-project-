@@ -1,62 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) — GA4 G-S6GWN1X1JT -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6GWN1X1JT"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', 'G-S6GWN1X1JT');
-    </script>
-    <!-- End Google tag -->
-    <!-- Google Tag Manager -->
-    <script>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != 'dataLayer' ? '&l=' + l : '';
-        j.async = true;
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-        f.parentNode.insertBefore(j, f);
-      })(window, document, 'script', 'dataLayer', 'GTM-MMBMKP9R');
-    </script>
-    <!-- End Google Tag Manager -->
+    <base href="/" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1A1A2E" />
+    <title>Bazaar | Online Shopping Pakistan</title>
     <meta
       name="description"
-      content="online shopping Pakistan: Bazaar — quality products, secure checkout, nationwide delivery. Shop groceries, cleaning, tea, rice, fashion &amp; electronics with fast delivery from Hydera…"
+      content="Shop groceries, health &amp; beauty, home care, fashion and daily essentials online in Pakistan. Bazaar offers secure checkout and nationwide delivery."
     />
-    <meta
-      name="keywords"
-      content="online shopping Pakistan, grocery delivery, Bazaar, Hyderabad, groceries online, fast delivery"
-    />
-    <meta name="theme-color" content="#1A1A2E" />
-    <title>Online Shopping Pakistan — Groceries &amp; Essentials | Bazaar</title>
-
     <link rel="canonical" href="https://www.bazaar-pk.com/" />
-
-    <meta property="og:site_name" content="Bazaar" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Online Shopping Pakistan — Groceries &amp; Essentials | Bazaar" />
+    <meta property="og:title" content="Bazaar | Online Shopping Pakistan" />
     <meta
       property="og:description"
-      content="online shopping Pakistan: Bazaar — quality products, secure checkout, nationwide delivery. Shop groceries, cleaning, tea, rice, fashion &amp; electronics with fast delivery from Hydera…"
+      content="Shop groceries, fashion, and home essentials online in Pakistan with Bazaar."
     />
     <meta property="og:url" content="https://www.bazaar-pk.com/" />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1625432800813-5cad3897cf22?w=1200&amp;h=630&amp;auto=format&amp;fit=crop&amp;q=82" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Online Shopping Pakistan — Groceries &amp; Essentials | Bazaar" />
+    <meta name="twitter:title" content="Bazaar | Online Shopping Pakistan" />
     <meta
       name="twitter:description"
-      content="online shopping Pakistan: Bazaar — quality products, secure checkout, nationwide delivery. Shop groceries, cleaning, tea, rice, fashion &amp; electronics with fast delivery from Hydera…"
+      content="Shop groceries, fashion, and home essentials online in Pakistan with Bazaar."
     />
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1625432800813-5cad3897cf22?w=1200&amp;h=630&amp;auto=format&amp;fit=crop&amp;q=82" />
 
     <!-- Google Search Console: HTML tag method — paste meta from GSC and uncomment -->
     <!-- <meta name="google-site-verification" content="YOUR_GSC_CODE" /> -->
@@ -64,15 +29,32 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.svg" />
 
-    <!-- Self-hosted fonts (woff2) — loads before JS bundle; font-display: swap in fonts.css -->
-    <link rel="preload" href="%PUBLIC_URL%/fonts/dm-sans/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Logo font (Taskor) — inline so live site matches local before async CSS loads -->
+    <style>
+      @font-face {
+        font-family: 'Taskor';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('%PUBLIC_URL%/fonts/taskor/taskor-regular.woff2') format('woff2');
+      }
+    </style>
+
+    <!-- Self-hosted fonts (font-display: swap) — no fonts.googleapis.com -->
+    <link rel="preload" href="%PUBLIC_URL%/fonts/dm-sans/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="%PUBLIC_URL%/fonts/dm-sans/dm-sans-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="%PUBLIC_URL%/fonts/playfair-display/playfair-display-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="%PUBLIC_URL%/fonts/playfair-display/playfair-display-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="%PUBLIC_URL%/fonts/taskor/taskor-regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="stylesheet" href="%PUBLIC_URL%/fonts/fonts.css" />
+
+    <link rel="alternate" type="text/plain" href="%PUBLIC_URL%/llms.txt" title="Bazaar PK — LLM site guide" />
 
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
     <link rel="dns-prefetch" href="https://res.cloudinary.com" />
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
-    <link rel="preconnect" href="https://nova-ecommerce-project-backend-production.up.railway.app" crossorigin />
+    <link rel="preconnect" href="https://nova-ecommerce-project-backend-production.up.railway.app" />
     <link rel="dns-prefetch" href="https://nova-ecommerce-project-backend-production.up.railway.app" />
     <script>
       (function () {
@@ -82,72 +64,7 @@
         if (!isLocal) window.__REACT_APP_API_URL__ = PRODUCTION_API;
       })();
     </script>
-    <script src="%PUBLIC_URL%/api-config.js"></script>
-
-    <!-- Meta Pixel Code -->
-    <script>
-      !(function (f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = !0;
-        n.version = '2.0';
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = !0;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '1519068336295914');
-      fbq('track', 'PageView');
-    </script>
-    <noscript>
-      <img
-        height="1"
-        width="1"
-        style="display: none"
-        src="https://www.facebook.com/tr?id=1519068336295914&amp;ev=PageView&amp;noscript=1"
-        alt=""
-      />
-    </noscript>
-    <!-- End Meta Pixel Code -->
-
-    <!-- OneSignal Web Push — production domain only (bazaar-pk.com) -->
-    <script>
-      (function () {
-        var host = window.location.hostname;
-        var isProduction =
-          host === 'bazaar-pk.com' || host === 'www.bazaar-pk.com';
-        if (!isProduction) return;
-
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function (OneSignal) {
-          var path = window.location.pathname || '';
-          if (path.indexOf('/admin') === 0 || path.indexOf('/staff') === 0) return;
-
-          await OneSignal.init({
-            appId: 'a0266c18-958d-485a-ad42-8d0797b119ca',
-            safari_web_id: 'web.onesignal.auto.2b467c5d-2ccd-4e09-a57b-cb7ab9efd0c0',
-            serviceWorkerPath: '/OneSignalSDKWorker.js',
-            notifyButton: { enable: true }
-          });
-
-          setTimeout(function () {
-            OneSignal.Slidedown.promptPush();
-          }, 2500);
-        });
-
-        var s = document.createElement('script');
-        s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-        s.defer = true;
-        document.head.appendChild(s);
-      })();
-    </script>
-    <!-- End OneSignal -->
+    <script src="%PUBLIC_URL%/api-config.js" defer></script>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
@@ -160,7 +77,40 @@
       ></iframe
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1519068336295914&amp;ev=PageView&amp;noscript=1"
+        alt=""
+      />
+    </noscript>
+    <!--
+      GTM / GA4 / Meta Pixel are NOT loaded here — they would block first paint.
+      Stubs queue events; DeferredThirdPartyScripts loads gtm.js + fbevents.js with
+      async+defer after React paints (+2s). See src/lib/thirdPartyScripts.js
+    -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag =
+        window.gtag ||
+        function gtag() {
+          window.dataLayer.push(arguments);
+        };
+      if (!window.fbq) {
+        var fbqQueue = (window.fbq = function () {
+          fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments);
+        });
+        fbq.queue = [];
+        fbq.loaded = false;
+        fbq.version = '2.0';
+        fbq.push = fbq;
+        window._fbq = fbq;
+      }
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+    </script>
+    <div id="static-fallback"></div>
     <div id="root"></div>
   </body>
 </html>

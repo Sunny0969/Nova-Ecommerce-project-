@@ -1,18 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar
-} from 'recharts';
 import { Wallet, ShoppingCart, Package, Users } from 'lucide-react';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
 import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
@@ -25,6 +14,7 @@ import {
   statusClass,
   StatCard
 } from './adminMetricsUI';
+import { useRecharts } from './useRecharts';
 
 const REV_PERIODS = [
   { value: '7d', label: '7 days' },
@@ -44,6 +34,7 @@ function revenueChartHint(granularity) {
 }
 
 export default function AdminAnalytics() {
+  const recharts = useRecharts();
   const [stats, setStats] = useState(null);
   const [revenuePoints, setRevenuePoints] = useState([]);
   const [revGranularity, setRevGranularity] = useState('month');
@@ -103,6 +94,18 @@ export default function AdminAnalytics() {
   const topRows = stats?.topProducts || [];
   const recent = stats?.recentOrders || [];
   const lowStock = stats?.lowStockList || [];
+
+  const {
+    ResponsiveContainer,
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    BarChart,
+    Bar
+  } = recharts || {};
 
   if (loading) {
     return (
@@ -182,6 +185,9 @@ export default function AdminAnalytics() {
             </div>
           </div>
           <div className="admin-chart-card__plot">
+            {!recharts ? (
+              <LoadingSpinner size="md" label="Loading charts" />
+            ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={lineData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" />
@@ -218,12 +224,16 @@ export default function AdminAnalytics() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
         <div className="admin-chart-card">
           <h2 className="admin-chart-card__title">Orders (last 30 days)</h2>
           <p className="admin-chart-card__hint">All orders by created date (UTC days).</p>
           <div className="admin-chart-card__plot">
+            {!recharts ? (
+              <LoadingSpinner size="md" label="Loading charts" />
+            ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={barData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" />
@@ -252,6 +262,7 @@ export default function AdminAnalytics() {
                 <Bar dataKey="count" fill="#3d4f7c" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

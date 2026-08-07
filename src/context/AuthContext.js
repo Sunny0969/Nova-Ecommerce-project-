@@ -6,8 +6,8 @@ import React, {
   useCallback,
   useMemo
 } from 'react';
-import axios from 'axios';
-import { authAPI, TOKEN_KEY } from 'api';
+import api from '../api/client';
+import { authAPI, TOKEN_KEY } from '../api/auth';
 import {
   getFirstAllowedStaffPath,
   normalizeStaffPermissions,
@@ -17,12 +17,12 @@ import {
 const AuthContext = createContext();
 const LEGACY_STAFF_STORAGE_KEYS = ['staffToken', 'staffPermissions', 'staffUser'];
 
-/** Keeps legacy `axios` calls (cart, wishlist, etc.) authenticated */
+/** Keeps configured store API client authenticated for cart, wishlist, etc. */
 function syncGlobalAxiosAuth(token) {
   if (token) {
-    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
   } else {
-    delete axios.defaults.headers.common.Authorization;
+    delete api.defaults.headers.common.Authorization;
   }
 }
 

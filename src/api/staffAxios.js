@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { TOKEN_KEY } from './axios';
+import { TOKEN_KEY } from './auth';
 import { resolveStoreApiOrigin } from '../config/apiOrigin';
 
 export const staffApi = axios.create({

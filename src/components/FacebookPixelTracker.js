@@ -6,7 +6,7 @@ function isStorefrontPath(pathname) {
 
 /**
  * SPA analytics on route changes (Meta Pixel PageView + GA4 page_view via dataLayer).
- * Initial hits are sent from public/index.html (Meta) and GTM container load (GA4 config tag).
+ * Initial hits are sent after deferred third-party scripts load (~2s post-render).
  */
 export default function FacebookPixelTracker() {
   const { pathname, search } = useLocation();

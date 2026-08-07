@@ -4,7 +4,7 @@ import { productImageUrl } from '../lib/productImage';
 import { buildProductImageAlt } from '../utils/imageAlt';
 import { getProductSalePrices } from '../lib/productSale';
 import { formatPKR } from '../utils/currency';
-import ProductImage from './ProductImage';
+import ProductImage, { FLASH_SALE_IMAGE_WIDTH, FLASH_SALE_IMAGE_HEIGHT } from './ProductImage';
 import { buildProductPath, getProductCategorySlug } from '../utils/urls';
 import ProductSaleRibbon from './ProductSaleRibbon';
 import { useProductPrefetch } from '../hooks/useProductPrefetch';
@@ -30,6 +30,9 @@ export default function FlashSaleCard({ product, imagePriority = false }) {
             className="flash-sale-card__img"
             src={imageUrl}
             alt={buildProductImageAlt(product)}
+            width={FLASH_SALE_IMAGE_WIDTH}
+            height={FLASH_SALE_IMAGE_HEIGHT}
+            sizes="(max-width: 639px) 50vw, (max-width: 1023px) 25vw, 160px"
             priority={imagePriority}
           />
         ) : (

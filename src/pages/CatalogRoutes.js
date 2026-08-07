@@ -1,8 +1,6 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import Shop from './Products';
-import ProductDetail from './ProductDetail';
-import NotFound from './NotFound';
+import { PageSuspenseFallback } from '../components/RouteFallback';
 import {
   buildCategoryPath,
   buildProductPath,
@@ -10,22 +8,46 @@ import {
   normalizeSlug
 } from '../utils/urls';
 
+const Shop = lazy(() => import(/* webpackChunkName: "shop" */ './Products'));
+const ProductDetail = lazy(() => import(/* webpackChunkName: "product-detail" */ './ProductDetail'));
+const NotFound = lazy(() => import(/* webpackChunkName: "not-found" */ './NotFound'));
+
+function CatalogRouteFallback() {
+  return <PageSuspenseFallback label="Loading" />;
+}
+
 /** /:categorySlug — category product listing */
 export function CatalogCategoryRoute() {
   const { categorySlug } = useParams();
   if (isReservedCatalogSlug(categorySlug)) {
-    return <NotFound />;
+    return (
+      <Suspense fallback={<CatalogRouteFallback />}>
+        <NotFound />
+      </Suspense>
+    );
   }
-  return <Shop />;
+  return (
+    <Suspense fallback={<CatalogRouteFallback />}>
+      <Shop />
+    </Suspense>
+  );
 }
 
 /** /:categorySlug/:productSlug — product detail */
 export function CatalogProductRoute() {
   const { categorySlug } = useParams();
   if (isReservedCatalogSlug(categorySlug)) {
-    return <NotFound />;
+    return (
+      <Suspense fallback={<CatalogRouteFallback />}>
+        <NotFound />
+      </Suspense>
+    );
   }
-  return <ProductDetail />;
+  return (
+    <Suspense fallback={<CatalogRouteFallback />}>
+      <ProductDetail />
+    </Suspense>
+  );
 }
 
 /** 301-style client redirect: /shop/category/:cat/:product → /:cat/:product */

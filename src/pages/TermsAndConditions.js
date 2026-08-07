@@ -127,6 +127,14 @@ export default function TermsAndConditions() {
                 Privacy Policy
               </Link>
               {' · '}
+              <Link to="/returns-and-refunds" className="legal-page__link">
+                Returns &amp; Refunds
+              </Link>
+              {' · '}
+              <Link to="/shipping-policy" className="legal-page__link">
+                Shipping Policy
+              </Link>
+              {' · '}
               <Link to="/faqs" className="legal-page__link">
                 FAQs
               </Link>

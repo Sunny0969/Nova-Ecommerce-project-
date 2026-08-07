@@ -2,6 +2,7 @@
   padding-top: 2rem;
   padding-bottom: 2.5rem;
   background: var(--white);
+  min-height: 420px;
 }
 
 .home-flash-sale__header {
@@ -153,9 +154,11 @@
 
 .flash-sale-card__image-wrap {
   position: relative;
-  aspect-ratio: 1;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 120px;
   border-radius: 12px;
-  background: var(--cream);
+  background: #fafafa;
   border: 1px solid var(--gray-light);
   overflow: hidden;
   display: flex;

@@ -1,18 +1,13 @@
-import api from './axios';
+import api from './client';
 
 /**
- * Central API entry — `import ... from 'api'`.
- * Create React App: set `REACT_APP_API_URL` in `.env.production`
+ * Narrow public entry — blog + staff helpers only.
+ * Storefront code should import from `api/client`, `api/auth`, `api/storefront`, etc.
  */
 
 export default api;
 
-export * from './axios';
-export * from './blog';
-
-/* ============================================================
-   Staff APIs
-   ============================================================ */
+export { blogAPI } from './blog';
 
 export const staffAPI = {
   login: (body) => api.post('/api/staff/login', body),

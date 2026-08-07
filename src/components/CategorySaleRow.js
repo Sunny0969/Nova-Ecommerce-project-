@@ -50,17 +50,17 @@ export default function CategorySaleRow({ category, products, onAddToCart }) {
         </div>
       </div>
 
-      <div className="home-cat-sale-row__scroll rec-row__scroll" ref={scrollRef} role="list">
+      <ul className="home-cat-sale-row__scroll rec-row__scroll" ref={scrollRef}>
         {list.map((product, idx) => (
-          <div key={product._id || product.slug} className="rec-row__item" role="listitem">
+          <li key={product._id || product.slug} className="rec-row__item">
             <ProductCard
               product={product}
               onAddToCart={onAddToCart}
               imagePriority={idx < 4}
             />
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

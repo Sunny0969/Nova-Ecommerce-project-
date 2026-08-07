@@ -3,7 +3,7 @@
  * Speeds up navigation on fast connections; harmless no-op when skipped (save-data / 2G).
  */
 
-import { productsAPI } from 'api';
+import { productsAPI } from '../api/storefront';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAX_CACHE = 48;

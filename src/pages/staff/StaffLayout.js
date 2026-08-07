@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router-dom';
 import SEO from '../../components/SEO';
+import '../../styles/admin.css';
 import staffApi from '../../api/staffAxios';
 import { useStaffAuth } from '../../context/StaffAuthContext';
 import { apiMessage } from '../../lib/api';

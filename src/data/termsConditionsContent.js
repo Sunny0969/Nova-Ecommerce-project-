@@ -135,7 +135,7 @@ export const TERMS_SECTIONS = [
       'When you place an order, you make an offer to purchase the listed products. Order confirmation and status updates do not guarantee acceptance until the order is processed and dispatched.',
       'Commercial terms such as price, availability, and delivery timelines are displayed on the Site and confirmed at checkout. We or our fulfilment partners may cancel an order before dispatch—for example due to stock issues, pricing errors, suspected fraud, or failed payment verification. Prepaid amounts for cancelled orders will be refunded according to our refund policy.',
       'Orders are intended for normal household consumption unless otherwise agreed. We may limit quantities that appear excessive for individual use.',
-      'For returns, refunds, and exchanges, see our FAQs and Contact Us page or speak with customer support.'
+      'For returns, refunds, and exchanges, see our Returns & Refunds Policy, Shipping Policy, FAQs, or Contact Us page.'
     ]
   },
   {

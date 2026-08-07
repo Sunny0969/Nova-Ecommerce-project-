@@ -6,8 +6,9 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader2, GripVertical, X } from 'lucide-react';
 import LazyJoditEditor from '../../components/LazyJoditEditor';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 import { buildProductPath } from '../../utils/urls';
+import { fetchAdminCategories } from '../../lib/api';
 
 /** Preview of public URL path from the product title (matches server slug-from-name rules). */
 function seoSlugFromTitle(s) {
@@ -60,6 +61,8 @@ const schema = object({
     .integer()
     .notRequired(),
   category: string().required('Category is required'),
+  shopGender: string().oneOf(['', 'women', 'men']).default(''),
+  shopSubcategoryId: string().default(''),
   tags: array().of(string().max(60)).default([]),
   isFeatured: boolean().default(false),
   isPublished: boolean().default(false),
@@ -83,6 +86,8 @@ const defaultForm = {
   stock: 0,
   lowStockThreshold: null,
   category: '',
+  shopGender: '',
+  shopSubcategoryId: '',
   tags: [],
   isFeatured: false,
   isPublished: false,
@@ -121,7 +126,7 @@ function migrateLegacyToVariantAxes(color, texture, size) {
     base.color = {
       enabled: true,
       selectionMode: c.length > 1 ? 'multiple' : 'single',
-      options: c.map((label) => ({ label, image: null }))
+      options: c.map((label) => ({ label, image: null, stock: '', price: '', comparePrice: '' }))
     };
   }
   const sh = parts(texture);
@@ -129,7 +134,7 @@ function migrateLegacyToVariantAxes(color, texture, size) {
     base.shape = {
       enabled: true,
       selectionMode: sh.length > 1 ? 'multiple' : 'single',
-      options: sh.map((label) => ({ label, image: null }))
+      options: sh.map((label) => ({ label, image: null, stock: '', price: '', comparePrice: '' }))
     };
   }
   const sz = parts(size);
@@ -137,7 +142,7 @@ function migrateLegacyToVariantAxes(color, texture, size) {
     base.size = {
       enabled: true,
       selectionMode: sz.length > 1 ? 'multiple' : 'single',
-      options: sz.map((label) => ({ label, image: null }))
+      options: sz.map((label) => ({ label, image: null, stock: '', price: '', comparePrice: '' }))
     };
   }
   return base;
@@ -152,6 +157,9 @@ function normalizeLoadedVariantAxes(apiAxes, legacyColor, legacyTexture, legacyS
       const options = (ax.options || [])
         .map((o) => ({
           label: String(o.label || ''),
+          stock: o.stock != null && o.stock !== '' ? Number(o.stock) : '',
+          price: o.price != null && o.price !== '' ? Number(o.price) : '',
+          comparePrice: o.comparePrice != null && o.comparePrice !== '' ? Number(o.comparePrice) : '',
           image:
             o.image?.url && o.image?.public_id
               ? { type: 'server', url: o.image.url, public_id: o.image.public_id }
@@ -185,6 +193,18 @@ function variantAxesPayloadForApi(va) {
     const opts = (ax.options || [])
       .map((o) => ({
         label: String(o.label || '').trim().slice(0, 80),
+        ...(o.stock !== '' && o.stock != null && Number.isFinite(Number(o.stock)) && Number(o.stock) >= 0
+          ? { stock: Math.floor(Number(o.stock)) }
+          : {}),
+        ...(o.price !== '' && o.price != null && Number.isFinite(Number(o.price)) && Number(o.price) >= 0
+          ? { price: Math.round(Number(o.price) * 100) / 100 }
+          : {}),
+        ...(o.comparePrice !== '' &&
+        o.comparePrice != null &&
+        Number.isFinite(Number(o.comparePrice)) &&
+        Number(o.comparePrice) >= 0
+          ? { comparePrice: Math.round(Number(o.comparePrice) * 100) / 100 }
+          : {}),
         image:
           o.image?.type === 'server' && o.image.url
             ? { url: o.image.url, public_id: o.image.public_id || '' }
@@ -210,6 +230,9 @@ function variantAxesForDraft(va) {
       selectionMode: ax.selectionMode === 'multiple' ? 'multiple' : 'single',
       options: (ax.options || []).map((o) => ({
         label: o.label || '',
+        stock: o.stock != null && o.stock !== '' ? o.stock : '',
+        price: o.price != null && o.price !== '' ? o.price : '',
+        comparePrice: o.comparePrice != null && o.comparePrice !== '' ? o.comparePrice : '',
         image:
           o.image?.type === 'server' && o.image.url
             ? { type: 'server', url: o.image.url, public_id: o.image.public_id || '' }
@@ -308,14 +331,14 @@ function VariantAxesEditor({ value, onChange }) {
     }
     setAxis(key, {
       enabled: true,
-      options: ax.options?.length ? ax.options : [{ label: '', image: null }],
+      options: ax.options?.length ? ax.options : [{ label: '', image: null, stock: '', price: '', comparePrice: '' }],
       selectionMode: ax.selectionMode || 'single'
     });
   };
 
   const addOption = (key) => {
     const ax = value[key] || defaultVariantAxesState()[key];
-    setAxis(key, { options: [...(ax.options || []), { label: '', image: null }] });
+    setAxis(key, { options: [...(ax.options || []), { label: '', image: null, stock: '', price: '', comparePrice: '' }] });
   };
 
   const removeOption = (key, idx) => {
@@ -349,6 +372,30 @@ function VariantAxesEditor({ value, onChange }) {
       if (i !== idx) return o;
       if (o.image?.type === 'local' && o.image.url) URL.revokeObjectURL(o.image.url);
       return { ...o, image: null };
+    });
+    setAxis(key, { options });
+  };
+
+  const updateOptionStock = (key, idx, raw) => {
+    const ax = value[key];
+    const options = ax.options.map((o, i) => {
+      if (i !== idx) return o;
+      if (raw === '' || raw == null) return { ...o, stock: '' };
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) return { ...o, stock: '' };
+      return { ...o, stock: Math.floor(n) };
+    });
+    setAxis(key, { options });
+  };
+
+  const updateOptionMoney = (key, idx, field, raw) => {
+    const ax = value[key];
+    const options = ax.options.map((o, i) => {
+      if (i !== idx) return o;
+      if (raw === '' || raw == null) return { ...o, [field]: '' };
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) return { ...o, [field]: '' };
+      return { ...o, [field]: Math.round(n * 100) / 100 };
     });
     setAxis(key, { options });
   };
@@ -402,6 +449,45 @@ function VariantAxesEditor({ value, onChange }) {
                         value={opt.label}
                         onChange={(e) => updateOptionLabel(key, idx, e.target.value)}
                       />
+                      <label className="product-form__variant-stock">
+                        <span className="product-form__variant-stock-label">Stock</span>
+                        <input
+                          className="product-form__input product-form__variant-stock-input"
+                          type="number"
+                          min={0}
+                          step={1}
+                          placeholder="0"
+                          value={opt.stock === '' || opt.stock == null ? '' : opt.stock}
+                          onChange={(e) => updateOptionStock(key, idx, e.target.value)}
+                          aria-label={`Stock for ${opt.label || 'option'}`}
+                        />
+                      </label>
+                      <label className="product-form__variant-stock">
+                        <span className="product-form__variant-stock-label">Price (PKR)</span>
+                        <input
+                          className="product-form__input product-form__variant-stock-input"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="Selling"
+                          value={opt.price === '' || opt.price == null ? '' : opt.price}
+                          onChange={(e) => updateOptionMoney(key, idx, 'price', e.target.value)}
+                          aria-label={`Price for ${opt.label || 'option'}`}
+                        />
+                      </label>
+                      <label className="product-form__variant-stock">
+                        <span className="product-form__variant-stock-label">Was (PKR)</span>
+                        <input
+                          className="product-form__input product-form__variant-stock-input"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="Optional"
+                          value={opt.comparePrice === '' || opt.comparePrice == null ? '' : opt.comparePrice}
+                          onChange={(e) => updateOptionMoney(key, idx, 'comparePrice', e.target.value)}
+                          aria-label={`Compare price for ${opt.label || 'option'}`}
+                        />
+                      </label>
                       <div className="product-form__variant-img-col">
                         {opt.image?.url ? (
                           <div className="product-form__variant-thumb-wrap">
@@ -484,6 +570,7 @@ export default function ProductForm() {
   const [dragFileActive, setDragFileActive] = useState(false);
   const [dragItemIndex, setDragItemIndex] = useState(/** @type {null | number} */ (null));
   const [variantAxes, setVariantAxes] = useState(() => defaultVariantAxesState());
+  const [shopSubcategories, setShopSubcategories] = useState([]);
   const variantAxesRef = useRef(variantAxes);
 
   const fileInputId = `product-form-files-${useId()}`;
@@ -504,6 +591,8 @@ export default function ProductForm() {
 
   const nameW = useWatch({ control, name: 'name' });
   const categoryW = useWatch({ control, name: 'category' });
+  const shopGenderW = useWatch({ control, name: 'shopGender' });
+  const shopSubcategoryIdW = useWatch({ control, name: 'shopSubcategoryId' });
   const shortW = useWatch({ control, name: 'shortDescription' });
   const descW = useWatch({ control, name: 'description' });
   const priceW = useWatch({ control, name: 'price' });
@@ -522,14 +611,13 @@ export default function ProductForm() {
       ? Math.round(((Number(priceW) - Number(costW)) / Number(priceW)) * 10000) / 100
       : null;
 
-  // Categories
+  // Categories — admin list (includes new/empty categories like Towels)
   useEffect(() => {
     (async () => {
       try {
-        const { data: body } = await adminAPI.categories.list();
-        const list = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        const list = await fetchAdminCategories(adminAPI);
         setCategories(list);
-      } catch (e) {
+      } catch {
         toast.error('Failed to load categories');
       }
     })();
@@ -598,6 +686,13 @@ export default function ProductForm() {
               ? null
               : Math.max(0, Math.floor(Number(p.lowStockThreshold))),
           category: catId,
+          shopGender: p.shopGender != null ? String(p.shopGender) : '',
+          shopSubcategoryId:
+            typeof p.shopSubcategory === 'object' && p.shopSubcategory?._id
+              ? String(p.shopSubcategory._id)
+              : p.shopSubcategory
+                ? String(p.shopSubcategory)
+                : '',
           tags: Array.isArray(p.tags) ? p.tags : [],
           isFeatured: Boolean(p.isFeatured),
           isPublished: Boolean(p.isPublished),
@@ -772,6 +867,17 @@ export default function ProductForm() {
       }
     }
 
+    if (wantPublish && previewCategorySlug === 'clothing') {
+      const gender = String(data.shopGender || '').trim();
+      const subId = String(data.shopSubcategoryId || '').trim();
+      if (!gender || !subId) {
+        toast.error(
+          'Before publishing: select Shop for (Women/Men) and Clothing type under Clothing shop filters.'
+        );
+        return;
+      }
+    }
+
     const fd = new FormData();
     const normTags = (Array.isArray(data.tags) ? data.tags : [])
       .map((s) => (typeof s === 'string' ? s : String(s)).trim())
@@ -805,6 +911,13 @@ export default function ProductForm() {
       ],
       ['isFeatured', data.isFeatured ? 'true' : 'false'],
       ['isPublished', published ? 'true' : 'false'],
+      ['shopGender', data.shopGender != null ? String(data.shopGender) : ''],
+      [
+        'shopSubcategory',
+        data.shopSubcategoryId != null && String(data.shopSubcategoryId).trim()
+          ? String(data.shopSubcategoryId).trim()
+          : ''
+      ],
       ['tags', JSON.stringify(normTags)],
       ['variantAxes', JSON.stringify(variantAxesPayloadForApi(variantAxes))]
     ].forEach(([k, v]) => {
@@ -909,6 +1022,55 @@ export default function ProductForm() {
     return match?.slug || '';
   }, [categoryW, categories]);
 
+  const isClothingCategory = previewCategorySlug === 'clothing';
+
+  useEffect(() => {
+    if (!previewCategorySlug) {
+      setShopSubcategories([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await adminAPI.subcategories.list(previewCategorySlug);
+        const rows = res?.data?.data?.subcategories || res?.data?.subcategories || [];
+        if (!cancelled) setShopSubcategories(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!cancelled) setShopSubcategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [previewCategorySlug]);
+
+  const flatShopSubcategories = useMemo(
+    () => shopSubcategories.filter((s) => !s.gender && s.isActive !== false),
+    [shopSubcategories]
+  );
+  const hasFlatSubcategories = !isClothingCategory && flatShopSubcategories.length > 0;
+
+  useEffect(() => {
+    if (!previewCategorySlug) {
+      setValue('shopSubcategoryId', '', { shouldDirty: true });
+      setValue('shopGender', '', { shouldDirty: true });
+    }
+  }, [previewCategorySlug, setValue]);
+
+  const filteredShopSubcategories = useMemo(() => {
+    const gender = String(shopGenderW || '').trim();
+    if (!gender) return [];
+    return shopSubcategories.filter((s) => s.gender === gender && s.isActive !== false);
+  }, [shopSubcategories, shopGenderW]);
+
+  useEffect(() => {
+    if (!shopGenderW || !shopSubcategoryIdW) return;
+    const match = shopSubcategories.find((s) => String(s._id) === String(shopSubcategoryIdW));
+    if (match && match.gender !== shopGenderW) {
+      setValue('shopSubcategoryId', '', { shouldDirty: true });
+    }
+  }, [shopGenderW, shopSubcategoryIdW, shopSubcategories, setValue]);
+
   const previewProductSlug = seoSlugFromTitle(nameW || '');
   const previewProductPath = buildProductPath(previewProductSlug, previewCategorySlug);
   const seopath = `${typeof window !== 'undefined' ? window.location.origin : ''}${previewProductPath}`;
@@ -1005,19 +1167,87 @@ export default function ProductForm() {
                 {categories.map((c) => (
                   <option key={c._id} value={c._id}>
                     {c.name || c.slug}
+                    {c.isActive === false ? ' (inactive)' : ''}
                   </option>
                 ))}
               </select>
               {errors.category && <span className="product-form__err">{errors.category.message}</span>}
             </label>
+            {isClothingCategory ? (
+              <section className="product-form__section product-form__section--clothing-filters">
+                <h2 className="product-form__section-title">Clothing shop filters</h2>
+                <p className="product-form__hint">
+                  Optional for drafts. <strong>Required before publishing</strong> — controls Women/Men and type
+                  filters on the clothing shop page.{' '}
+                  <a href="/admin/subcategories?category=clothing" target="_blank" rel="noreferrer">
+                    Manage subcategories
+                  </a>
+                </p>
+                <div className="product-form__clothing-filters-grid">
+                  <label className="product-form__label">
+                    Shop for
+                    <select className="product-form__input" {...register('shopGender')}>
+                      <option value="">— Select gender —</option>
+                      <option value="women">Women</option>
+                      <option value="men">Men</option>
+                    </select>
+                  </label>
+                  <label className="product-form__label">
+                    Clothing type
+                    <select
+                      className="product-form__input"
+                      {...register('shopSubcategoryId')}
+                      disabled={!shopGenderW}
+                    >
+                      <option value="">
+                        {shopGenderW ? '— Select type —' : 'Select gender first'}
+                      </option>
+                      {filteredShopSubcategories.map((sub) => (
+                        <option key={sub._id} value={sub._id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {!shopGenderW && isClothingCategory ? (
+                  <p className="product-form__field-hint product-form__field-hint--warn">
+                    Choose Women or Men so this product appears in the correct shop filter.
+                  </p>
+                ) : null}
+              </section>
+            ) : hasFlatSubcategories ? (
+              <label className="product-form__label">
+                Subcategory
+                <span className="product-form__field-hint">
+                  Assign this product to a shop subcategory.{' '}
+                  <a
+                    href={`/admin/subcategories?category=${encodeURIComponent(previewCategorySlug)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Manage subcategories
+                  </a>
+                </span>
+                <select className="product-form__input" {...register('shopSubcategoryId')}>
+                  <option value="">— Select subcategory —</option>
+                  {flatShopSubcategories.map((sub) => (
+                    <option key={sub._id} value={sub._id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </section>
 
           <section className="product-form__section">
             <h2 className="product-form__section-title">Variants</h2>
             <p className="product-form__hint">
               Turn on Color, Shape/material, and/or Size. Each can be <strong>single</strong> or <strong>multiple</strong>{' '}
-              choice. Add one row per value; optional image per row (e.g. colour swatch). Shoppers see these on the
-              product page.
+              choice. Add one row per value. Set <strong>stock and price per row</strong> for each pack/size
+              (e.g. 6-pack price &amp; stock). Optional &quot;Was&quot; price shows a sale on that option. Shoppers see
+              prices update when they pick a size.
             </p>
             <VariantAxesEditor value={variantAxes} onChange={setVariantAxes} />
             <label className="product-form__label">
@@ -1113,6 +1343,9 @@ export default function ProductForm() {
             <div className="product-form__grid-3">
               <label className="product-form__label">
                 Selling price (PKR)
+                <span className="product-form__field-hint">
+                  Default when variant rows have no price. Shop listing shows the lowest variant price when set.
+                </span>
                 <input className="product-form__input" type="number" min={0} step="0.01" {...register('price')} />
                 {errors.price && <span className="product-form__err">{errors.price.message}</span>}
               </label>
@@ -1142,6 +1375,10 @@ export default function ProductForm() {
               </label>
               <label className="product-form__label">
                 Stock in hand
+                <span className="product-form__field-hint">
+                  Total when variant rows have no stock. If you set stock per variant above, this becomes their sum when
+                  you publish.
+                </span>
                 <input className="product-form__input" type="number" min={0} step={1} {...register('stock')} />
                 {errors.stock && <span className="product-form__err">{errors.stock.message}</span>}
               </label>

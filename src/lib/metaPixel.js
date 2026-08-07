@@ -6,6 +6,8 @@ import {
   gtmSignUp,
   gtmPurchase
 } from './gtmAnalytics';
+import { resolveOrderPurchaseValue } from './orderPurchaseValue';
+import { whenThirdPartyReady } from './thirdPartyScripts';
 
 export const META_PIXEL_ID = '1519068336295914';
 
@@ -23,7 +25,7 @@ function currentUrl() {
   return typeof window !== 'undefined' ? window.location.href : '';
 }
 
-/** Meta Pixel base script loads from public/index.html (fbq). */
+/** Meta Pixel loads on idle after React paint + 2s (see thirdPartyScripts.js). */
 export function ensureMetaPixel() {
   return hasFbq();
 }
@@ -51,7 +53,7 @@ function unitPrice(product) {
 
 /** Mirror pixel event to Conversions API with same eventId (deduplication). */
 function mirrorToServer({ eventName, eventId, customData, email, phone, firstName, lastName }) {
-  void import('api')
+  void import('../api/meta')
     .then(({ metaAPI }) =>
       metaAPI.trackEvent({
         eventName,
@@ -71,7 +73,7 @@ function mirrorToServer({ eventName, eventId, customData, email, phone, firstNam
     });
 }
 
-/** SPA route change — skip first load (index.html already sent PageView). */
+/** SPA route change — skip first load (deferred loader already sent PageView). */
 export function trackPageView() {
   fbqTrack('PageView');
   gtmPageView();
@@ -176,48 +178,79 @@ export function trackCompleteRegistration({ email, phone, eventId }) {
   gtmSignUp({ method: 'email' });
 }
 
+function orderContentIds(order) {
+  return (order.orderItems || [])
+    .map((line) => {
+      const ref = line.product;
+      if (ref && typeof ref === 'object' && ref._id) return String(ref._id);
+      if (ref) return String(ref);
+      return '';
+    })
+    .filter(Boolean);
+}
+
 /**
  * Browser Purchase — eventID must match backend CAPI eventId (order Mongo _id).
+ * Waits for deferred Meta Pixel load; skips dedupe until value > 0.
  */
 export function trackPurchase(order) {
   const orderId = String(order?._id || '').trim();
   if (!orderId) return;
 
+  const value = resolveOrderPurchaseValue(order);
+  if (value <= 0) return;
+
   const dedupeKey = `meta_purchase_${orderId}`;
   try {
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(dedupeKey)) return;
-    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(dedupeKey, '1');
   } catch {
     /* ignore storage errors */
   }
 
-  const total = Number(order.totalPrice) || 0;
-  const wallet = Number(order.walletAmountUsed) || 0;
-  const value = Math.round((total + wallet) * 100) / 100;
-
-  const contentIds = (order.orderItems || [])
-    .map((line) => {
-      const ref = line.product;
-      if (ref && typeof ref === 'object' && ref._id) return String(ref._id);
-      return '';
-    })
-    .filter(Boolean);
+  const contentIds = orderContentIds(order);
+  const numItems = (order.orderItems || []).reduce(
+    (n, line) => n + (Number(line.quantity) || 0),
+    0
+  );
 
   const payload = {
     value,
     currency: 'PKR',
     content_type: 'product',
-    num_items: (order.orderItems || []).reduce(
-      (n, line) => n + (Number(line.quantity) || 0),
-      0
-    )
+    num_items: numItems
   };
 
   if (contentIds.length) {
     payload.content_ids = contentIds;
   }
 
-  fbqTrack('Purchase', payload, { eventID: orderId });
-  gtmPurchase(order);
-  /* Server Purchase is sent from backend on order place (same eventId for dedup). */
+  const shipping = order.shippingAddress || {};
+
+  void whenThirdPartyReady().then(() => {
+    try {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(dedupeKey)) return;
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(dedupeKey, '1');
+    } catch {
+      /* ignore storage errors */
+    }
+
+    fbqTrack('Purchase', payload, { eventID: orderId });
+    mirrorToServer({
+      eventName: 'Purchase',
+      eventId: orderId,
+      customData: {
+        currency: 'PKR',
+        value,
+        contentIds,
+        contentType: 'product',
+        numItems
+      },
+      email: shipping.email || order.paymentResult?.email_address,
+      phone: shipping.phone,
+      firstName: shipping.firstName,
+      lastName: shipping.lastName
+    });
+    gtmPurchase(order);
+  });
+  /* Server Purchase is also sent from backend on order place (same eventId for dedup). */
 }

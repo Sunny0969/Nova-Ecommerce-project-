@@ -2,12 +2,13 @@
 
 /* Uniform slider — all banners 1920×575, full width, full image visible */
 
-.home-banner-slider {
+.home-banner-slider,
+.home-banner-slider-wrapper {
   position: relative;
-  width: min(var(--page-max-width, 1280px), calc(100% - 2 * var(--page-gutter, 0.25rem)));
+  width: min(var(--page-max-width, 1280px), calc(100% - 2 * var(--home-slider-gutter, 0.25rem)));
   aspect-ratio: 1920 / 575;
   height: auto;
-  margin: clamp(0.75rem, 2vw, 1.25rem) auto 0;
+  margin: 0.35rem auto 0;
   padding: 0;
   background-color: #ffffff;
   border-radius: var(--radius-lg, 12px);
@@ -43,9 +44,13 @@
 }
 
 .home-banner-slider__slide-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 3.25rem;
+  z-index: 1;
   display: block;
-  width: 100%;
-  height: 100%;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -57,10 +62,13 @@
 }
 
 .home-banner-slider__img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  aspect-ratio: 1920 / 575;
+  object-fit: cover;
   object-position: center center;
 }
 
@@ -68,31 +76,47 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0.65rem;
+  bottom: 0.25rem;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   pointer-events: auto;
 }
 
 .home-banner-slider__dot {
-  width: 2rem;
-  height: 0.35rem;
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   padding: 0;
   border: none;
   border-radius: 999px;
-  background-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-banner-slider__dot::after {
+  content: '';
+  display: block;
+  width: 2rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.35);
   transition: background-color 0.25s ease, transform 0.2s ease;
 }
 
-.home-banner-slider__dot:hover {
+.home-banner-slider__dot:hover::after {
   background-color: rgba(255, 255, 255, 0.65);
 }
 
-.home-banner-slider__dot--active {
+.home-banner-slider__dot--active::after {
   background-color: var(--brand-orange);
   transform: scaleX(1.08);
 }
@@ -104,10 +128,20 @@
 
 @media (max-width: 768px) {
   .home-banner-slider {
-    margin-top: 0.65rem;
+    margin-top: 0.25rem;
   }
 
-  /* Dots become oversized circles on touch layouts — slider auto-advances on mobile */
+  .home-top-stack__lead .home-banner-slider {
+    align-self: center;
+    width: min(var(--page-max-width, 1280px), calc(100% - 2 * var(--home-slider-gutter, 0.25rem)));
+    flex-shrink: 0;
+  }
+
+  .home-banner-slider__slide-link {
+    bottom: 0;
+  }
+
+  /* Dots hidden on mobile — slider auto-advances; full-height tap target */
   .home-banner-slider__dots {
     display: none;
   }

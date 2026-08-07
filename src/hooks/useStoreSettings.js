@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { storeSettingsAPI } from 'api';
+import { storeSettingsAPI } from '../api/storefront';
 
 const DEFAULT_POLL_MS = 12000;
 

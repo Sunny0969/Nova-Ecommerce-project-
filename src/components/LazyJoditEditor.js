@@ -1,13 +1,21 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 
-const JoditEditor = lazy(() => import('jodit-react'));
+const JoditEditor = lazy(() =>
+  import(
+    /* webpackChunkName: "admin-jodit" */
+    'jodit-react'
+  )
+);
 
 let cssLoaded = false;
 
 function ensureJoditCss() {
   if (cssLoaded) return;
   cssLoaded = true;
-  void import('jodit/es2021/jodit.min.css');
+  void import(
+    /* webpackChunkName: "admin-jodit" */
+    'jodit/es2021/jodit.min.css'
+  );
 }
 
 /**

@@ -27,9 +27,54 @@ export function unwrapFeaturedResponse(res) {
 }
 
 /** GET /api/categories — data is array of category docs */
+export function sortCategoriesAlphabetically(categories) {
+  if (!Array.isArray(categories) || categories.length < 2) {
+    return Array.isArray(categories) ? [...categories] : [];
+  }
+
+  return [...categories].sort((a, b) =>
+    String(a.name || a.slug || '').localeCompare(String(b.name || b.slug || ''), 'en', {
+      sensitivity: 'base',
+      numeric: true
+    })
+  );
+}
+
+/** Storefront categories — active with at least one published product. */
+export function filterStorefrontCategories(categories) {
+  if (!Array.isArray(categories)) return [];
+  return categories.filter((cat) => {
+    if (!cat || cat.isActive === false) return false;
+    const count = Number(cat.productCount);
+    if (Number.isFinite(count)) return count > 0;
+    return true;
+  });
+}
+
+/** GET /api/categories — data is array of category docs (storefront order: A–Z) */
 export function unwrapCategoriesResponse(res) {
   const d = res?.data?.data;
-  return Array.isArray(d) ? d : [];
+  return sortCategoriesAlphabetically(filterStorefrontCategories(Array.isArray(d) ? d : []));
+}
+
+/** Admin pickers — all categories (including new/empty and inactive). */
+export function unwrapAdminCategoriesResponse(res) {
+  const d = res?.data?.data;
+  return sortCategoriesAlphabetically(Array.isArray(d) ? d : []);
+}
+
+/** Load full category list for admin forms (product, coupon, filters). */
+export async function fetchAdminCategories(adminAPI) {
+  try {
+    const res = await adminAPI.categories.listAll();
+    return unwrapAdminCategoriesResponse(res);
+  } catch (e) {
+    if (e?.response?.status === 404) {
+      const res = await adminAPI.categories.list();
+      return unwrapAdminCategoriesResponse(res);
+    }
+    throw e;
+  }
 }
 
 function stringifyApiDetail(value) {

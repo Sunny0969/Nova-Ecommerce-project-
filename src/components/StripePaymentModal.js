@@ -5,7 +5,8 @@ import { X, Lock, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatPKR } from '../utils/currency';
 import { apiMessage } from '../lib/api';
-import { ordersAPI, stripeAPI } from 'api';
+import { ordersAPI } from '../api/orders';
+import { stripeAPI } from '../api/stripe';
 
 const CARD_OPTIONS = {
   style: {
@@ -29,6 +30,7 @@ export default function StripePaymentModal({
   isGuestCheckout = false,
   useGuestStripeApi = false,
   guestItems = [],
+  guestCouponCode = '',
   onSuccess,
   submitting = false,
   setSubmitting
@@ -84,11 +86,13 @@ export default function StripePaymentModal({
 
       let intentRes;
       try {
+        const guestPayload = {
+          ...payload,
+          items: guestItems,
+          couponCode: guestCouponCode || undefined
+        };
         intentRes = payWithGuestStripe
-          ? await stripeAPI.guestCreatePaymentIntent({
-              ...payload,
-              items: guestItems
-            })
+          ? await stripeAPI.guestCreatePaymentIntent(guestPayload)
           : await stripeAPI.createPaymentIntent(payload);
       } catch (intentErr) {
         if (
@@ -99,7 +103,8 @@ export default function StripePaymentModal({
           usedGuestStripe = true;
           intentRes = await stripeAPI.guestCreatePaymentIntent({
             ...payload,
-            items: guestItems
+            items: guestItems,
+            couponCode: guestCouponCode || undefined
           });
         } else {
           throw intentErr;
@@ -133,7 +138,8 @@ export default function StripePaymentModal({
             paymentIntentId: paymentIntentId || paymentIntent.id,
             deliveryOption: lockedShipping.deliveryOption,
             shippingAddress,
-            items: guestItems
+            items: guestItems,
+            couponCode: guestCouponCode || undefined
           })
         : await ordersAPI.confirm({
             paymentIntentId: paymentIntentId || paymentIntent.id,

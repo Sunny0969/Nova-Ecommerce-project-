@@ -36,6 +36,8 @@ export const RESERVED_CATALOG_SLUGS = new Set([
   'contact-us',
   'faqs',
   'terms-and-conditions',
+  'returns-and-refunds',
+  'shipping-policy',
   'admin',
   'staff',
   'api'

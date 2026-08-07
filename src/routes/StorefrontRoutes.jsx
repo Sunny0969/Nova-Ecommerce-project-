@@ -1,59 +1,81 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
+import DelayedSuspense from '../components/DelayedSuspense';
 import { PageSuspenseFallback } from '../components/RouteFallback';
 
-const Home = lazy(() => import('../pages/Home'));
-const Shop = lazy(() => import('../pages/Products'));
-const ProductDetail = lazy(() => import('../pages/ProductDetail'));
-const CategoryPage = lazy(() => import('../pages/CategoryPage'));
-const BrandsPage = lazy(() => import('../pages/BrandsPage'));
-const LegacyShopRedirect = lazy(() => import('../pages/LegacyShopRedirect'));
-const LegacyProductRedirect = lazy(() => import('../pages/LegacyProductRedirect'));
+const Home = lazy(() => import(/* webpackChunkName: "home" */ '../pages/Home'));
+const Shop = lazy(() => import(/* webpackChunkName: "shop" */ '../pages/Products'));
+const ProductDetail = lazy(() => import(/* webpackChunkName: "product-detail" */ '../pages/ProductDetail'));
 const CatalogCategoryRoute = lazy(() =>
-  import('../pages/CatalogRoutes').then((m) => ({ default: m.CatalogCategoryRoute }))
+  import(/* webpackChunkName: "catalog-routes" */ '../pages/CatalogRoutes').then((m) => ({
+    default: m.CatalogCategoryRoute
+  }))
 );
 const CatalogProductRoute = lazy(() =>
-  import('../pages/CatalogRoutes').then((m) => ({ default: m.CatalogProductRoute }))
+  import(/* webpackChunkName: "catalog-routes" */ '../pages/CatalogRoutes').then((m) => ({
+    default: m.CatalogProductRoute
+  }))
 );
 const LegacyCatalogProductRedirect = lazy(() =>
-  import('../pages/CatalogRoutes').then((m) => ({ default: m.LegacyCatalogProductRedirect }))
+  import(/* webpackChunkName: "catalog-routes" */ '../pages/CatalogRoutes').then((m) => ({
+    default: m.LegacyCatalogProductRedirect
+  }))
 );
 const LegacyCatalogCategoryRedirect = lazy(() =>
-  import('../pages/CatalogRoutes').then((m) => ({ default: m.LegacyCatalogCategoryRedirect }))
+  import(/* webpackChunkName: "catalog-routes" */ '../pages/CatalogRoutes').then((m) => ({
+    default: m.LegacyCatalogCategoryRedirect
+  }))
 );
-const Login = lazy(() => import('../pages/Login'));
-const Register = lazy(() => import('../pages/Register'));
-const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('../pages/auth/ResetPassword'));
-const VerifyEmail = lazy(() => import('../pages/auth/VerifyEmail'));
-const Cart = lazy(() => import('../pages/Cart'));
-const Checkout = lazy(() => import('../pages/Checkout'));
-const OrderConfirmation = lazy(() => import('../pages/OrderConfirmation'));
-const AccountLayout = lazy(() => import('../pages/account/AccountLayout'));
-const AccountDashboard = lazy(() => import('../pages/account/AccountDashboard'));
-const MyOrders = lazy(() => import('../pages/account/MyOrders'));
-const OrderDetail = lazy(() => import('../pages/account/OrderDetail'));
-const Profile = lazy(() => import('../pages/account/Profile'));
-const Addresses = lazy(() => import('../pages/account/Addresses'));
-const AccountWishlist = lazy(() => import('../pages/account/Wishlist'));
-const MyReviews = lazy(() => import('../pages/account/MyReviews'));
-const Wallet = lazy(() => import('../pages/account/Wallet'));
-const Orders = lazy(() => import('../pages/Orders'));
-const WishlistPage = lazy(() => import('../pages/WishlistPage'));
-const Blog = lazy(() => import('../pages/Blog'));
-const BlogDetailsPage = lazy(() => import('../pages/BlogDetailsPage'));
-const AboutUs = lazy(() => import('../pages/AboutUs'));
-const PrivacyPolicy = lazy(() => import('../pages/PrivacyPolicy'));
-const ContactUs = lazy(() => import('../pages/ContactUs'));
-const Faqs = lazy(() => import('../pages/Faqs'));
-const TermsAndConditions = lazy(() => import('../pages/TermsAndConditions'));
-const NotFound = lazy(() => import('../pages/NotFound'));
 
-/** Public storefront routes — checkout/admin code is not in this chunk. */
+const BrandsPage = lazy(() => import(/* webpackChunkName: "brands-page" */ '../pages/BrandsPage'));
+const CategoryPage = lazy(() => import(/* webpackChunkName: "category-page" */ '../pages/CategoryPage'));
+const LegacyShopRedirect = lazy(() => import(/* webpackChunkName: "legacy-shop-redirect" */ '../pages/LegacyShopRedirect'));
+const LegacyProductRedirect = lazy(() =>
+  import(/* webpackChunkName: "legacy-product-redirect" */ '../pages/LegacyProductRedirect')
+);
+const Login = lazy(() => import(/* webpackChunkName: "login" */ '../pages/Login'));
+const Register = lazy(() => import(/* webpackChunkName: "register" */ '../pages/Register'));
+const ForgotPassword = lazy(() => import(/* webpackChunkName: "forgot-password" */ '../pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import(/* webpackChunkName: "reset-password" */ '../pages/auth/ResetPassword'));
+const VerifyEmail = lazy(() => import(/* webpackChunkName: "verify-email" */ '../pages/auth/VerifyEmail'));
+const Cart = lazy(() => import(/* webpackChunkName: "cart" */ '../pages/Cart'));
+const Checkout = lazy(() => import(/* webpackChunkName: "checkout" */ '../pages/Checkout'));
+const OrderConfirmation = lazy(() =>
+  import(/* webpackChunkName: "order-confirmation" */ '../pages/OrderConfirmation')
+);
+const AccountLayout = lazy(() => import(/* webpackChunkName: "account-layout" */ '../pages/account/AccountLayout'));
+const AccountDashboard = lazy(() =>
+  import(/* webpackChunkName: "account-dashboard" */ '../pages/account/AccountDashboard')
+);
+const MyOrders = lazy(() => import(/* webpackChunkName: "my-orders" */ '../pages/account/MyOrders'));
+const OrderDetail = lazy(() => import(/* webpackChunkName: "order-detail" */ '../pages/account/OrderDetail'));
+const Profile = lazy(() => import(/* webpackChunkName: "profile" */ '../pages/account/Profile'));
+const Addresses = lazy(() => import(/* webpackChunkName: "addresses" */ '../pages/account/Addresses'));
+const AccountWishlist = lazy(() => import(/* webpackChunkName: "account-wishlist" */ '../pages/account/Wishlist'));
+const MyReviews = lazy(() => import(/* webpackChunkName: "my-reviews" */ '../pages/account/MyReviews'));
+const Wallet = lazy(() => import(/* webpackChunkName: "wallet" */ '../pages/account/Wallet'));
+const Orders = lazy(() => import(/* webpackChunkName: "orders" */ '../pages/Orders'));
+const WishlistPage = lazy(() => import(/* webpackChunkName: "wishlist-page" */ '../pages/WishlistPage'));
+const Blog = lazy(() => import(/* webpackChunkName: "blog" */ '../pages/Blog'));
+const BlogDetailsPage = lazy(() => import(/* webpackChunkName: "blog-details" */ '../pages/BlogDetailsPage'));
+const AboutUs = lazy(() => import(/* webpackChunkName: "about-us" */ '../pages/AboutUs'));
+const PrivacyPolicy = lazy(() => import(/* webpackChunkName: "privacy-policy" */ '../pages/PrivacyPolicy'));
+const ContactUs = lazy(() => import(/* webpackChunkName: "contact-us" */ '../pages/ContactUs'));
+const Faqs = lazy(() => import(/* webpackChunkName: "faqs" */ '../pages/Faqs'));
+const TermsAndConditions = lazy(() =>
+  import(/* webpackChunkName: "terms-and-conditions" */ '../pages/TermsAndConditions')
+);
+const ReturnsRefundPolicy = lazy(() =>
+  import(/* webpackChunkName: "returns-refund-policy" */ '../pages/ReturnsRefundPolicy')
+);
+const ShippingPolicy = lazy(() => import(/* webpackChunkName: "shipping-policy" */ '../pages/ShippingPolicy'));
+const NotFound = lazy(() => import(/* webpackChunkName: "not-found" */ '../pages/NotFound'));
+
+/** Public storefront routes — each page is an async chunk; admin/staff never load here. */
 export default function StorefrontRoutes() {
   return (
-    <Suspense fallback={<PageSuspenseFallback />}>
+    <DelayedSuspense delayMs={180} fallback={<PageSuspenseFallback />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
@@ -114,9 +136,11 @@ export default function StorefrontRoutes() {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/faqs" element={<Faqs />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/returns-and-refunds" element={<ReturnsRefundPolicy />} />
+        <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Suspense>
+    </DelayedSuspense>
   );
 }

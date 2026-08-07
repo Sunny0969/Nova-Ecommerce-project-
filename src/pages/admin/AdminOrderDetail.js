@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { adminAPI } from 'api';
+import { Download } from 'lucide-react';
+import { adminAPI } from '../../api/adminApi';
 import { apiMessage } from '../../lib/api';
 import { productImageUrl } from '../../lib/productImage';
+import { downloadOrderPdf } from '../../lib/downloadOrderPdf';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { formatPKR } from '../../utils/currency';
 import { EASYPAISA_NUMBER } from '../../config/payments';
@@ -18,6 +20,46 @@ const STATUS_OPTIONS = [
   'flagged',
   'rejected'
 ];
+
+const STATUS_LABELS = {
+  pending: 'Pending',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  flagged: 'Under review',
+  rejected: 'Rejected'
+};
+
+function resolveNotifyEmail(order) {
+  if (!order) return '';
+  const u = order.user;
+  const account = typeof u === 'object' && u?.email ? String(u.email).trim() : '';
+  const checkout = order.shippingAddress?.email ? String(order.shippingAddress.email).trim() : '';
+  return checkout || account || '';
+}
+
+function toastForEmailResult(res, fallbackSuccess) {
+  const d = res.data?.data;
+  const msg = res.data?.message || fallbackSuccess;
+  if (d?.emailNotified) {
+    toast.success(msg);
+    return;
+  }
+  if (d?.emailReason === 'no_email') {
+    toast(msg, { icon: '⚠️' });
+    return;
+  }
+  if (d?.emailReason === 'not_configured' || d?.emailReason === 'railway_smtp_blocked') {
+    toast.error('Status saved but emails are not configured on the server (RESEND_API_KEY).');
+    return;
+  }
+  if (d?.emailSkipped && d?.emailReason) {
+    toast(msg, { icon: 'ℹ️' });
+    return;
+  }
+  toast.success(fallbackSuccess);
+}
 
 function orderIdLabel(id) {
   if (!id) return '—';
@@ -39,10 +81,12 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusDraft, setStatusDraft] = useState('pending');
+  const [cancelReasonDraft, setCancelReasonDraft] = useState('');
   const [trackingDraft, setTrackingDraft] = useState('');
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingTracking, setSavingTracking] = useState(false);
   const [savingPaid, setSavingPaid] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -53,6 +97,7 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
       setOrder(o || null);
       if (o) {
         setStatusDraft(o.status || 'pending');
+        setCancelReasonDraft(o.cancelReason || '');
         setTrackingDraft(o.trackingNumber || '');
       }
     } catch (e) {
@@ -69,11 +114,24 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
 
   const handleStatusSave = async () => {
     if (!order?._id) return;
+    if (statusDraft === order.status) {
+      toast('Status is already "' + statusDraft + '" — pick a different status to notify the customer.', {
+        icon: 'ℹ️'
+      });
+      return;
+    }
     setSavingStatus(true);
     try {
-      const res = await adminAPI.orders.updateStatus(order._id, { status: statusDraft });
-      setOrder(res.data?.data?.order || order);
-      toast.success('Status updated');
+      const body = { status: statusDraft };
+      if (statusDraft === 'cancelled' && cancelReasonDraft.trim()) {
+        body.cancelReason = cancelReasonDraft.trim();
+      }
+      const res = await adminAPI.orders.updateStatus(order._id, body);
+      const updated = res.data?.data?.order || order;
+      setOrder(updated);
+      setStatusDraft(updated.status || statusDraft);
+      if (updated.cancelReason) setCancelReasonDraft(updated.cancelReason);
+      toastForEmailResult(res, 'Status updated');
     } catch (e) {
       toast.error(apiMessage(e, 'Could not update status'));
     } finally {
@@ -92,11 +150,25 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
         trackingNumber: trackingDraft.trim()
       });
       setOrder(res.data?.data?.order || order);
-      toast.success('Tracking saved — customer notified');
+      toastForEmailResult(res, 'Tracking saved');
     } catch (e) {
       toast.error(apiMessage(e, 'Could not save tracking'));
     } finally {
       setSavingTracking(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!order) return;
+    setDownloadingPdf(true);
+    try {
+      await downloadOrderPdf(order);
+      toast.success('Order PDF downloaded (A3)');
+    } catch (e) {
+      console.error(e);
+      toast.error('Could not generate PDF');
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -106,7 +178,8 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
     try {
       const res = await adminAPI.orders.markPaid(order._id, { isPaid: paid });
       setOrder(res.data?.data?.order || order);
-      toast.success(paid ? 'Marked as paid' : 'Marked as unpaid');
+      if (res.data?.data?.order?.status) setStatusDraft(res.data.data.order.status);
+      toastForEmailResult(res, paid ? 'Marked as paid' : 'Marked as unpaid');
     } catch (e) {
       toast.error(apiMessage(e, 'Could not update payment'));
     } finally {
@@ -136,6 +209,7 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
   const u = order.user;
   const customerName = typeof u === 'object' && u != null ? u.name || '—' : '—';
   const customerEmail = typeof u === 'object' && u != null ? u.email || '' : '';
+  const notifyEmail = resolveNotifyEmail(order);
   const addr = order.shippingAddress || {};
   const items = Array.isArray(order.orderItems) ? order.orderItems : [];
   const bankTransfer = isBankTransferOrder(order);
@@ -153,9 +227,20 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
             Placed {order.createdAt ? new Date(order.createdAt).toLocaleString() : '—'}
           </p>
         </div>
-        <span className={`admin-order-detail__status admin-order-detail__status--${order.status}`}>
-          {order.status}
-        </span>
+        <div className="admin-order-detail__head-actions">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm admin-order-detail__download"
+            disabled={downloadingPdf}
+            onClick={handleDownloadPdf}
+          >
+            <Download size={16} strokeWidth={2} aria-hidden />
+            {downloadingPdf ? 'Preparing…' : 'Download PDF (A3)'}
+          </button>
+          <span className={`admin-order-detail__status admin-order-detail__status--${order.status}`}>
+            {order.status}
+          </span>
+        </div>
       </div>
 
       <div className="admin-order-detail__grid">
@@ -329,6 +414,18 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
 
         <section className="admin-order-detail__card card-like">
           <h2 className="admin-order-detail__card-title">Fulfillment</h2>
+          <p className="admin-order-detail__muted admin-order-detail__notify-hint">
+            {notifyEmail ? (
+              <>
+                Customer is emailed automatically on every status change to{' '}
+                <a href={`mailto:${notifyEmail}`}>{notifyEmail}</a>
+              </>
+            ) : (
+              <span className="admin-order-detail__alert admin-order-detail__alert--warn">
+                No customer email on this order — status emails cannot be sent.
+              </span>
+            )}
+          </p>
           <label className="form-label" htmlFor="admin-order-status">
             Status
           </label>
@@ -340,17 +437,32 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {STATUS_LABELS[s] || s}
               </option>
             ))}
           </select>
+          {statusDraft === 'cancelled' ? (
+            <>
+              <label className="form-label" htmlFor="admin-order-cancel-reason" style={{ marginTop: '0.75rem' }}>
+                Cancellation reason (included in customer email)
+              </label>
+              <textarea
+                id="admin-order-cancel-reason"
+                className="form-control"
+                rows={3}
+                value={cancelReasonDraft}
+                onChange={(e) => setCancelReasonDraft(e.target.value)}
+                placeholder="Optional — e.g. Out of stock, customer request"
+              />
+            </>
+          ) : null}
           <button
             type="button"
             className="btn btn-primary btn-sm admin-order-detail__save"
-            disabled={savingStatus}
+            disabled={savingStatus || statusDraft === order.status}
             onClick={handleStatusSave}
           >
-            {savingStatus ? 'Saving…' : 'Update status'}
+            {savingStatus ? 'Saving…' : 'Update status & email customer'}
           </button>
 
           <label className="form-label" htmlFor="admin-order-tracking" style={{ marginTop: '1rem' }}>
@@ -365,7 +477,7 @@ export default function AdminOrderDetail({ basePath = '/admin' }) {
           />
           <button
             type="button"
-            className="btn btn-outline btn-sm admin-order-detail__save"
+            className="btn btn-outline btn-sm admin-order-detail__save admin-order-detail__btn-outline"
             disabled={savingTracking}
             onClick={handleTrackingSave}
           >

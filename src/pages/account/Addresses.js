@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { authAPI } from 'api';
+import { authAPI } from '../../api/auth';
 import { apiMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal';
@@ -158,6 +158,18 @@ export default function Addresses() {
                 {a.state ? `, ${a.state}` : ''} {a.zipCode}
                 <br />
                 {a.country}
+                {a.phone ? (
+                  <>
+                    <br />
+                    {a.phone}
+                  </>
+                ) : null}
+                {a.email ? (
+                  <>
+                    <br />
+                    {a.email}
+                  </>
+                ) : null}
               </address>
               <div className="account-address-card__actions">
                 {!a.isDefault && (

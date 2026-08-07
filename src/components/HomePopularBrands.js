@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
-import api from 'api';
+import api from '../api/client';
 import { apiMessage } from '../lib/api';
 import { buildBrandImageAlt } from '../utils/imageAlt';
-import { optimizeImageUrl } from '../utils/optimizedImageUrl';
+import { buildBrandPath } from '../utils/urls';
 import OptimizedImage from './OptimizedImage';
 import './HomePopularBrands.css';
 
@@ -85,13 +85,15 @@ export default function HomePopularBrands() {
         </div>
 
         {loading ? (
-          <div className="home-popular-brands__track home-popular-brands__track--loading">
+          <ul className="home-popular-brands__track home-popular-brands__track--loading" aria-hidden>
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="brand-tile brand-tile--skeleton">
-                <Skeleton height={100} borderRadius={12} />
-              </div>
+              <li key={i} className="home-popular-brands__item">
+                <div className="brand-tile brand-tile--skeleton">
+                  <Skeleton height={100} borderRadius={12} />
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         ) : error ? (
           <div className="api-error-banner" role="alert">
             <p>
@@ -102,30 +104,35 @@ export default function HomePopularBrands() {
             </button>
           </div>
         ) : (
-          <div ref={scrollRef} className="home-popular-brands__track" role="list">
-            {brands.map((brand) => (
-              <Link
-                key={brand._id || brand.slug}
-                to="/brands"
-                className="brand-tile"
-                role="listitem"
-                title={brand.name}
-              >
-                {brand.imageUrl ? (
-                  <OptimizedImage
-                    className="brand-tile__img"
-                    src={optimizeImageUrl(brand.imageUrl, { width: 240, quality: 80 })}
-                    alt={buildBrandImageAlt(brand.name)}
-                    width={240}
-                    height={120}
-                    optimize={false}
-                  />
-                ) : (
-                  <span className="brand-tile__fallback">{brand.name}</span>
-                )}
-              </Link>
-            ))}
-          </div>
+          <ul ref={scrollRef} className="home-popular-brands__track">
+            {brands.map((brand) => {
+              const slug = brand.slug || '';
+              return (
+                <li key={brand._id || slug} className="home-popular-brands__item">
+                  <Link
+                    to={buildBrandPath(slug)}
+                    className="brand-tile"
+                    title={`Shop ${brand.name} at Bazaar`}
+                    aria-label={`${brand.name} — shop at Bazaar`}
+                  >
+                    {brand.imageUrl ? (
+                      <OptimizedImage
+                        className="brand-tile__img"
+                        src={brand.imageUrl}
+                        alt={buildBrandImageAlt(brand.name)}
+                        width={240}
+                        height={120}
+                        optimizeWidth={240}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="brand-tile__fallback">{brand.name}</span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </section>

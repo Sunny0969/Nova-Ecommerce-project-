@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Tag } from 'lucide-react';
-import { publicAPI } from 'api';
+import { publicAPI } from '../api/storefront';
 import './HomeDealsBanner.css';
 
 const COMING_SOON = 'Coming Soon';

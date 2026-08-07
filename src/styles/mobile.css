@@ -16,13 +16,8 @@ svg {
   height: auto;
 }
 
-/* Reserve space for fixed mobile chrome (chat FAB + toasts) */
+/* Reserve space for fixed mobile chrome (bottom nav + chat FAB + toasts) */
 @media (max-width: 767px) {
-  .main-content:not(.main-content--admin) {
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
-  }
-
-  .nav-tool-btn,
   .nav-hamburger,
   .nav-avatar-btn,
   .nav-signin-btn,

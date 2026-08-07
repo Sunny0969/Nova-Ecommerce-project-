@@ -1,7 +1,10 @@
-node_modules
 .env
 .env.local
 .env.production
 .env.development.local
 .env.production.local
 .env.test.local
+
+# Build output (regenerate with npm run build — do not commit secrets in build/)
+/build
+scripts/.crawl-cache.json

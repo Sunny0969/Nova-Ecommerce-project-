@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getCategorySeoContent } from '../data/categorySeoContent';
+import { getCategorySeoContentAsync } from '../lib/categorySeoLoader';
 import { getClusterLinksResolved } from '../data/seoInternalLinks';
 import { getPillarGuideSections } from '../data/pillarGuideContent';
 import { filterValidFaqs } from '../utils/jsonLd';
@@ -26,7 +26,24 @@ function buildPriceRows(seo, products) {
 }
 
 export default function CategoryShopSeo({ categorySlug, categoryName, products = [] }) {
-  const seo = useMemo(() => getCategorySeoContent(categorySlug), [categorySlug]);
+  const [seo, setSeo] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!categorySlug) {
+      setSeo(null);
+      return undefined;
+    }
+
+    getCategorySeoContentAsync(categorySlug).then((content) => {
+      if (!cancelled) setSeo(content);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categorySlug]);
+
   const [openFaq, setOpenFaq] = useState(null);
 
   const priceRows = useMemo(() => buildPriceRows(seo, products), [seo, products]);

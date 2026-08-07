@@ -1,26 +1,12 @@
 /* Blog listing — Bazaar palette */
 
-.page-header {
-  padding: 2rem 0;
-  background: var(--cream, #FFF7F0);
-  border-bottom: 1px solid var(--gray-light, #e8e2d8);
+.page-header--blog {
+  padding: 0.45rem 0 0.35rem;
 }
 
-.page-header__title {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--navy, #1A1A2E);
-}
-
-.page-header__subtitle {
-  margin: 0;
-  color: var(--gray, #5c5c6e);
-  font-size: 1rem;
-}
-
-.section {
-  padding: 3rem 0;
+.page-header--blog .breadcrumb {
+  margin-top: 0;
+  font-size: 0.8125rem;
 }
 
 .section--blog {

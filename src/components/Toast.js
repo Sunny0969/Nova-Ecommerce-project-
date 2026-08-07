@@ -76,7 +76,7 @@ export function AppToaster() {
           ? {
               left: 16,
               right: 16,
-              bottom: 'calc(4.75rem + env(safe-area-inset-bottom, 0px))',
+              bottom: 'calc(var(--mobile-bottom-nav-height, 3.75rem) + env(safe-area-inset-bottom, 0px) + 0.65rem)',
               top: 'auto',
             }
           : undefined

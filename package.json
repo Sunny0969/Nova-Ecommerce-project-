@@ -10,6 +10,8 @@
     "axios": "^1.7.9",
     "jodit": "^4.12.2",
     "jodit-react": "^5.3.21",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.468.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -24,12 +26,17 @@
     "yup": "^1.6.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "craco start",
+    "preview:hostinger": "npm run build:hostinger && npx --yes serve -s build -l 3000",
+    "crawl-cache": "node scripts/generate-static-fallback-cache.js",
+    "build": "craco build && node scripts/patch-index-html-performance.js && node scripts/inject-home-prerender.js && node scripts/ensure-spa-hostinger-fallback.js && node scripts/verify-storefront-bundle.js && node scripts/verify-storefront-css.js",
+    "prerender": "node scripts/prerender-catalog.js",
+    "prerender:verify": "node scripts/verify-prerender.js",
     "analyze": "npm run build && source-map-explorer \"build/static/js/*.js\"",
-    "build:hostinger": "react-scripts build && node scripts/verify-hostinger-build.js",
-    "sitemap": "node ../backend/scripts/generateSitemap.js",
-    "test": "react-scripts test",
+    "build:hostinger": "craco build && node scripts/patch-index-html-performance.js && node scripts/inject-home-prerender.js && node scripts/prerender-catalog.js && node scripts/generate-sitemap.js && node scripts/ensure-spa-hostinger-fallback.js && node scripts/verify-hostinger-build.js && node scripts/verify-lcp-optimizations.js && node scripts/verify-storefront-bundle.js && node scripts/verify-storefront-css.js && node scripts/verify-prerender.js",
+    "sitemap": "node scripts/generate-sitemap.js",
+    "sitemap:db": "node ../backend/scripts/generateSitemap.js",
+    "test": "craco test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -51,6 +58,8 @@
   },
   "proxy": "http://127.0.0.1:5001",
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
+    "@fullhuman/postcss-purgecss": "^8.0.0",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.10",
     "source-map-explorer": "^2.5.3",

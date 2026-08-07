@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
-import { productsAPI } from 'api';
+import { productsAPI } from '../api/storefront';
 import { unwrapFeaturedResponse, apiMessage } from '../lib/api';
 import { filterOnSaleProducts } from '../lib/productSale';
 import FlashSaleCard from './FlashSaleCard';

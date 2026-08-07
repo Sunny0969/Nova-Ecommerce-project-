@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import SEO from '../../components/SEO';
 import { getAdminSeoTitle } from '../../utils/seo';
+import '../../styles/admin.css';
 
 import {
   LayoutDashboard,
@@ -14,12 +15,14 @@ import {
   SlidersHorizontal,
   Shield,
   UserCog,
+  BookOpen,
+  Bell,
   LogOut,
   ChevronRight
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 
 const NAV_LINKS = [
   { to: '/admin/dashboard', end: true, label: 'Dashboard', icon: LayoutDashboard },
@@ -28,7 +31,9 @@ const NAV_LINKS = [
   { to: '/admin/categories', label: 'Categories', icon: LayoutGrid },
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/coupons', label: 'Coupons', icon: TicketPercent },
+  { to: '/admin/blogs', label: 'Blogs', icon: BookOpen, badgeKey: 'blogDrafts' },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
   { to: '/admin/fraud', label: 'Fraud', icon: Shield },
   { to: '/admin/store-settings', label: 'Shipping & tax', icon: SlidersHorizontal },
   { to: '/admin/staff', label: 'Staff', icon: UserCog }
@@ -87,6 +92,7 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const crumbs = useAdminBreadcrumbs();
   const [pendingCount, setPendingCount] = React.useState(0);
+  const [blogDraftCount, setBlogDraftCount] = React.useState(0);
 
   const displayName = user?.name || user?.email || 'Admin';
   const handleLogout = React.useCallback(() => {
@@ -97,12 +103,22 @@ export default function AdminLayout() {
     let mounted = true;
     (async () => {
       try {
-        const res = await adminAPI.products.pendingApprovals();
-        const list = res.data?.data || res.data?.products || res.data;
+        const [pendingRes, blogRes] = await Promise.all([
+          adminAPI.products.pendingApprovals(),
+          adminAPI.blogs.stats().catch(() => null)
+        ]);
+        const list = pendingRes.data?.data || pendingRes.data?.products || pendingRes.data;
         const n = Array.isArray(list) ? list.length : 0;
-        if (mounted) setPendingCount(n);
+        const drafts = blogRes?.data?.data?.draftCount;
+        if (mounted) {
+          setPendingCount(n);
+          setBlogDraftCount(typeof drafts === 'number' ? drafts : 0);
+        }
       } catch {
-        if (mounted) setPendingCount(0);
+        if (mounted) {
+          setPendingCount(0);
+          setBlogDraftCount(0);
+        }
       }
     })();
     return () => {
@@ -132,7 +148,13 @@ export default function AdminLayout() {
           <nav className="admin-sidebar__nav">
             <ul className="admin-sidebar__list">
 
-              {NAV_LINKS.map(({ to, end, label, icon: Icon }) => {
+              {NAV_LINKS.map(({ to, end, label, icon: Icon, badgeKey }) => {
+                const badgeCount =
+                  badgeKey === 'blogDrafts'
+                    ? blogDraftCount
+                    : to === '/admin/products'
+                      ? pendingCount
+                      : 0;
                 return (
                   <li key={to}>
                     <NavLink to={to} end={end} className={navLinkClass} title={label}>
@@ -144,7 +166,7 @@ export default function AdminLayout() {
                       />
                       <span className="admin-sidebar__label">{label}</span>
 
-                      {to === '/admin/products' && pendingCount > 0 ? (
+                      {badgeCount > 0 ? (
                         <span
                           className="nav-badge nav-badge--cart"
                           style={{
@@ -153,7 +175,7 @@ export default function AdminLayout() {
                             transform: 'none'
                           }}
                         >
-                          {pendingCount}
+                          {badgeCount}
                         </span>
                       ) : null}
                     </NavLink>

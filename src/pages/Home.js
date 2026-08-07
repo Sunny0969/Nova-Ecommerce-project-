@@ -3,12 +3,14 @@ import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
 import { unwrapCategoriesResponse, apiMessage } from '../lib/api';
 import HomeBannerSlider from '../components/HomeBannerSlider';
+import HomeCategoryMobileRow from '../components/HomeCategoryMobileRow';
 import HomeHero from '../components/HomeHero';
 import HomeCategoriesGrid from '../components/HomeCategoriesGrid';
 import LazySection from '../components/LazySection';
 import HomeSectionFallback from '../components/HomeSectionFallback';
 import { homeRouteSeo } from '../config/routeSeo';
-import api from 'api';
+import { hidePrerenderFallback } from '../lib/prerenderFallback';
+import api from '../api/client';
 
 const HomeFlashSale = lazy(() => import('../components/HomeFlashSale'));
 const HomePopularBrands = lazy(() => import('../components/HomePopularBrands'));
@@ -41,6 +43,10 @@ const Home = () => {
     fetchCategories();
   }, [fetchCategories]);
 
+  useEffect(() => {
+    if (!categoriesLoading) hidePrerenderFallback();
+  }, [categoriesLoading]);
+
   const handleAddToCart = async (product) => {
     await addToCart(product, 1);
   };
@@ -55,13 +61,15 @@ const Home = () => {
       />
 
       <div className="home-top-stack">
-        <HomeBannerSlider />
+        <div className="home-top-stack__lead">
+          <HomeBannerSlider />
+          <HomeCategoryMobileRow categories={categories} loading={categoriesLoading} />
+        </div>
         <HomeHero />
       </div>
 
       <section className="section home-categories-browse" id="categories" aria-label="Shop categories">
         <div className="container">
-          <h2 className="home-categories-browse__title">Categories</h2>
           <HomeCategoriesGrid
             categories={categories}
             loading={categoriesLoading}

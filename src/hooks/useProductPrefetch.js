@@ -18,6 +18,7 @@ export function useProductPrefetch(slug) {
   return {
     onMouseEnter: warm,
     onFocus: warm,
-    onTouchStart: warm
+    onTouchStart: warm,
+    onMouseDown: warm
   };
 }

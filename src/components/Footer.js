@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Youtube, MapPin, Phone } from 'lucide-react';
-// import { Facebook, Twitter, Instagram } from 'lucide-react';
-import api from 'api';
-import { unwrapCategoriesResponse } from '../lib/api';
+import { MapPin, Phone } from 'lucide-react';
+import api from '../api/client';
+import { unwrapCategoriesResponse, sortCategoriesAlphabetically } from '../lib/api';
 import {
   businessDisplayName,
   businessPhoneDisplay,
@@ -19,21 +18,25 @@ const ABOUT_LINKS = [
   { label: 'All Categories', to: '/#categories' },
   { label: 'All Brands', to: '/brands' },
   { label: 'Blogs', to: '/blog' },
+  { label: 'About Us', to: '/about-us' },
+  { label: 'Contact Us', to: '/contact-us' },
+  { label: 'FAQs', to: '/faqs' }
+];
+
+const POLICY_LINKS = [
   { label: 'Privacy Policy', to: '/privacy-policy' },
   { label: 'Terms & Conditions', to: '/terms-and-conditions' },
-  { label: 'Contact Us', to: '/contact-us' },
-  { label: 'FAQs', to: '/faqs' },
-  { label: 'About Us', to: '/about-us' }
+  { label: 'Returns & Refunds', to: '/returns-and-refunds' },
+  { label: 'Shipping Policy', to: '/shipping-policy' }
 ];
 
 function splitIntoColumns(items, numCols = 3) {
-  const sorted = [...items].sort((a, b) =>
-    String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })
-  );
+  const sorted = sortCategoriesAlphabetically(items);
   const cols = Array.from({ length: numCols }, () => []);
-  sorted.forEach((item, i) => {
-    cols[i % numCols].push(item);
-  });
+  const perCol = Math.ceil(sorted.length / numCols) || 0;
+  for (let i = 0; i < numCols; i += 1) {
+    cols[i] = sorted.slice(i * perCol, (i + 1) * perCol);
+  }
   return cols;
 }
 
@@ -99,46 +102,6 @@ const Footer = () => {
                 </a>
               </p>
             </address>
-            <div className="footer-socials" aria-label="Social media">
-              {/* Re-enable when official profile URLs are ready
-              <a
-                href="https://facebook.com/..."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social"
-                aria-label="Facebook"
-              >
-                <Facebook size={18} strokeWidth={1.75} />
-              </a>
-              <a
-                href="https://twitter.com/..."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social"
-                aria-label="Twitter"
-              >
-                <Twitter size={18} strokeWidth={1.75} />
-              </a>
-              <a
-                href="https://instagram.com/..."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social"
-                aria-label="Instagram"
-              >
-                <Instagram size={18} strokeWidth={1.75} />
-              </a>
-              */}
-              {/* <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social"
-                aria-label="YouTube"
-              >
-                <Youtube size={18} strokeWidth={1.75} />
-              </a> */}
-            </div>
           </div>
 
           <div className="footer-col footer-col--about">
@@ -151,6 +114,14 @@ const Footer = () => {
                   ) : (
                     <Link to={link.to}>{link.label}</Link>
                   )}
+                </li>
+              ))}
+            </ul>
+            <p className="footer-col__heading footer-col__heading--sub">Policies</p>
+            <ul className="footer-links">
+              {POLICY_LINKS.map((link) => (
+                <li key={link.label}>
+                  <Link to={link.to}>{link.label}</Link>
                 </li>
               ))}
             </ul>
@@ -210,12 +181,28 @@ const Footer = () => {
         <div className="footer-bottom footer-bottom--bazaar">
           <p className="footer-copyright">
             © {new Date().getFullYear()} {businessDisplayName}. All rights reserved.{' '}
-            <Link to="/terms-and-conditions" className="footer-copyright__link">
-              Terms &amp; Conditions
+            <Link to="/privacy-policy" className="footer-copyright__link">
+              Privacy
             </Link>
-            . Powered by <a href="https://rathisoft.com" target="_blank" rel="noopener noreferrer"><span style={{ color: 'var(--gold)', textDecoration: 'underline' }}>Rathisoft Innovation</span></a>.
+            {' · '}
+            <Link to="/returns-and-refunds" className="footer-copyright__link">
+              Returns
+            </Link>
+            {' · '}
+            <Link to="/shipping-policy" className="footer-copyright__link">
+              Shipping
+            </Link>
+            {' · '}
+            <Link to="/terms-and-conditions" className="footer-copyright__link">
+              Terms
+            </Link>
+            . Powered by{' '}
+            <a href="https://rathisoft.com" target="_blank" rel="noopener noreferrer">
+              <span style={{ color: 'var(--gold)', textDecoration: 'underline' }}>Rathisoft Innovation</span>
+            </a>
+            .
           </p>
-          <div className="footer-payments" aria-label="Accepted payment methods">
+          <div className="footer-payments" role="group" aria-label="Accepted payment methods">
             <span className="footer-pay footer-pay--visa" title="Visa">
               VISA
             </span>

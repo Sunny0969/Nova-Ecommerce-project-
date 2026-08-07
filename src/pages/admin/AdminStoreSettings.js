@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 import { apiMessage } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { formatPKR } from '../../utils/currency';
 import {
   emptyStoreSettingsForm,
   formToStoreSettingsPayload,
+  newWeightTierRow,
   storeSettingsToForm
 } from '../../lib/storeSettingsForm';
 
@@ -42,6 +44,29 @@ export default function AdminStoreSettings() {
     setForm((f) => ({ ...f, [key]: e.target.checked }));
   };
 
+  const updateTier = (id, field, value) => {
+    setForm((f) => ({
+      ...f,
+      weightShippingTiers: (f.weightShippingTiers || []).map((row) =>
+        row.id === id ? { ...row, [field]: value } : row
+      )
+    }));
+  };
+
+  const addTier = () => {
+    setForm((f) => ({
+      ...f,
+      weightShippingTiers: [...(f.weightShippingTiers || []), newWeightTierRow()]
+    }));
+  };
+
+  const removeTier = (id) => {
+    setForm((f) => ({
+      ...f,
+      weightShippingTiers: (f.weightShippingTiers || []).filter((row) => row.id !== id)
+    }));
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -66,13 +91,10 @@ export default function AdminStoreSettings() {
     );
   }
 
-  const weightThreshold = Number(form.weightShippingThresholdKg) || 1;
-  const shipUpTo = Number(form.shippingUpToThresholdKg) || 0;
-  const shipExtra = Number(form.shippingAdditionalPerKgOver) || 0;
-  const exampleOver = shipUpTo + shipExtra;
+  const weightTiers = form.weightShippingTiers || [];
 
   return (
-    <div className="admin-dashboard max-w-3xl">
+    <div className="admin-dashboard admin-store-settings max-w-3xl">
       <h1 className="admin-dashboard__title">Shipping &amp; tax</h1>
       <p className="admin-dashboard__lede mb-6">
         These values apply to every customer cart and checkout in real time. Free shipping uses the order subtotal{' '}
@@ -80,7 +102,7 @@ export default function AdminStoreSettings() {
         shipping).
       </p>
 
-      <form onSubmit={onSubmit} className="space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <form onSubmit={onSubmit} className="admin-store-settings__form space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="freeMin">
             Free shipping from (subtotal)
@@ -95,14 +117,16 @@ export default function AdminStoreSettings() {
             value={form.freeShippingMin}
             onChange={onChange('freeShippingMin')}
           />
-          <p className="mt-1 text-xs text-neutral-500">
-            Standard delivery is free when the cart subtotal (before discounts) reaches this amount. Express and
-            next-day always use their flat rates below.
+          <p className="admin-store-settings__hint mt-1 text-xs">
+            Standard delivery is free when the cart subtotal (before discounts) reaches this amount.
+            Carts with missing product weights always use flat standard shipping (fallback).
           </p>
         </div>
 
         <fieldset className="space-y-4 rounded-lg border border-neutral-200 p-4">
-          <legend className="px-1 text-sm font-semibold text-neutral-900">Weight-based shipping (standard delivery)</legend>
+          <legend className="px-1 text-sm font-semibold text-neutral-900">
+            Weight-based shipping (standard delivery)
+          </legend>
           <label className="flex items-center gap-2 text-sm text-neutral-800">
             <input
               type="checkbox"
@@ -111,78 +135,114 @@ export default function AdminStoreSettings() {
             />
             Use cart weight for standard shipping (recommended)
           </label>
-          <p className="text-xs text-neutral-500">
-            Each product needs a weight (kg) in the admin product form. Products without weight use the default below.
-            Total cart weight = sum of (product weight × quantity).
+          <p className="admin-store-settings__hint text-xs">
+            Set a flat shipping price for each weight range (kg). Total cart weight uses each product&apos;s
+            weight, or the default below when a product has no weight. Customers see cart weight and the matching
+            tier at checkout.
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="weightThreshold">
-                Weight threshold (kg)
-              </label>
-              <input
-                id="weightThreshold"
-                type="number"
-                min={0.01}
-                step={0.01}
-                required
-                className={inputClass}
-                value={form.weightShippingThresholdKg}
-                onChange={onChange('weightShippingThresholdKg')}
-              />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="defaultWeight">
+              Default product weight (kg)
+            </label>
+            <input
+              id="defaultWeight"
+              type="number"
+              min={0.01}
+              step={0.01}
+              required
+              className={inputClass}
+              value={form.defaultProductWeightKg}
+              onChange={onChange('defaultProductWeightKg')}
+            />
+            <p className="admin-store-settings__hint mt-1 text-xs">
+              Used only when estimating weight for products that have no weight set.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-neutral-800">Weight ranges &amp; prices</p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm admin-store-settings__add-btn"
+                onClick={addTier}
+              >
+                <Plus size={16} aria-hidden /> Add range
+              </button>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="defaultWeight">
-                Default product weight (kg)
-              </label>
-              <input
-                id="defaultWeight"
-                type="number"
-                min={0.01}
-                step={0.01}
-                required
-                className={inputClass}
-                value={form.defaultProductWeightKg}
-                onChange={onChange('defaultProductWeightKg')}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="shipUpTo">
-                Shipping up to threshold (PKR)
-              </label>
-              <input
-                id="shipUpTo"
-                type="number"
-                min={0}
-                step={1}
-                required
-                className={inputClass}
-                value={form.shippingUpToThresholdKg}
-                onChange={onChange('shipUpToThresholdKg')}
-              />
-              <p className="mt-1 text-xs text-neutral-500">
-                e.g. {formatPKR(shipUpTo)} when total weight is {weightThreshold} kg or less
+
+            {weightTiers.length === 0 ? (
+              <p className="admin-store-settings__hint rounded-lg border border-dashed border-neutral-400 bg-neutral-50 px-3 py-4 text-sm">
+                No weight ranges yet. Click &quot;Add range&quot; — e.g. 0–1 kg = Rs 199, 1.01–2 kg = Rs 320.
               </p>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="shipExtra">
-                Additional per kg over threshold (PKR)
-              </label>
-              <input
-                id="shipExtra"
-                type="number"
-                min={0}
-                step={1}
-                required
-                className={inputClass}
-                value={form.shippingAdditionalPerKgOver}
-                onChange={onChange('shippingAdditionalPerKgOver')}
-              />
-              <p className="mt-1 text-xs text-neutral-500">
-                e.g. over {weightThreshold} kg → {formatPKR(shipUpTo)} + {formatPKR(shipExtra)} per extra kg started (
-                {formatPKR(exampleOver)} for {weightThreshold + 0.1} kg)
-              </p>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                {weightTiers.map((tier, index) => (
+                  <div
+                    key={tier.id}
+                    className="admin-store-settings__tier-card grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
+                  >
+                    <div>
+                      <label className="admin-store-settings__tier-label mb-1 block text-xs">From (kg)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        required
+                        className={inputClass}
+                        value={tier.minKg}
+                        onChange={(e) => updateTier(tier.id, 'minKg', e.target.value)}
+                        placeholder="0"
+                        aria-label={`Tier ${index + 1} from kg`}
+                      />
+                    </div>
+                    <div>
+                      <label className="admin-store-settings__tier-label mb-1 block text-xs">To (kg)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        required
+                        className={inputClass}
+                        value={tier.maxKg}
+                        onChange={(e) => updateTier(tier.id, 'maxKg', e.target.value)}
+                        placeholder="1"
+                        aria-label={`Tier ${index + 1} to kg`}
+                      />
+                    </div>
+                    <div>
+                      <label className="admin-store-settings__tier-label mb-1 block text-xs">Price (PKR)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        required
+                        className={inputClass}
+                        value={tier.price}
+                        onChange={(e) => updateTier(tier.id, 'price', e.target.value)}
+                        placeholder="199"
+                        aria-label={`Tier ${index + 1} price`}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm admin-store-settings__remove-btn"
+                        onClick={() => removeTier(tier.id)}
+                        aria-label={`Remove tier ${index + 1}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <p className="admin-store-settings__tier-summary sm:col-span-4 text-xs">
+                      {tier.minKg !== '' && tier.maxKg !== '' && tier.price !== ''
+                        ? `${tier.minKg}–${tier.maxKg} kg → ${formatPKR(Number(tier.price) || 0)} standard shipping`
+                        : `Tier ${index + 1}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </fieldset>
 
@@ -201,7 +261,9 @@ export default function AdminStoreSettings() {
               value={form.shippingStandard}
               onChange={onChange('shippingStandard')}
             />
-            <p className="mt-1 text-xs text-neutral-500">Used only when weight-based shipping is off.</p>
+            <p className="admin-store-settings__hint mt-1 text-xs">
+              Used when weight-based shipping is off, any cart item has no weight, or no tier matches.
+            </p>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-800" htmlFor="shipExp">
@@ -250,7 +312,7 @@ export default function AdminStoreSettings() {
             value={form.taxPercent}
             onChange={onChange('taxPercent')}
           />
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="admin-store-settings__hint mt-1 text-xs">
             Applied to merchandise total after coupon discounts. Use 0 for no tax line.
           </p>
         </div>

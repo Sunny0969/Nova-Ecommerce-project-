@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import SEO from '../components/SEO';
-import { ordersAPI } from 'api';
+import { ordersAPI } from '../api/orders';
 import { apiMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import LoadingSpinner from '../components/LoadingSpinner';
+import BrandLogoLoader from '../components/BrandLogoLoader';
 import { formatPKR } from '../utils/currency';
 import { trackPurchase } from '../lib/metaPixel';
+import { resolveOrderPurchaseValue } from '../lib/orderPurchaseValue';
 import { EASYPAISA_NUMBER } from '../config/payments';
 import { resolvePaymentProof } from '../utils/orderPaymentProof';
 
@@ -87,8 +88,9 @@ export default function OrderConfirmation() {
 
   useEffect(() => {
     if (!order?._id) return;
+    if (resolveOrderPurchaseValue(order) <= 0) return;
     trackPurchase(order);
-  }, [order?._id]);
+  }, [order]);
 
   if (loading) {
     return (
@@ -99,7 +101,7 @@ export default function OrderConfirmation() {
           description="Loading your Bazaar order confirmation."
           canonicalUrl={id ? `/order-confirmation/${id}` : '/order-confirmation'}
         />
-        <LoadingSpinner size="lg" label="Loading order" />
+        <BrandLogoLoader label="Loading order" />
       </div>
     );
   }

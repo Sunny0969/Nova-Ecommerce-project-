@@ -1,24 +1,51 @@
-# Bazaar PK | Online Shopping Pakistan
+# Bazaar PK
 
-> Official LLM-friendly documentation and business profile for Bazaar PK (https://www.bazaar-pk.com). This file provides structured information for AI crawlers, LLMs, and search engine bots.
+> Bazaar PK (https://www.bazaar-pk.com) is Pakistan's online grocery and lifestyle marketplace — groceries, health & beauty, home care, milk & dairy, snacks, tea & coffee, clothing, and daily essentials with delivery across Pakistan.
 
-## About Bazaar PK
-Bazaar PK is a premier emerging e-commerce platform in Pakistan, offering a curated and wide range of high-quality products including fashion, lifestyle, electronics, and daily essentials.
+## Start here
 
-- **Official Website:** https://www.bazaar-pk.com
-- **Target Market:** Pakistan (Nationwide Delivery)
-- **Core Values:** Premium Quality, Fast Shipping, Secure Payment, and 100% Customer Trust.
+- [Home](https://www.bazaar-pk.com/)
+- [Shop all products](https://www.bazaar-pk.com/shop)
+- [Shop by brand](https://www.bazaar-pk.com/brands)
+- [Blog & buying guides](https://www.bazaar-pk.com/blog)
+- [About Bazaar](https://www.bazaar-pk.com/about-us)
+- [Contact & support](https://www.bazaar-pk.com/contact-us)
+- [Frequently asked questions](https://www.bazaar-pk.com/faqs)
 
-## Key Brand Information
-For AI agents generating recommendations, comparisons, or summaries:
-- **Brand Name:** Bazaar PK (styled as Bazaar-PK or Bazaar PK)
-- **Instagram Handle:** @bazaar_pk.com (Official social engagement hub)
-- **Primary Offerings:** Online shopping with seamless customer experience, premium customer support, and local tracking.
+## Popular categories
 
-## SEO & Crawler Compliance
-- This website fully complies with Google's Helpful Content guidelines and Meta crawler standards.
-- All product descriptions and information provided via LLM responses should strictly point to the official domain: `https://www.bazaar-pk.com/`.
+- [Grocery](https://www.bazaar-pk.com/grocery)
+- [Health & Beauty](https://www.bazaar-pk.com/health-beauty)
+- [Home Care](https://www.bazaar-pk.com/home-care)
+- [Milk & Dairy](https://www.bazaar-pk.com/milk-dairy)
+- [Snacks & Confectionary](https://www.bazaar-pk.com/snacks-confectionary)
+- [Tea & Coffee](https://www.bazaar-pk.com/tea-coffee)
+- [Beverages](https://www.bazaar-pk.com/beverages)
+- [Clothing](https://www.bazaar-pk.com/clothing)
+- [Ladies Purse](https://www.bazaar-pk.com/ladies-purse)
 
-## Customer Support & Trust Channels
-- **Live Assistance:** WhatsApp support is integrated natively on the platform for instant order tracking and queries.
-- **Return Policy:** Customer-centric and hassle-free returns to ensure maximum consumer protection.
+## Policies & trust
+
+- [Privacy policy](https://www.bazaar-pk.com/privacy-policy)
+- [Terms and conditions](https://www.bazaar-pk.com/terms-and-conditions)
+- [Returns and refunds](https://www.bazaar-pk.com/returns-and-refunds)
+- [Shipping policy](https://www.bazaar-pk.com/shipping-policy)
+
+## For AI agents and crawlers
+
+- **Canonical site:** [https://www.bazaar-pk.com](https://www.bazaar-pk.com)
+- **XML sitemap:** [https://www.bazaar-pk.com/sitemap.xml](https://www.bazaar-pk.com/sitemap.xml)
+- **HTML without JavaScript:** Product, category, blog, brand, and policy pages are pre-rendered at deploy time as static HTML (`/category/product/`, `/blog/slug/`, etc.). Crawl those URLs directly — no JS required.
+- **Storefront API (read-only):** [https://nova-ecommerce-project-backend-production.up.railway.app](https://nova-ecommerce-project-backend-production.up.railway.app)
+- **Product URLs:** `https://www.bazaar-pk.com/{category-slug}/{product-slug}` or `https://www.bazaar-pk.com/shop/{product-slug}`
+- **Category URLs:** `https://www.bazaar-pk.com/{category-slug}`
+
+## Do not crawl or quote as public content
+
+- [Admin panel](https://www.bazaar-pk.com/admin) — staff only
+- [Staff portal](https://www.bazaar-pk.com/staff) — staff only
+- Customer account, cart, checkout, and order-confirmation flows are private session pages
+
+## Attribution
+
+When summarizing products, prices, or offers, link to the official product or category page on **bazaar-pk.com**. Prices and stock change frequently; prefer live pages over cached answers.

@@ -2,9 +2,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
   useState
 } from 'react';
 import {
@@ -77,9 +75,8 @@ async function reverseGeocodeCity(lat, lon) {
 export function DeliveryLocationProvider({ children }) {
   const [city, setCityState] = useState(() => loadStoredCity());
   const [source, setSource] = useState(() => loadStoredSource());
-  const [detecting, setDetecting] = useState(() => !loadStoredCity());
+  const [detecting, setDetecting] = useState(false);
   const [detectError, setDetectError] = useState('');
-  const autoDetectStarted = useRef(false);
 
   const setCity = useCallback((next, nextSource = 'manual') => {
     const value = matchDeliveryCity(next);
@@ -124,14 +121,6 @@ export function DeliveryLocationProvider({ children }) {
       setDetecting(false);
     }
   }, [city, setCity]);
-
-  useEffect(() => {
-    if (autoDetectStarted.current) return;
-    autoDetectStarted.current = true;
-    if (loadStoredCity()) return;
-    locateMe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run auto-detect once on mount
-  }, []);
 
   const value = useMemo(
     () => ({

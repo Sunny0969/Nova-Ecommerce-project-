@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, List, SlidersHorizontal, Search, X } from 'lucide-react';
+import { LayoutGrid, List, SlidersHorizontal, Search, X, ArrowUpDown } from 'lucide-react';
+import './ShopMobileStrip.css';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
+import ShopClothingFilters from '../components/ShopClothingFilters';
+import ShopCategorySubfilters from '../components/ShopCategorySubfilters';
 import Pagination from '../components/Pagination';
 import CategoryShopSeo from '../components/CategoryShopSeo';
 import OptimizedImage from '../components/OptimizedImage';
@@ -19,19 +22,36 @@ import {
   shouldStayOnLegacyShopQuery
 } from '../utils/urls';
 import { buildBrandImageAlt } from '../utils/imageAlt';
-import { getCategorySeoContent } from '../data/categorySeoContent';
+import { getCategorySeoContentAsync } from '../lib/categorySeoLoader';
 import {
   buildFAQPageSchema,
   buildProductItemListSchema,
   buildSpeakableSpecificationSchema,
   filterValidFaqs
 } from '../utils/jsonLd';
-import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage } from '../lib/api';
+import { unwrapProductListResponse, unwrapCategoriesResponse, apiMessage, sortCategoriesAlphabetically } from '../lib/api';
 import { networkErrorMessage } from '../config/apiOrigin';
-import api from 'api';
+import { hidePrerenderFallback } from '../lib/prerenderFallback';
+import api from '../api/client';
 
 const PAGE_SIZE = 20;
 const VIEW_STORAGE_KEY = 'bazaar-shop-products-view';
+
+const MOBILE_SORT_TABS = [
+  { key: 'newest', label: 'Best Match', matches: (s) => !s || s === 'newest' },
+  { key: 'popular', label: 'Top Sales', matches: (s) => s === 'popular' },
+  { key: 'price', label: 'Price', matches: (s) => s === 'price-asc' || s === 'price-desc' }
+];
+
+/** Parse min/max price filter input; empty string allowed, invalid returns null */
+function parsePriceFilterValue(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  const n = Number(s);
+  if (!Number.isFinite(n) || n < 0) return null;
+  const rounded = Math.round(n * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(() =>
@@ -91,6 +111,9 @@ const Products = () => {
   const [categoriesError, setCategoriesError] = useState(null);
   const [categoryTags, setCategoryTags] = useState([]);
   const [categoryTagsLoading, setCategoryTagsLoading] = useState(false);
+  const [categoryFilterTree, setCategoryFilterTree] = useState(null);
+  const [categoryFiltersLoading, setCategoryFiltersLoading] = useState(false);
+  const [categorySeoForSchema, setCategorySeoForSchema] = useState(null);
   const [brands, setBrands] = useState([]);
 
   const [viewMode, setViewMode] = useState(() => {
@@ -111,6 +134,8 @@ const Products = () => {
   const inStock = searchParams.get('inStock') === 'true';
   const onSale = searchParams.get('onSale') === 'true';
   const selectedTag = (searchParams.get('tag') || '').trim();
+  const selectedGender = (searchParams.get('gender') || '').trim().toLowerCase();
+  const selectedSubcategory = (searchParams.get('subcategory') || '').trim().toLowerCase();
   const selectedBrandSlug = (effectiveSearchParams.get('brand') || '').trim().toLowerCase();
   const selectedCategories = useMemo(
     () => categoriesFromSearchParams(effectiveSearchParams),
@@ -120,10 +145,12 @@ const Products = () => {
   const [searchInput, setSearchInput] = useState(searchUrl);
   const [minDraft, setMinDraft] = useState(minPriceUrl);
   const [maxDraft, setMaxDraft] = useState(maxPriceUrl);
+  const [priceFilterError, setPriceFilterError] = useState('');
 
   useEffect(() => setSearchInput(searchUrl), [searchUrl]);
   useEffect(() => setMinDraft(minPriceUrl), [minPriceUrl]);
   useEffect(() => setMaxDraft(maxPriceUrl), [maxPriceUrl]);
+  useEffect(() => setPriceFilterError(''), [minPriceUrl, maxPriceUrl]);
 
   const searchParamsRef = useRef(searchParams);
   searchParamsRef.current = searchParams;
@@ -164,6 +191,11 @@ const Products = () => {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  const sortedCategories = useMemo(
+    () => sortCategoriesAlphabetically(categories),
+    [categories]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -212,6 +244,10 @@ const Products = () => {
       if (sale) params.set('onSale', 'true');
       const tag = (sp.get('tag') || '').trim();
       if (tag) params.set('tag', tag);
+      const gender = (sp.get('gender') || '').trim().toLowerCase();
+      if (gender === 'women' || gender === 'men') params.set('gender', gender);
+      const subcategory = (sp.get('subcategory') || '').trim().toLowerCase();
+      if (subcategory) params.set('subcategory', subcategory);
       const brand = (sp.get('brand') || '').trim().toLowerCase();
       if (brand) params.set('brand', brand);
 
@@ -257,6 +293,10 @@ const Products = () => {
   }, [drawerOpen, isDesktopFilters]);
 
   useEffect(() => {
+    if (!loading) hidePrerenderFallback();
+  }, [loading]);
+
+  useEffect(() => {
     if (!drawerOpen) return;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -293,6 +333,28 @@ const Products = () => {
     setSearchParams(next);
   };
 
+  const applyInstantFilter = useCallback(
+    (mutator) => {
+      const next = new URLSearchParams(searchParams);
+      mutator(next);
+      const q = shopFiltersOnlyQuery(next);
+      const path = getShopListingCanonicalPath(next, location.pathname);
+      navigate(q ? `${path}?${q}` : path);
+      if (!isDesktopFilters) {
+        setDrawerOpen(false);
+      }
+      if (typeof window !== 'undefined') {
+        window.requestAnimationFrame(() => {
+          document.getElementById('shop-product-results')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        });
+      }
+    },
+    [searchParams, location.pathname, navigate, isDesktopFilters]
+  );
+
   const toggleCategory = (slug) => {
     const s = String(slug || '').trim().toLowerCase();
     if (!s) return;
@@ -315,20 +377,64 @@ const Products = () => {
     });
   };
 
-  const commitPriceRange = () => {
+  const setClothingGender = (gender) => {
     updateParams((next) => {
-      const mn = minDraft.trim();
-      const mx = maxDraft.trim();
+      const g = String(gender || '').trim().toLowerCase();
+      if (g === 'women' || g === 'men') next.set('gender', g);
+      else next.delete('gender');
+      next.delete('subcategory');
+      next.delete('tag');
+      next.set('page', '1');
+    });
+  };
+
+  const setClothingSubcategory = (slug) => {
+    updateParams((next) => {
+      const s = String(slug || '').trim().toLowerCase();
+      if (s) next.set('subcategory', s);
+      else next.delete('subcategory');
+      next.delete('tag');
+      next.set('page', '1');
+    });
+  };
+
+  const commitPriceRange = useCallback(() => {
+    const mn = parsePriceFilterValue(minDraft);
+    const mx = parsePriceFilterValue(maxDraft);
+
+    if (minDraft.trim() && mn === null) {
+      setPriceFilterError('Enter a valid minimum price (0 or higher).');
+      return;
+    }
+    if (maxDraft.trim() && mx === null) {
+      setPriceFilterError('Enter a valid maximum price (0 or higher).');
+      return;
+    }
+    if (mn && mx && Number(mn) > Number(mx)) {
+      setPriceFilterError('Minimum price cannot be greater than maximum.');
+      return;
+    }
+    if (mn === minPriceUrl && mx === maxPriceUrl) {
+      setPriceFilterError('');
+      setMinDraft(mn);
+      setMaxDraft(mx);
+      return;
+    }
+
+    setPriceFilterError('');
+    setMinDraft(mn);
+    setMaxDraft(mx);
+    updateParams((next) => {
       if (mn) next.set('minPrice', mn);
       else next.delete('minPrice');
       if (mx) next.set('maxPrice', mx);
       else next.delete('maxPrice');
       next.set('page', '1');
     });
-  };
+  }, [minDraft, maxDraft, minPriceUrl, maxPriceUrl, updateParams]);
 
   const setRating = (value) => {
-    updateParams((next) => {
+    applyInstantFilter((next) => {
       if (value) next.set('rating', value);
       else next.delete('rating');
       next.set('page', '1');
@@ -336,7 +442,7 @@ const Products = () => {
   };
 
   const setInStock = (checked) => {
-    updateParams((next) => {
+    applyInstantFilter((next) => {
       if (checked) next.set('inStock', 'true');
       else next.delete('inStock');
       next.set('page', '1');
@@ -344,12 +450,37 @@ const Products = () => {
   };
 
   const setSort = (value) => {
-    updateParams((next) => {
+    applyInstantFilter((next) => {
       if (value && value !== 'newest') next.set('sort', value);
       else next.delete('sort');
       next.set('page', '1');
     });
   };
+
+  const handleMobileSortTab = (tabKey) => {
+    if (tabKey === 'price') {
+      if (sort === 'price-asc') setSort('price-desc');
+      else setSort('price-asc');
+      return;
+    }
+    setSort(tabKey === 'newest' ? 'newest' : tabKey);
+  };
+
+  const toggleOnSale = () => {
+    applyInstantFilter((next) => {
+      if (onSale) next.delete('onSale');
+      else next.set('onSale', 'true');
+      next.set('page', '1');
+    });
+  };
+
+  const hasActiveDrawerFilters =
+    selectedCategories.length > 0 ||
+    selectedBrandSlug ||
+    minPriceUrl ||
+    maxPriceUrl ||
+    ratingUrl ||
+    inStock;
 
   const clearAllFilters = () => {
     navigate('/shop');
@@ -406,11 +537,11 @@ const Products = () => {
           <p className="filter-panel__error" role="alert">
             {categoriesError}
           </p>
-        ) : categories.length === 0 ? (
+        ) : sortedCategories.length === 0 ? (
           <p className="filter-panel__hint">No categories yet.</p>
         ) : (
           <ul className="filter-checklist">
-            {categories.map((cat) => {
+            {sortedCategories.map((cat) => {
               const slug = (cat.slug || '').toLowerCase();
               const name = cat.name || slug;
               const checked = selectedCategories.some((c) => c.toLowerCase() === slug);
@@ -434,37 +565,56 @@ const Products = () => {
 
       <div className="filter-section">
         <h3 className="filter-section__title">Price range</h3>
-        <div className="filter-price-row">
-          <label className="filter-price-field">
-            <span className="filter-price-field__label">Min (PKR)</span>
-            <input
-              type="number"
-              className="form-control form-control--compact"
-              min={0}
-              step={0.01}
-              placeholder="0"
-              value={minDraft}
-              onChange={(e) => setMinDraft(e.target.value)}
-              onBlur={commitPriceRange}
-            />
-          </label>
-          <label className="filter-price-field">
-            <span className="filter-price-field__label">Max (PKR)</span>
-            <input
-              type="number"
-              className="form-control form-control--compact"
-              min={0}
-              step={0.01}
-              placeholder="Any"
-              value={maxDraft}
-              onChange={(e) => setMaxDraft(e.target.value)}
-              onBlur={commitPriceRange}
-            />
-          </label>
-        </div>
-        <button type="button" className="btn btn-outline btn-sm filter-price-apply" onClick={commitPriceRange}>
-          Apply prices
-        </button>
+        <form
+          className="filter-price-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            commitPriceRange();
+          }}
+        >
+          <div className="filter-price-row">
+            <label className="filter-price-field">
+              <span className="filter-price-field__label">Min (PKR)</span>
+              <input
+                type="number"
+                className="form-control form-control--compact"
+                min={0}
+                step={1}
+                placeholder="0"
+                value={minDraft}
+                onChange={(e) => {
+                  setMinDraft(e.target.value);
+                  if (priceFilterError) setPriceFilterError('');
+                }}
+                aria-invalid={priceFilterError ? 'true' : undefined}
+              />
+            </label>
+            <label className="filter-price-field">
+              <span className="filter-price-field__label">Max (PKR)</span>
+              <input
+                type="number"
+                className="form-control form-control--compact"
+                min={0}
+                step={1}
+                placeholder="Any"
+                value={maxDraft}
+                onChange={(e) => {
+                  setMaxDraft(e.target.value);
+                  if (priceFilterError) setPriceFilterError('');
+                }}
+                aria-invalid={priceFilterError ? 'true' : undefined}
+              />
+            </label>
+          </div>
+          {priceFilterError ? (
+            <p className="filter-price-error" role="alert">
+              {priceFilterError}
+            </p>
+          ) : null}
+          <button type="submit" className="btn btn-outline btn-sm filter-price-apply">
+            Apply prices
+          </button>
+        </form>
       </div>
 
       <div className="filter-section">
@@ -552,9 +702,45 @@ const Products = () => {
     ? String(activeCategory.slug).toLowerCase()
     : '';
 
+  const categoryFilterMode = categoryFilterTree?.mode || 'none';
+  const useClothingFilters =
+    categoryFilterMode === 'gender' &&
+    (categoryFiltersLoading || (categoryFilterTree?.genders?.length > 0));
+  const useFlatSubfilters =
+    categoryFilterMode === 'flat' &&
+    (categoryFiltersLoading || (categoryFilterTree?.subcategories?.length > 0));
+  const flatSubcategories = categoryFilterTree?.subcategories || [];
+
   useEffect(() => {
     if (!activeCategorySlug) {
-      setCategoryTags([]);
+      setCategoryFilterTree(null);
+      return;
+    }
+    let cancelled = false;
+    const loadTree = async () => {
+      setCategoryFiltersLoading(true);
+      try {
+        const res = await api.get(
+          `/api/subcategories?category=${encodeURIComponent(activeCategorySlug)}`
+        );
+        if (cancelled) return;
+        setCategoryFilterTree(res?.data?.data || null);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setCategoryFilterTree(null);
+      } finally {
+        if (!cancelled) setCategoryFiltersLoading(false);
+      }
+    };
+    loadTree();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategorySlug]);
+
+  useEffect(() => {
+    if (!activeCategorySlug || useClothingFilters || useFlatSubfilters) {
+      if (!useClothingFilters && !useFlatSubfilters) setCategoryTags([]);
       return;
     }
     let cancelled = false;
@@ -585,7 +771,71 @@ const Products = () => {
     return () => {
       cancelled = true;
     };
+  }, [activeCategorySlug, useClothingFilters, useFlatSubfilters]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!activeCategorySlug) {
+      setCategorySeoForSchema(null);
+      return undefined;
+    }
+
+    getCategorySeoContentAsync(activeCategorySlug).then((content) => {
+      if (!cancelled) setCategorySeoForSchema(content);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeCategorySlug]);
+
+  useEffect(() => {
+    if (!useClothingFilters) return;
+    if (categoryFiltersLoading) return;
+    const genders = categoryFilterTree?.genders || [];
+    if (selectedGender && !genders.some((g) => g.gender === selectedGender)) {
+      updateParams((next) => {
+        next.delete('gender');
+        next.delete('subcategory');
+        next.set('page', '1');
+      });
+      return;
+    }
+    if (!selectedGender || !selectedSubcategory) return;
+    const subs = genders.find((g) => g.gender === selectedGender)?.subcategories || [];
+    if (!subs.some((s) => s.slug === selectedSubcategory)) {
+      updateParams((next) => {
+        next.delete('subcategory');
+        next.set('page', '1');
+      });
+    }
+  }, [
+    useClothingFilters,
+    categoryFiltersLoading,
+    categoryFilterTree,
+    selectedGender,
+    selectedSubcategory,
+    updateParams
+  ]);
+
+  useEffect(() => {
+    if (!useFlatSubfilters) return;
+    if (categoryFiltersLoading) return;
+    if (!selectedSubcategory) return;
+    const valid = flatSubcategories.some((s) => s.slug === selectedSubcategory);
+    if (!valid) {
+      updateParams((next) => {
+        next.delete('subcategory');
+        next.set('page', '1');
+      });
+    }
+  }, [
+    useFlatSubfilters,
+    categoryFiltersLoading,
+    flatSubcategories,
+    selectedSubcategory,
+    updateParams
+  ]);
 
   useEffect(() => {
     if (!selectedTag) return;
@@ -703,9 +953,8 @@ const Products = () => {
       if (itemList) schemas.push(itemList);
     }
 
-    if (activeCategorySlug) {
-      const seoContent = getCategorySeoContent(activeCategorySlug);
-      const faqSchema = buildFAQPageSchema(filterValidFaqs(seoContent?.faqs));
+    if (activeCategorySlug && categorySeoForSchema) {
+      const faqSchema = buildFAQPageSchema(filterValidFaqs(categorySeoForSchema?.faqs));
       if (faqSchema) schemas.push(faqSchema);
 
       const speakable = buildSpeakableSpecificationSchema(listingCanonicalUrl, [
@@ -716,7 +965,7 @@ const Products = () => {
     }
 
     return schemas.length ? schemas : null;
-  }, [listingBreadcrumbJsonLd, activeCategorySlug, listingCanonicalUrl, items, headerTitle]);
+  }, [listingBreadcrumbJsonLd, activeCategorySlug, categorySeoForSchema, listingCanonicalUrl, items, headerTitle]);
 
   return (
     <>
@@ -727,7 +976,7 @@ const Products = () => {
         keywords={listingSeo.keywords}
         schema={listingJsonLd}
       />
-      <header className="page-header">
+      <header className="page-header page-header--shop-listing">
         <div className="container">
           <h1 className="page-header__title">{headerTitle}</h1>
           <p className="page-header__subtitle">{headerSubtitle}</p>
@@ -781,30 +1030,150 @@ const Products = () => {
         </div>
       </header>
 
-      <div className="section shop-page">
-        <div className="container">
-          {!isDesktopFilters && (
-            <div className="shop-mobile-filter-bar">
-              <button
-                type="button"
-                className="btn btn-outline shop-filters-open-btn"
-                onClick={() => setDrawerOpen(true)}
-                aria-expanded={drawerOpen}
-                aria-controls="shop-filters-drawer"
-              >
-                <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden />
-                Filters
-                {selectedCategories.length > 0 ||
-                selectedBrandSlug ||
-                minPriceUrl ||
-                maxPriceUrl ||
-                ratingUrl ||
-                inStock ? (
-                  <span className="shop-filters-open-btn__badge" aria-hidden />
-                ) : null}
-              </button>
+      {!isDesktopFilters ? (
+        <div className="shop-mobile-strip">
+          <div className="shop-mobile-sort" role="tablist" aria-label="Sort products">
+            {MOBILE_SORT_TABS.map((tab) => {
+              const active = tab.matches(sort);
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`shop-mobile-sort__tab${active ? ' shop-mobile-sort__tab--active' : ''}`}
+                  onClick={() => handleMobileSortTab(tab.key)}
+                >
+                  {tab.label}
+                  {tab.key === 'price' && active ? (
+                    <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="shop-mobile-chips">
+            <button
+              type="button"
+              className="shop-mobile-filter-btn"
+              onClick={() => setDrawerOpen(true)}
+              aria-expanded={drawerOpen}
+              aria-controls="shop-filters-drawer"
+            >
+              <SlidersHorizontal size={16} strokeWidth={1.75} aria-hidden="true" />
+              Filter
+              {hasActiveDrawerFilters ? (
+                <span className="shop-mobile-filter-btn__badge" aria-hidden="true" />
+              ) : null}
+            </button>
+            <div className="shop-mobile-chips__scroll" role="toolbar" aria-label="Quick filters">
+              {useClothingFilters ? (
+                <ShopClothingFilters
+                  tree={categoryFilterTree}
+                  loading={categoryFiltersLoading}
+                  selectedGender={selectedGender}
+                  selectedSubcategory={selectedSubcategory}
+                  onGenderChange={setClothingGender}
+                  onSubcategoryChange={setClothingSubcategory}
+                />
+              ) : useFlatSubfilters ? (
+                <ShopCategorySubfilters
+                  className="shop-category-subfilters--mobile"
+                  subcategories={flatSubcategories}
+                  loading={categoryFiltersLoading}
+                  selectedSubcategory={selectedSubcategory}
+                  onSubcategoryChange={setClothingSubcategory}
+                  ariaLabel={`${headerTitle} subcategories`}
+                />
+              ) : activeCategory && (categoryTagsLoading || categoryTags.length > 0) ? (
+                <>
+                  <button
+                    type="button"
+                    className={`shop-mobile-chip${!selectedTag ? ' shop-mobile-chip--active' : ''}`}
+                    aria-pressed={!selectedTag}
+                    disabled={categoryTagsLoading}
+                    onClick={() => setSubcategoryTag('')}
+                  >
+                    All
+                  </button>
+                  {categoryTags.map(({ tag }) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`shop-mobile-chip${
+                        selectedTag === tag ? ' shop-mobile-chip--active' : ''
+                      }`}
+                      aria-pressed={selectedTag === tag}
+                      onClick={() => setSubcategoryTag(tag)}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={`shop-mobile-chip${inStock ? ' shop-mobile-chip--active' : ''}`}
+                    aria-pressed={inStock}
+                    onClick={() => setInStock(!inStock)}
+                  >
+                    In stock
+                  </button>
+                  <button
+                    type="button"
+                    className={`shop-mobile-chip${onSale ? ' shop-mobile-chip--active' : ''}`}
+                    aria-pressed={onSale}
+                    onClick={toggleOnSale}
+                  >
+                    Sale
+                  </button>
+                  {sortedCategories.map((cat) => {
+                    const slug = (cat.slug || '').toLowerCase();
+                    const name = cat.name || slug;
+                    const active = selectedCategories.some((c) => c.toLowerCase() === slug);
+                    if (!slug) return null;
+                    return (
+                      <button
+                        key={cat._id || slug}
+                        type="button"
+                        className={`shop-mobile-chip${active ? ' shop-mobile-chip--active' : ''}`}
+                        aria-pressed={active}
+                        onClick={() => toggleCategory(slug)}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="shop-mobile-meta" aria-live="polite">
+            <span>
+              {loading || searchPending ? (
+                searchPending && !loading ? 'Searching…' : 'Loading…'
+              ) : (
+                <>
+                  <span className="shop-mobile-meta__count">{totalCount}</span>
+                  {' result'}
+                  {totalCount !== 1 ? 's' : ''}
+                </>
+              )}
+            </span>
+            {searchUrl ? (
+              <button type="button" className="shop-mobile-meta__clear" onClick={clearSearchOnly}>
+                Clear “{searchUrl.length > 18 ? `${searchUrl.slice(0, 18)}…` : searchUrl}”
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="section shop-page shop-page--listing">
+        <div className="container">
 
           <div className="shop-layout shop-layout--bazaar">
             {isDesktopFilters ? (
@@ -835,7 +1204,7 @@ const Products = () => {
               </div>
             ) : null}
 
-            <div className="shop-main">
+            <div className="shop-main" id="shop-product-results">
               {activeBrand ? (
                 <div className="shop-brand-bar" aria-label="Active brand filter">
                   <div className="shop-brand-bar__identity">
@@ -883,9 +1252,28 @@ const Products = () => {
             </div>
           )}
 
-              {activeCategory && (categoryTagsLoading || categoryTags.length > 0) ? (
+              {useClothingFilters ? (
+                <ShopClothingFilters
+                  className="shop-subcategory-bar--desktop-only"
+                  tree={categoryFilterTree}
+                  loading={categoryFiltersLoading}
+                  selectedGender={selectedGender}
+                  selectedSubcategory={selectedSubcategory}
+                  onGenderChange={setClothingGender}
+                  onSubcategoryChange={setClothingSubcategory}
+                />
+              ) : useFlatSubfilters ? (
+                <ShopCategorySubfilters
+                  className="shop-subcategory-bar--desktop-only"
+                  subcategories={flatSubcategories}
+                  loading={categoryFiltersLoading}
+                  selectedSubcategory={selectedSubcategory}
+                  onSubcategoryChange={setClothingSubcategory}
+                  ariaLabel={`${headerTitle} subcategories`}
+                />
+              ) : activeCategory && (categoryTagsLoading || categoryTags.length > 0) ? (
                 <div
-                  className="shop-subcategory-bar"
+                  className="shop-subcategory-bar shop-subcategory-bar--desktop-only"
                   role="toolbar"
                   aria-label={`${headerTitle} subcategories`}
                 >
@@ -918,7 +1306,7 @@ const Products = () => {
                 </div>
               ) : null}
 
-              <div className="shop-toolbar shop-toolbar--bazaar">
+              <div className="shop-toolbar shop-toolbar--bazaar shop-toolbar--desktop-only">
                 <p className="results-count" aria-live="polite">
                   {loading || searchPending ? (
                     <span className="results-count__label">

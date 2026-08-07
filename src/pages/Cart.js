@@ -4,12 +4,12 @@ import { Lock, ShoppingCart, Truck } from 'lucide-react';
 import SEO from '../components/SEO';
 import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
-import LoadingSpinner from '../components/LoadingSpinner';
+import BrandLogoLoader from '../components/BrandLogoLoader';
 import EmptyState from '../components/EmptyState';
 import CartItem from '../components/CartItem';
 import { formatPKR } from '../utils/currency';
 import { computeTotalsPreview, computeCartWeightKg } from '../utils/pricing';
-import { recommendationsAPI } from 'api';
+import { recommendationsAPI } from '../api/storefront';
 import RecommendationRow from '../components/RecommendationRow';
 import { getSessionId } from '../lib/sessionId';
 import { useStoreSettings } from '../hooks/useStoreSettings';
@@ -56,7 +56,7 @@ const Cart = () => {
   const preview = useMemo(() => {
     if (!cart.length || !settings) return null;
     const cartWeightKg = computeCartWeightKg(cart, settings);
-    return computeTotalsPreview(subtotal, discountAmount, 'standard', settings, cartWeightKg);
+    return computeTotalsPreview(subtotal, discountAmount, 'standard', settings, cartWeightKg, cart);
   }, [cart, subtotal, discountAmount, settings]);
 
   const handleApplyCoupon = async () => {
@@ -117,10 +117,7 @@ const Cart = () => {
 
               <div className="cart-items">
                 {cartLoading ? (
-                  <div className="cart-loading">
-                    <LoadingSpinner size="lg" label="Loading cart" />
-                    <p className="cart-loading__note">Loading your cart…</p>
-                  </div>
+                  <BrandLogoLoader compact label="Loading cart" />
                 ) : cart.length === 0 ? (
                   <EmptyState
                     className="cart-empty-state"
@@ -213,10 +210,6 @@ const Cart = () => {
                           <span className="value">{formatPKR(preview.taxPrice)}</span>
                         </div>
                       ) : null}
-                      <div className="summary-row summary-row--muted">
-                        <span className="label">Currency</span>
-                        <span className="value">PKR</span>
-                      </div>
                       <div className="summary-row total">
                         <span className="label">Estimated total</span>
                         <span className="value">{formatPKR(preview.totalPrice)}</span>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Tag, Truck, ShieldCheck } from 'lucide-react';
-import { publicAPI } from 'api';
+import { publicAPI } from '../api/storefront';
 import { formatPKR } from '../utils/currency';
 import { getHomeWhyChooseCards } from '../data/homeWhyChoose';
 import './HomeWhyChoose.css';

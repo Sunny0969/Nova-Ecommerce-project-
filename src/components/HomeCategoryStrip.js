@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronsRight } from 'lucide-react';
-import api from 'api';
-import { unwrapCategoriesResponse } from '../lib/api';
+import api from '../api/client';
+import { sortCategoriesAlphabetically, unwrapCategoriesResponse } from '../lib/api';
 import { buildCategoryPath } from '../utils/urls';
 import './HomeCategoryStrip.css';
 
@@ -36,16 +36,23 @@ export default function HomeCategoryStrip() {
     el.scrollBy({ left: Math.min(280, el.clientWidth * 0.85), behavior: 'smooth' });
   }, []);
 
+  const sortedCategories = useMemo(
+    () => sortCategoriesAlphabetically(categories),
+    [categories]
+  );
+
   return (
     <nav className="home-category-strip" aria-label="Browse categories">
       <div className="home-category-strip__inner">
         <div ref={scrollRef} className="home-category-strip__scroll">
           {loading ? (
-            <span className="home-category-strip__status">Loading categories…</span>
+            <span className="home-category-strip__status home-category-strip__status--skeleton" aria-hidden>
+              {'\u00A0'}
+            </span>
           ) : categories.length === 0 ? (
             <span className="home-category-strip__status">{COMING_SOON}</span>
           ) : (
-            categories.map((cat) => {
+            sortedCategories.map((cat) => {
               const slug = cat.slug || '';
               const name = cat.name || slug;
               return (
@@ -60,7 +67,8 @@ export default function HomeCategoryStrip() {
             })
           )}
         </div>
-        {categories.length > 0 && (
+
+        {sortedCategories.length > 0 && (
           <button
             type="button"
             className="home-category-strip__more"

@@ -1,0 +1,43 @@
+BAZAAR — Partnership Brand Kit
+==============================
+
+Website
+  https://www.bazaar-pk.com
+
+Business
+  Bazaar
+  Al Meeran Town, Citizen Colony, Hyderabad, Sindh, Pakistan
+  Phone: 0348 3510584  |  WhatsApp: +92 348 3510584
+
+Brand colors
+  Navy (primary):     #1A1A2E
+  Navy deep:          #12121F
+  Orange (accent):    #F97316
+  Orange light:       #FB923C
+  White (background): #FFFFFF
+  Cream (sections):   #F8F6F1
+
+Typography (website)
+  Headings: Playfair Display
+  Body/UI:  DM Sans
+  Logo:     Taskor (custom wordmark)
+
+Files in this folder
+  bazaar-wordmark.svg          — logo on white (print, email, light backgrounds)
+  bazaar-wordmark-dark.svg     — logo on navy (dark backgrounds)
+  bazaar-icon.svg              — square app/social icon
+  bazaar-partnership-banner.png — partnership intro slide (email / deck)
+  bazaar-logo.jpg              — official wordmark JPG
+
+Live image URLs (after deploy)
+  Logo JPG:    https://www.bazaar-pk.com/images/bazaar-logo.jpg
+  Favicon:     https://www.bazaar-pk.com/favicon.svg
+  Banner 1:    https://res.cloudinary.com/db05hw4ri/image/upload/v1781378765/bazaar/home-banners/wdkt8hfhmjwewa78dplk.webp
+  Banner 2:    https://res.cloudinary.com/db05hw4ri/image/upload/v1781378767/bazaar/home-banners/znnlqeqklqkyzbunft2q.webp
+  Banner 3:    https://res.cloudinary.com/db05hw4ri/image/upload/v1781378768/bazaar/home-banners/hrsavx4ywudjg6pwzbmh.webp
+
+Social / link preview (1200×630)
+  https://res.cloudinary.com/db05hw4ri/image/upload/f_auto,q_auto,c_fill,w_1200,h_630/bazaar/home-banners/wdkt8hfhmjwewa78dplk
+
+Suggested partnership email subject
+  Bazaar × [Partner Name] — Online retail partnership (Pakistan)

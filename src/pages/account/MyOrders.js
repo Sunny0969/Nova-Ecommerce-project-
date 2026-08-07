@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ordersAPI } from 'api';
+import { ordersAPI } from '../../api/orders';
+import { authAPI } from '../../api/auth';
 import { apiMessage } from '../../lib/api';
+import {
+  mapUserReviewsByProduct,
+  orderIsFullyReviewed
+} from '../../lib/orderReviewStatus';
 import { productImageUrl } from '../../lib/productImage';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -39,18 +44,25 @@ export default function MyOrders() {
   const [status, setStatus] = useState('');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewedProductIds, setReviewedProductIds] = useState(() => new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page: 1, limit: 50 };
       if (status) params.status = status;
-      const res = await ordersAPI.getMyOrders(params);
-      const list = res.data?.data?.orders;
+      const [ordersRes, reviewsRes] = await Promise.all([
+        ordersAPI.getMyOrders(params),
+        authAPI.myReviews().catch(() => null)
+      ]);
+      const list = ordersRes.data?.data?.orders;
       setOrders(Array.isArray(list) ? list : []);
+      const reviewMap = mapUserReviewsByProduct(reviewsRes?.data?.data?.reviews);
+      setReviewedProductIds(new Set(reviewMap.keys()));
     } catch (e) {
       toast.error(apiMessage(e, 'Could not load orders'));
       setOrders([]);
+      setReviewedProductIds(new Set());
     } finally {
       setLoading(false);
     }
@@ -103,7 +115,13 @@ export default function MyOrders() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {orders.map((order) => {
+                  const fullyReviewed =
+                    order.status === 'delivered' && orderIsFullyReviewed(order, reviewedProductIds);
+                  const canReview =
+                    order.status === 'delivered' && !fullyReviewed;
+
+                  return (
                   <tr key={order._id}>
                     <td>#{orderShortId(order)}</td>
                     <td>
@@ -143,21 +161,42 @@ export default function MyOrders() {
                       <span className={statusClass(order.status)}>{order.status}</span>
                     </td>
                     <td className="account-table__actions">
-                      <Link
-                        to={`/account/orders/${order._id}`}
-                        className="btn btn-outline btn-sm"
-                      >
-                        View
-                      </Link>
+                      <div className="account-orders__action-group">
+                        <Link
+                          to={`/account/orders/${order._id}`}
+                          className="btn btn-outline btn-sm"
+                        >
+                          View
+                        </Link>
+                        {canReview ? (
+                          <Link
+                            to={`/account/orders/${order._id}?review=1`}
+                            className="btn btn-primary btn-sm"
+                          >
+                            Review
+                          </Link>
+                        ) : fullyReviewed ? (
+                          <span className="account-orders__reviewed-label">Reviewed</span>
+                        ) : (
+                          <span className="account-orders__action-slot" aria-hidden />
+                        )}
+                      </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <ul className="account-orders__cards">
-            {orders.map((order) => (
+            {orders.map((order) => {
+              const fullyReviewed =
+                order.status === 'delivered' && orderIsFullyReviewed(order, reviewedProductIds);
+              const canReview =
+                order.status === 'delivered' && !fullyReviewed;
+
+              return (
               <li key={order._id} className="account-orders__card card-like">
                 <div className="account-orders__card-head">
                   <span className="account-orders__card-id">#{orderShortId(order)}</span>
@@ -204,8 +243,21 @@ export default function MyOrders() {
                 >
                   View order
                 </Link>
+                {canReview ? (
+                  <Link
+                    to={`/account/orders/${order._id}?review=1`}
+                    className="btn btn-outline btn-sm btn-full account-orders__review-link"
+                  >
+                    Write review
+                  </Link>
+                ) : fullyReviewed ? (
+                  <span className="account-orders__reviewed-label account-orders__reviewed-label--full">
+                    Reviewed
+                  </span>
+                ) : null}
               </li>
-            ))}
+              );
+            })}
           </ul>
         </>
       )}

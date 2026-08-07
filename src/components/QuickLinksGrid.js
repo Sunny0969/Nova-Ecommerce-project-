@@ -14,18 +14,15 @@ export default function QuickLinksGrid({ links }) {
           <p className="section-header__sub">Jump to categories based on what you want to improve today.</p>
         </div>
 
-        <div className="quick-links__grid" role="list">
+        <ul className="quick-links__grid">
           {links.map((l) => (
-            <Link
-              key={l.id}
-              role="listitem"
-              to={l.url}
-              className="quick-link"
-            >
-              {l.label}
-            </Link>
+            <li key={l.id} className="quick-links__item">
+              <Link to={l.url} className="quick-link">
+                {l.label}
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

@@ -1,32 +1,42 @@
 import React, { lazy, Suspense } from 'react';
-import ReactDOM from 'react-dom/client';
-import './assets/fonts/taskor/taskor.css';
+import { createRoot } from 'react-dom/client';
 import './index.css';
 import './styles/mobile.css';
 import './mix.css';
+import { DelayedFallback } from './components/DelayedSuspense';
+import BrandLogoLoader from './components/BrandLogoLoader';
+import { prefetchStorefrontRoutes } from './lib/prefetchStorefront';
+import { capturePrerenderDocumentSeeds } from './lib/prerenderFallback';
 
 const App = lazy(() => import('./App'));
 
 function RootFallback() {
-  return (
-    <div
-      className="site-chrome-placeholder site-chrome-placeholder--header"
-      style={{ minHeight: '100vh' }}
-      aria-busy="true"
-      aria-label="Loading Bazaar"
-    />
-  );
+  return <BrandLogoLoader label="Loading Bazaar" />;
 }
+
+const appTree = (
+  <React.StrictMode>
+    <Suspense fallback={<DelayedFallback delayMs={120} fallback={<RootFallback />} />}>
+      <App />
+    </Suspense>
+  </React.StrictMode>
+);
 
 if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
   window.history.scrollRestoration = 'manual';
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <Suspense fallback={<RootFallback />}>
-      <App />
-    </Suspense>
-  </React.StrictMode>
-);
+capturePrerenderDocumentSeeds();
+
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add('js');
+}
+
+const container = document.getElementById('root');
+if (!container) {
+  throw new Error('Missing #root mount node');
+}
+
+createRoot(container).render(appTree);
+
+prefetchStorefrontRoutes();

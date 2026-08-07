@@ -1,12 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ordersAPI } from 'api';
+import { Star } from 'lucide-react';
+import { ordersAPI } from '../../api/orders';
+import { authAPI } from '../../api/auth';
 import { apiMessage } from '../../lib/api';
+import {
+  buildReviewMetaMap,
+  lineProductId,
+  mapUserReviewsByProduct
+} from '../../lib/orderReviewStatus';
 import { productImageUrl } from '../../lib/productImage';
 import { useCart } from '../../context/CartContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Modal from '../../components/Modal';
+import ProductReviewModal from '../../components/ProductReviewModal';
 import SEO from '../../components/SEO';
 import { formatPKR } from '../../utils/currency';
 import { buildProductPath, getProductCategorySlug } from '../../utils/urls';
@@ -41,38 +49,99 @@ function lineImage(line) {
   return line.image || '';
 }
 
+function buildReviewTarget(line, meta) {
+  const productId = lineProductId(line);
+  if (!productId || meta?.hasReview) return null;
+  return {
+    productId,
+    productName: line.name || meta?.productName || 'Product',
+    productImage: lineImage(line),
+    mode: 'create'
+  };
+}
+
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { addToCart, fetchCart } = useCart();
   const [order, setOrder] = useState(null);
+  const [itemReviews, setItemReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [buyAgainBusy, setBuyAgainBusy] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState(null);
+  const [userReviewsByProduct, setUserReviewsByProduct] = useState(() => new Map());
+
+  const loadOrder = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const [orderRes, reviewsRes] = await Promise.all([
+        ordersAPI.getOne(id),
+        authAPI.myReviews().catch(() => null)
+      ]);
+      setOrder(orderRes.data?.data?.order || null);
+      setItemReviews(
+        Array.isArray(orderRes.data?.data?.itemReviews) ? orderRes.data.data.itemReviews : []
+      );
+      const list = reviewsRes?.data?.data?.reviews;
+      setUserReviewsByProduct(mapUserReviewsByProduct(Array.isArray(list) ? list : []));
+    } catch (e) {
+      toast.error(apiMessage(e, 'Could not load order'));
+      setOrder(null);
+      setItemReviews([]);
+      setUserReviewsByProduct(new Map());
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const res = await ordersAPI.getOne(id);
-        const o = res.data?.data?.order;
-        if (!cancelled) setOrder(o || null);
-      } catch (e) {
-        if (!cancelled) {
-          toast.error(apiMessage(e, 'Could not load order'));
-          setOrder(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+    loadOrder();
+  }, [loadOrder]);
+
+  useEffect(() => {
+    if (loading || !order) return;
+    if (searchParams.get('review') !== '1') return;
+
+    setSearchParams({}, { replace: true });
+
+    if (order.status !== 'delivered') {
+      toast.error('Reviews are only available for delivered orders');
+      return;
+    }
+
+    const metaMap = buildReviewMetaMap(order, itemReviews, userReviewsByProduct);
+    const lines = order.orderItems || [];
+    const targetLine = lines.find((line) => {
+      const pid = lineProductId(line);
+      return pid && metaMap.get(pid)?.canReview;
+    });
+
+    if (!targetLine) {
+      toast('You have already reviewed all items in this order');
+      return;
+    }
+
+    const meta = metaMap.get(lineProductId(targetLine));
+    const target = buildReviewTarget(targetLine, meta);
+    if (target) setReviewTarget(target);
+  }, [loading, order, itemReviews, userReviewsByProduct, searchParams, setSearchParams]);
+
+  const reviewMetaByProduct = useMemo(
+    () => buildReviewMetaMap(order, itemReviews, userReviewsByProduct),
+    [order, itemReviews, userReviewsByProduct]
+  );
+
+  const pendingReviewCount = useMemo(() => {
+    let count = 0;
+    reviewMetaByProduct.forEach((row) => {
+      if (row.canReview) count += 1;
+    });
+    return count;
+  }, [reviewMetaByProduct]);
 
   const handleCancel = async () => {
     if (!order?._id) return;
@@ -155,8 +224,21 @@ export default function OrderDetail() {
 
   const idx = stepIndex(order.status);
   const cancelled = order.status === 'cancelled';
+  const delivered = order.status === 'delivered';
   const showStepper = !cancelled;
   const canCancel = order.status === 'pending';
+
+  const openReviewForLine = (line) => {
+    const productId = lineProductId(line);
+    if (!productId) return;
+    const meta = reviewMetaByProduct.get(productId);
+    if (meta?.hasReview) {
+      toast('You have already reviewed this product');
+      return;
+    }
+    const target = buildReviewTarget(line, meta);
+    if (target) setReviewTarget(target);
+  };
 
   return (
     <div className="account-page account-order-detail">
@@ -202,6 +284,19 @@ export default function OrderDetail() {
         </div>
       ) : null}
 
+      {delivered && pendingReviewCount > 0 ? (
+        <div className="account-order-detail__review-banner card-like" role="status">
+          <Star size={20} className="account-order-detail__review-icon" aria-hidden />
+          <div>
+            <strong>How was your order?</strong>
+            <p>
+              You can leave a star rating, review, and photos for{' '}
+              {pendingReviewCount === 1 ? 'the item' : `${pendingReviewCount} items`} below.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="account-order-detail__grid">
         <section className="account-order-detail__items card-like">
           <h3 className="account-subheading">Items</h3>
@@ -213,6 +308,8 @@ export default function OrderDetail() {
                   ? line.product.slug
                   : null;
               const productRef = typeof line.product === 'object' ? line.product : null;
+              const productId = lineProductId(line);
+              const reviewMeta = productId ? reviewMetaByProduct.get(productId) : null;
               const inner = (
                 <>
                   <div className="account-order-lines__img-wrap">
@@ -245,18 +342,39 @@ export default function OrderDetail() {
               );
               return (
                 <li key={`${line.name}-${i}`} className="account-order-lines__row">
-                  {slug ? (
-                    <Link
-                      to={buildProductPath(slug, getProductCategorySlug(productRef))}
-                      className="account-order-lines__link"
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <div className="account-order-lines__link account-order-lines__link--static">
-                      {inner}
-                    </div>
-                  )}
+                  <div className="account-order-lines__main">
+                    {slug ? (
+                      <Link
+                        to={buildProductPath(slug, getProductCategorySlug(productRef))}
+                        className="account-order-lines__link"
+                      >
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div className="account-order-lines__link account-order-lines__link--static">
+                        {inner}
+                      </div>
+                    )}
+                    {delivered && productId && reviewMeta?.hasReview ? (
+                      <span
+                        className="account-order-lines__reviewed-badge"
+                        aria-label={`Reviewed ${reviewMeta.rating} out of 5 stars`}
+                      >
+                        <Star size={14} aria-hidden />
+                        Reviewed
+                        {reviewMeta.rating != null ? ` · ${reviewMeta.rating}/5` : ''}
+                      </span>
+                    ) : delivered && productId && reviewMeta?.canReview ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm account-order-lines__review-btn"
+                        onClick={() => openReviewForLine(line)}
+                      >
+                        <Star size={14} aria-hidden />
+                        Write review
+                      </button>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -364,6 +482,21 @@ export default function OrderDetail() {
           account.
         </p>
       </Modal>
+
+      <ProductReviewModal
+        isOpen={Boolean(reviewTarget)}
+        onClose={() => setReviewTarget(null)}
+        productId={reviewTarget?.productId}
+        productName={reviewTarget?.productName}
+        productImage={reviewTarget?.productImage}
+        reviewId={reviewTarget?.reviewId}
+        mode={reviewTarget?.mode}
+        initialRating={reviewTarget?.initialRating}
+        initialTopic={reviewTarget?.initialTopic}
+        initialComment={reviewTarget?.initialComment}
+        existingImages={reviewTarget?.existingImages}
+        onSuccess={loadOrder}
+      />
     </div>
   );
 }

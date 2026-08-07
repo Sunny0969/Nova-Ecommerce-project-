@@ -2,12 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Skeleton from 'react-loading-skeleton';
 import SEO from '../components/SEO';
-import api from 'api';
+import api from '../api/client';
 import { apiMessage } from '../lib/api';
 import { buildMetaDescription, buildMetaKeywords, buildPageTitle } from '../utils/pageSeo';
 import { buildBrandPath } from '../utils/urls';
 import { buildBrandImageAlt } from '../utils/imageAlt';
-import { optimizeImageUrl } from '../utils/optimizedImageUrl';
 import OptimizedImage from '../components/OptimizedImage';
 import './BrandsPage.css';
 
@@ -71,13 +70,15 @@ export default function BrandsPage() {
           <h2 className="visually-hidden">Browse all grocery and household brands</h2>
 
           {loading ? (
-            <div className="brands-page__grid brands-page__grid--loading">
+            <ul className="brands-page__grid brands-page__grid--loading" aria-hidden>
               {Array.from({ length: 24 }).map((_, i) => (
-                <div key={i} className="brand-tile brand-tile--skeleton">
-                  <Skeleton height={100} borderRadius={12} />
-                </div>
+                <li key={i} className="brands-page__item">
+                  <div className="brand-tile brand-tile--skeleton">
+                    <Skeleton height={100} borderRadius={12} />
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : error ? (
             <div className="api-error-banner" role="alert">
               <p>
@@ -90,33 +91,34 @@ export default function BrandsPage() {
           ) : brands.length === 0 ? (
             <p className="brands-page__empty">No brands available yet.</p>
           ) : (
-            <div className="brands-page__grid" role="list">
+            <ul className="brands-page__grid">
               {brands.map((brand) => {
                 const slug = brand.slug || '';
                 return (
-                  <Link
-                    key={brand._id || slug}
-                    to={buildBrandPath(slug)}
-                    className="brand-tile brand-tile--link"
-                    role="listitem"
-                    aria-label={`Shop ${brand.name} products`}
-                  >
-                    {brand.imageUrl ? (
+                  <li key={brand._id || slug} className="brands-page__item">
+                    <Link
+                      to={buildBrandPath(slug)}
+                      className="brand-tile brand-tile--link"
+                      aria-label={`Shop ${brand.name} products`}
+                    >
+                      {brand.imageUrl ? (
                       <OptimizedImage
                         className="brand-tile__img"
-                        src={optimizeImageUrl(brand.imageUrl, { width: 240, quality: 80 })}
+                        src={brand.imageUrl}
                         alt={buildBrandImageAlt(brand.name)}
                         width={240}
                         height={120}
-                        optimize={false}
+                        optimizeWidth={240}
+                        loading="lazy"
                       />
-                    ) : (
-                      <span className="brand-tile__fallback">{brand.name}</span>
-                    )}
-                  </Link>
+                      ) : (
+                        <span className="brand-tile__fallback">{brand.name}</span>
+                      )}
+                    </Link>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </div>
       </div>

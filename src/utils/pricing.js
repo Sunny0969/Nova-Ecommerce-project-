@@ -5,8 +5,10 @@
  * @param {string} deliveryOption
  * @param {object} settings
  * @param {number|null} [cartWeightKg]
+ * @param {Array|null} [cartLines]
  */
-import { calculateWeightBasedShipping, normalizeWeightShippingSettings } from '../lib/shippingWeight';
+import { normalizeWeightShippingSettings, resolveStandardShippingPrice, shouldUseFlatStandardShipping } from '../lib/shippingWeight';
+import { findWeightShippingTier, formatWeightTierRange, hasWeightShippingTiers } from '../lib/weightShippingTiers';
 
 export function round2(n) {
   return Math.round(Number(n) * 100) / 100;
@@ -18,7 +20,7 @@ export {
   normalizeWeightShippingSettings
 } from '../lib/shippingWeight';
 
-export function calculateShipping(itemsPrice, deliveryOption, settings = {}, cartWeightKg = null) {
+export function calculateShipping(itemsPrice, deliveryOption, settings = {}, cartWeightKg = null, cartLines = null) {
   const cfg = normalizeWeightShippingSettings(settings);
   const d = deliveryOption || 'standard';
   let shipping = 0;
@@ -26,14 +28,20 @@ export function calculateShipping(itemsPrice, deliveryOption, settings = {}, car
     shipping = round2(Number(cfg.shippingExpress) >= 0 ? Number(cfg.shippingExpress) : 499);
   } else if (d === 'nextday') {
     shipping = round2(Number(cfg.shippingNextDay) >= 0 ? Number(cfg.shippingNextDay) : 599);
-  } else if (cfg.weightShippingEnabled && cartWeightKg != null) {
-    shipping = calculateWeightBasedShipping(cartWeightKg, cfg);
+  } else if (cfg.weightShippingEnabled) {
+    shipping = resolveStandardShippingPrice(cartLines, cartWeightKg, settings);
   } else {
     shipping = round2(Number(cfg.shippingStandard) ?? 299);
   }
 
   const freeMin = Number(settings?.freeShippingMin);
+  const skipFreeShipping =
+    d === 'standard' &&
+    cartLines &&
+    (shouldUseFlatStandardShipping(cartLines, settings) ||
+      (cfg.weightShippingEnabled && hasWeightShippingTiers(settings)));
   if (
+    !skipFreeShipping &&
     d === 'standard' &&
     Number.isFinite(freeMin) &&
     freeMin > 0 &&
@@ -54,13 +62,27 @@ export function computeTotalsPreview(
   discountAmount,
   deliveryOption,
   settings,
-  cartWeightKg = null
+  cartWeightKg = null,
+  cartLines = null
 ) {
   const disc = Math.min(Number(discountAmount) || 0, itemsPrice);
   const subAfterDisc = round2(Math.max(0, itemsPrice - disc));
-  const shippingPrice = calculateShipping(itemsPrice, deliveryOption, settings, cartWeightKg);
+  const shippingPrice = calculateShipping(itemsPrice, deliveryOption, settings, cartWeightKg, cartLines);
   const taxPrice = calculateTaxPrice(subAfterDisc, settings);
   const totalPrice = round2(Math.max(0, subAfterDisc + shippingPrice + taxPrice));
+
+  let weightShippingTierLabel;
+  if (
+    (deliveryOption || 'standard') === 'standard' &&
+    settings?.weightShippingEnabled !== false &&
+    cartWeightKg != null &&
+    cartLines &&
+    !shouldUseFlatStandardShipping(cartLines, settings)
+  ) {
+    const tier = findWeightShippingTier(cartWeightKg, settings?.weightShippingTiers);
+    if (tier) weightShippingTierLabel = formatWeightTierRange(tier);
+  }
+
   return {
     itemsPrice,
     discountAmount: disc,
@@ -68,6 +90,7 @@ export function computeTotalsPreview(
     shippingPrice,
     taxPrice,
     totalPrice,
-    cartWeightKg: cartWeightKg != null ? cartWeightKg : undefined
+    cartWeightKg: cartWeightKg != null ? cartWeightKg : undefined,
+    weightShippingTierLabel
   };
 }

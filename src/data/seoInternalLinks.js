@@ -171,6 +171,8 @@ export const LEGAL_INTERNAL_LINKS = [
   { to: '/faqs', label: 'Delivery, orders & payment FAQs' },
   { to: '/privacy-policy', label: 'Privacy policy & data protection' },
   { to: '/terms-and-conditions', label: 'Terms & conditions for online orders' },
+  { to: '/returns-and-refunds', label: 'Returns & refunds policy' },
+  { to: '/shipping-policy', label: 'Shipping & delivery policy' },
   { to: '/contact-us', label: 'Contact Bazaar support in Hyderabad' },
   { to: '/shop', label: 'Shop groceries & essentials online' }
 ];
@@ -214,6 +216,15 @@ export function getBlogRelatedLinks(blog) {
       label: `Shop ${destLabel} online at Bazaar`
     });
   }
+
+  const related = Array.isArray(blog?.relatedPosts) ? blog.relatedPosts : [];
+  related.slice(0, 2).forEach((post) => {
+    if (!post?.slug) return;
+    links.push({
+      to: `/blog/${post.slug}`,
+      label: post.title || 'Related shopping guide'
+    });
+  });
 
   const catMatch = dest.match(/\/shop\/category\/([^/?#]+)/i);
   if (catMatch) {

@@ -8,7 +8,8 @@ import React, {
   useRef
 } from 'react';
 import toast from 'react-hot-toast';
-import { wishlistAPI, productsAPI } from 'api';
+import { productsAPI } from '../api/storefront';
+import { wishlistAPI } from '../api/wishlist';
 import { useAuth } from './AuthContext';
 
 const WishlistContext = createContext();

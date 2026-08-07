@@ -1,3 +1,9 @@
+import {
+  hasWeightShippingTiers,
+  normalizeWeightShippingTiers,
+  resolveTierShippingPrice
+} from './weightShippingTiers';
+
 /**
  * Client-side weight parsing — mirrors backend/lib/parseWeightKg.js
  * @param {string|number|null|undefined} input
@@ -39,6 +45,7 @@ export function normalizeWeightShippingSettings(settings = {}) {
   return {
     ...settings,
     weightShippingEnabled: settings.weightShippingEnabled !== false,
+    weightShippingTiers: normalizeWeightShippingTiers(settings.weightShippingTiers),
     weightShippingThresholdKg:
       Number.isFinite(Number(settings.weightShippingThresholdKg)) &&
       Number(settings.weightShippingThresholdKg) > 0
@@ -62,13 +69,77 @@ export function resolveProductWeightKg(product, settings) {
   const cfg = normalizeWeightShippingSettings(settings);
   if (!product) return cfg.defaultProductWeightKg;
 
+  const explicit = getExplicitProductWeightKg(product);
+  if (explicit != null) return explicit;
+
+  return cfg.defaultProductWeightKg;
+}
+
+export function getExplicitProductWeightKg(product) {
+  if (!product) return null;
+
   const direct = Number(product.weightKg);
   if (Number.isFinite(direct) && direct > 0) return direct;
 
   const parsed = parseWeightStringToKg(product.weight);
   if (parsed != null && parsed > 0) return parsed;
 
-  return cfg.defaultProductWeightKg;
+  return null;
+}
+
+export function productHasExplicitWeightKg(product) {
+  return getExplicitProductWeightKg(product) != null;
+}
+
+export function cartHasAnyMissingProductWeight(cartLines) {
+  for (const line of cartLines || []) {
+    const qty = Math.max(0, Number(line.quantity) || 0);
+    if (!qty) continue;
+    const p = line.product && typeof line.product === 'object' ? line.product : null;
+    if (!productHasExplicitWeightKg(p)) return true;
+  }
+  return false;
+}
+
+export function computeExplicitCartWeightKg(cartLines) {
+  let total = 0;
+  for (const line of cartLines || []) {
+    const qty = Math.max(0, Number(line.quantity) || 0);
+    if (!qty) continue;
+    const p = line.product && typeof line.product === 'object' ? line.product : null;
+    const w = getExplicitProductWeightKg(p);
+    if (w != null) total += w * qty;
+  }
+  return Math.round(total * 1000) / 1000;
+}
+
+export function shouldUseFlatStandardShipping(cartLines, settings = {}) {
+  if (!cartLines || !cartLines.length) return true;
+
+  // Tier ranges: always price by total cart weight (incl. default weight per product).
+  if (hasWeightShippingTiers(settings)) {
+    return false;
+  }
+
+  if (cartHasAnyMissingProductWeight(cartLines)) return true;
+
+  const cfg = normalizeWeightShippingSettings(settings);
+  return computeExplicitCartWeightKg(cartLines) < cfg.weightShippingThresholdKg;
+}
+
+export function resolveStandardShippingPrice(cartLines, cartWeightKg, settings = {}) {
+  const cfg = normalizeWeightShippingSettings(settings);
+
+  if (settings.weightShippingEnabled === false) {
+    return Math.round(Number(cfg.shippingStandard ?? 299) * 100) / 100;
+  }
+
+  if (shouldUseFlatStandardShipping(cartLines, settings)) {
+    return Math.round(Number(cfg.shippingStandard ?? 299) * 100) / 100;
+  }
+
+  const w = cartWeightKg != null ? cartWeightKg : computeCartWeightKg(cartLines, settings);
+  return calculateWeightBasedShipping(w, settings);
 }
 
 /** @param {Array<{ product?: object, quantity?: number }>} cartLines */
@@ -85,6 +156,13 @@ export function computeCartWeightKg(cartLines, settings) {
 
 export function calculateWeightBasedShipping(totalWeightKg, settings) {
   const cfg = normalizeWeightShippingSettings(settings);
+  const tiers = cfg.weightShippingTiers;
+  if (tiers.length) {
+    const tierPrice = resolveTierShippingPrice(totalWeightKg, tiers);
+    if (tierPrice != null) return tierPrice;
+    return Math.round(Number(cfg.shippingStandard ?? 299) * 100) / 100;
+  }
+
   const t = cfg.weightShippingThresholdKg;
   const baseRate = cfg.shippingUpToThresholdKg;
   const addRate = cfg.shippingAdditionalPerKgOver;

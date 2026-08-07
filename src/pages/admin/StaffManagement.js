@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Shield, Trash2, Ban, CheckCircle2, XCircle, Copy } from 'lucide-react';
-import { adminAPI } from 'api';
+import { adminAPI } from '../../api/adminApi';
 import Modal from '../../components/Modal';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { apiMessage } from '../../lib/api';

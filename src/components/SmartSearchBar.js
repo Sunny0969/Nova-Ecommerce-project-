@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Sparkles, TrendingUp, BookOpen } from 'lucide-react';
-import { productsAPI, api } from 'api';
+import { productsAPI } from '../api/storefront';
+import api from '../api/client';
 import { apiMessage, unwrapProductListResponse } from '../lib/api';
 import { formatPKR } from '../utils/currency';
-import { productImageUrl } from '../lib/productImage';
+import OptimizedImage from './OptimizedImage';
 import blogSearchIndex from '../data/blogSearchIndex.json';
 
 const RECENT_KEY = 'nova_shop_recent_searches_v1';
@@ -233,10 +234,17 @@ export default function SmartSearchBar({
     onPick?.({ type: 'blog', slug });
   };
 
+  const submitSearch = (e) => {
+    e?.preventDefault?.();
+    onPickQuery(rawTrim);
+  };
+
   return (
     <div className="smart-search" role="search" aria-label="Site search">
-      <div className="nav-search__field">
-        <Search size={18} strokeWidth={1.75} className="nav-search__icon" aria-hidden="true" />
+      <form className="nav-search__field" onSubmit={submitSearch}>
+        <button type="submit" className="nav-search__submit" aria-label="Search shop">
+          <Search size={18} strokeWidth={1.75} className="nav-search__icon" aria-hidden="true" />
+        </button>
         <input
           ref={inputRef}
           type="search"
@@ -248,6 +256,7 @@ export default function SmartSearchBar({
           aria-label="Search products and blog posts"
           aria-controls="nav-search-results"
           autoComplete="off"
+          enterKeyHint="search"
         />
         <span className="smart-search__badge" title="Keyword search — no external AI">
           <Sparkles size={12} aria-hidden="true" /> Smart
@@ -257,7 +266,7 @@ export default function SmartSearchBar({
             Close
           </button>
         ) : null}
-      </div>
+      </form>
 
       {showDropdown && (
         <div className="nav-search__dropdown" id="nav-search-results" aria-hidden={!showDropdown}>
@@ -298,7 +307,18 @@ export default function SmartSearchBar({
                       onClick={() => onPickProduct(p)}
                     >
                       <span className="smart-search__thumb" aria-hidden="true">
-                        <img src={productImageUrl(p)} alt="" />
+                        <OptimizedImage
+                          src={
+                            p.imageUrl ||
+                            (typeof p.images?.[0] === 'string' ? p.images[0] : p.images?.[0]?.url) ||
+                            ''
+                          }
+                          alt=""
+                          width={48}
+                          height={48}
+                          optimizeWidth={96}
+                          loading="lazy"
+                        />
                       </span>
                       <span className="smart-search__meta">
                         <span className="smart-search__name">{p.name}</span>
