@@ -5,6 +5,10 @@
 .env.production.local
 .env.test.local
 
+# Dependencies
+node_modules/
+
 # Build output (regenerate with npm run build — do not commit secrets in build/)
 /build
 scripts/.crawl-cache.json
+

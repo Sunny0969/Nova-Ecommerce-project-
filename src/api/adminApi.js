@@ -54,6 +54,9 @@ export const adminAPI = {
     unblock: (id) => api.post(`/api/admin/staff/${encodeURIComponent(id)}/unblock`, {}),
     remove: (id) => api.delete(`/api/admin/staff/${encodeURIComponent(id)}`)
   },
+  auditLogs: {
+    list: (params) => api.get('/api/admin/audit-logs', { params })
+  },
   orders: {
     stats: () => api.get('/api/admin/orders/stats'),
     list: (params) => api.get('/api/admin/orders', { params }),

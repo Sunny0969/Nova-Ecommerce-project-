@@ -1,15 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Skeleton from 'react-loading-skeleton';
 import toast from 'react-hot-toast';
+import { RefreshCw } from 'lucide-react';
 import SEO from '../components/SEO';
 import { ordersAPI } from '../api/orders';
 import { apiMessage } from '../lib/api';
 import { formatPKR } from '../utils/currency';
+import { useCart } from '../context/CartContext';
 
 export default function Orders({ embedded }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reorderingId, setReorderingId] = useState(null);
+  const navigate = useNavigate();
+  const { refreshCart } = useCart();
+
+  const handleReorder = async (orderId) => {
+    try {
+      setReorderingId(orderId);
+      const res = await ordersAPI.reorder(orderId);
+      const msg = res.data?.message || 'Items added to cart!';
+      toast.success(msg);
+      if (refreshCart) await refreshCart();
+      navigate('/cart');
+    } catch (err) {
+      toast.error(apiMessage(err, 'Failed to reorder items'));
+    } finally {
+      setReorderingId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +84,18 @@ export default function Orders({ embedded }) {
                   </li>
                 ))}
               </ul>
+              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border, #e5e7eb)', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+                  disabled={reorderingId === order._id}
+                  onClick={() => handleReorder(order._id)}
+                >
+                  <RefreshCw size={14} className={reorderingId === order._id ? 'animate-spin' : ''} />
+                  {reorderingId === order._id ? 'Reordering…' : '1-Click Reorder'}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

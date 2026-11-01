@@ -49,8 +49,9 @@ function moneyDeduction(n) {
 
 /**
  * @param {object} order — populated admin order document
+ * @param {object} [options] — optional options like filterStaffProductIds, vendorName
  */
-export async function downloadOrderPdf(order) {
+export async function downloadOrderPdf(order, options = {}) {
   if (!order) return;
 
   const [{ jsPDF }, autoTableMod] = await Promise.all([
@@ -69,7 +70,15 @@ export async function downloadOrderPdf(order) {
   const margin = 18;
   let y = margin;
   const customer = customerFromOrder(order);
-  const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+  const rawItems = Array.isArray(order.orderItems) ? order.orderItems : [];
+
+  // If filtered for a specific staff/vendor
+  const filterIds = options.filterStaffProductIds ? new Set(options.filterStaffProductIds.map(String)) : null;
+  const items = filterIds
+    ? rawItems.filter((it) => filterIds.has(String(it.product?._id || it.product)))
+    : rawItems;
+
+  const isSplitPackingSlip = Boolean(filterIds);
   const placed = order.createdAt ? new Date(order.createdAt).toLocaleString('en-PK') : '—';
 
   doc.setFont('helvetica', 'bold');
@@ -80,7 +89,7 @@ export async function downloadOrderPdf(order) {
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Order invoice / packing slip', pageW - margin, y, { align: 'right' });
+  doc.text(isSplitPackingSlip ? 'Vendor Packing Slip (Split)' : 'Order invoice / packing slip', pageW - margin, y, { align: 'right' });
   y += 10;
 
   doc.setDrawColor(229, 231, 235);
@@ -91,7 +100,7 @@ export async function downloadOrderPdf(order) {
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(`Order #${orderRef(order)}`, margin, y);
+  doc.text(`Order #${orderRef(order)} ${isSplitPackingSlip ? '(Vendor Items)' : ''}`, margin, y);
   y += 7;
 
   doc.setFontSize(10);

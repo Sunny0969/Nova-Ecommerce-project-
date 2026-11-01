@@ -34,6 +34,9 @@ import { recommendationsAPI, productsAPI } from '../api/storefront';
 import api from '../api/client';
 import { getSessionId } from '../lib/sessionId';
 import StarRating from '../components/StarRating';
+import CompleteTheLookBundle from '../components/CompleteTheLookBundle';
+import WebARTryOnModal from '../components/WebARTryOnModal';
+import { Camera } from 'lucide-react';
 import { buildFakeReviews } from '../lib/fakeReviews';
 import { useStoreSettings } from '../hooks/useStoreSettings';
 import { getProductPhysicalSpecs } from '../lib/productPhysicalSpecs';
@@ -171,6 +174,7 @@ export default function ProductDetail() {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [variantGalleryExtraUrl, setVariantGalleryExtraUrl] = useState(null);
   const [variantPick, setVariantPick] = useState({});
+  const [arModalOpen, setArModalOpen] = useState(false);
   const loadSeqRef = useRef(0);
 
   // Must be declared before any early returns (hooks order).
@@ -1181,6 +1185,15 @@ export default function ProductDetail() {
               <button type="button" className="product-detail-wishlist-btn" onClick={handleWishlist}>
                 {inWishlist ? '♥ Saved to wishlist' : '♡ Add to Wishlist'}
               </button>
+
+              <button
+                type="button"
+                className="w-full mt-2.5 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-gradient-to-r from-purple-900/40 via-pink-900/30 to-purple-900/40 hover:from-purple-900/60 hover:to-pink-900/50 text-purple-200 border border-purple-500/40 shadow-sm transition transform active:scale-[0.99]"
+                onClick={() => setArModalOpen(true)}
+              >
+                <Camera size={18} className="text-pink-400 animate-pulse" />
+                <span>Try Live in AR (Virtual Fitting Room)</span>
+              </button>
             </div>
 
             <div className="product-detail-share">
@@ -1423,6 +1436,7 @@ export default function ProductDetail() {
         ) : null}
 
         <div className="container">
+          <CompleteTheLookBundle currentProduct={product} recommendations={alsoBought} />
           <InternalLinksBlock
             className="product-detail-internal-links"
             title="Shop related categories"
@@ -1471,6 +1485,12 @@ export default function ProductDetail() {
           </button>
         </div>
       ) : null}
+
+      <WebARTryOnModal
+        isOpen={arModalOpen}
+        onClose={() => setArModalOpen(false)}
+        product={product}
+      />
     </>
   );
 }

@@ -36,7 +36,8 @@ const NAV_LINKS = [
   { to: '/admin/notifications', label: 'Notifications', icon: Bell },
   { to: '/admin/fraud', label: 'Fraud', icon: Shield },
   { to: '/admin/store-settings', label: 'Shipping & tax', icon: SlidersHorizontal },
-  { to: '/admin/staff', label: 'Staff', icon: UserCog }
+  { to: '/admin/staff', label: 'Staff', icon: UserCog },
+  { to: '/admin/audit-logs', label: 'Audit logs', icon: Shield }
 ];
 
 function navLinkClass({ isActive }) {

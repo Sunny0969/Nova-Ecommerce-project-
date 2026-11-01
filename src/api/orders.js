@@ -26,6 +26,8 @@ export const ordersAPI = {
 
   cancel: (id, body) => api.post(`/api/orders/cancel/${id}`, body || {}),
 
+  reorder: (id) => api.post(`/api/orders/${id}/reorder`, {}),
+
   uploadPaymentProof: (id, formData) =>
     api.post(`/api/orders/${id}/payment-proof`, formData)
 };

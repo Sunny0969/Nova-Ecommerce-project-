@@ -31,37 +31,41 @@ async function main() {
 
   console.log('[inject-home-prerender] Injecting storefront shell for no-JS visitors…');
 
-  const [categories, homeStats, promoItems] = await Promise.all([
-    fetchCategories(),
-    fetchHomeStats(),
-    fetchPromoTicker()
-  ]);
+  try {
+    const [categories, homeStats, promoItems] = await Promise.all([
+      fetchCategories(),
+      fetchHomeStats(),
+      fetchPromoTicker()
+    ]);
 
-  const apiPct = Number(homeStats?.promo?.maxDiscountPercent);
-  const maxDiscountPercent =
-    Number.isFinite(apiPct) && apiPct > 0 ? Math.round(apiPct) : 40;
+    const apiPct = Number(homeStats?.promo?.maxDiscountPercent);
+    const maxDiscountPercent =
+      Number.isFinite(apiPct) && apiPct > 0 ? Math.round(apiPct) : 40;
 
-  const homeProducts = await fetchProducts({
-    limit: config.homeFeaturedLimit,
-    sort: 'popular'
-  });
+    const homeProducts = await fetchProducts({
+      limit: config.homeFeaturedLimit,
+      sort: 'popular'
+    });
 
-  const page = buildHomePage({
-    categories,
-    products: homeProducts.products,
-    maxDiscountPercent,
-    promoItems
-  });
+    const page = buildHomePage({
+      categories,
+      products: homeProducts.products,
+      maxDiscountPercent,
+      promoItems
+    });
 
-  let html = existing;
-  html = injectStaticFallback(html, page.rootHtml);
-  html = patchHead(html, page);
-  html = ensureSyncStylesheets(html, BUILD_DIR);
+    let html = existing;
+    html = injectStaticFallback(html, page.rootHtml);
+    html = patchHead(html, page);
+    html = ensureSyncStylesheets(html, BUILD_DIR);
 
-  fs.writeFileSync(INDEX, html, 'utf8');
-  console.log(
-    `[inject-home-prerender] OK — home page has navbar + hero + ${homeProducts.products.length} products (no-JS safe).`
-  );
+    fs.writeFileSync(INDEX, html, 'utf8');
+    console.log(
+      `[inject-home-prerender] OK — home page has navbar + hero + ${homeProducts.products.length} products (no-JS safe).`
+    );
+  } catch (err) {
+    console.warn('[inject-home-prerender] Warning: Remote API unavailable during build prerender (' + err.message + '). Skipping static home prerender, client-side React app will fetch at runtime.');
+  }
 }
 
 main().catch((err) => {

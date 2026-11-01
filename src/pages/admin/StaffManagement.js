@@ -55,16 +55,25 @@ function permBadges(perms) {
   if (!granted.length) return <span className="text-muted">—</span>;
   return (
     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-      {granted.map((g) => (
-        <span
-          key={g.key}
-          className="admin-dash-badge"
-          style={{ background: '#1A1A2E', color: '#F97316' }}
-          title={g.note || g.label}
-        >
-          {g.label}
-        </span>
-      ))}
+      {granted.map((g) => {
+        let label = g.label;
+        if (g.key === 'manageOrders') {
+          label = p.orderScope === 'own_products' ? 'Orders (Own Products)' : 'Orders (All)';
+        }
+        if (g.key === 'manageCustomers') {
+          label = p.customerScope === 'own_orders' ? 'Customers (Own Products/Orders)' : 'Customers (All)';
+        }
+        return (
+          <span
+            key={g.key}
+            className="admin-dash-badge"
+            style={{ background: '#1A1A2E', color: '#F97316' }}
+            title={g.note || g.label}
+          >
+            {label}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -484,18 +493,72 @@ export default function StaffManagement() {
             <div style={{ marginTop: 6, fontWeight: 700 }}>Permissions</div>
             <div style={{ display: 'grid', gap: 8 }}>
               {PERM_SPECS.map((p) => (
-                <label key={p.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(addPerms?.[p.key])}
-                    onChange={() => togglePerm(setAddPerms)(p.key)}
-                    style={{ marginTop: 4 }}
-                  />
-                  <div>
-                    <div style={{ fontWeight: 650 }}>{p.label}</div>
-                    {p.note ? <div className="text-muted" style={{ fontSize: 13 }}>{p.note}</div> : null}
-                  </div>
-                </label>
+                <div key={p.key} style={{ display: 'grid', gap: 6 }}>
+                  <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(addPerms?.[p.key])}
+                      onChange={() => togglePerm(setAddPerms)(p.key)}
+                      style={{ marginTop: 4 }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 650 }}>{p.label}</div>
+                      {p.note ? <div className="text-muted" style={{ fontSize: 13 }}>{p.note}</div> : null}
+                    </div>
+                  </label>
+
+                  {p.key === 'manageOrders' && Boolean(addPerms?.manageOrders) && (
+                    <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Orders Scope:</div>
+                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                        <input
+                          type="radio"
+                          name="addOrderScope"
+                          value="all"
+                          checked={addPerms?.orderScope !== 'own_products'}
+                          onChange={() => setAddPerms(prev => ({ ...prev, orderScope: 'all' }))}
+                        />
+                        <span>All Orders (Store ke tamam orders dekhein)</span>
+                      </label>
+                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                        <input
+                          type="radio"
+                          name="addOrderScope"
+                          value="own_products"
+                          checked={addPerms?.orderScope === 'own_products'}
+                          onChange={() => setAddPerms(prev => ({ ...prev, orderScope: 'own_products' }))}
+                        />
+                        <span>Only Their Products (Sirf apne add kiye hue products/categories ke orders)</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {p.key === 'manageCustomers' && Boolean(addPerms?.manageCustomers) && (
+                    <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Customers Scope:</div>
+                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                        <input
+                          type="radio"
+                          name="addCustomerScope"
+                          value="all"
+                          checked={addPerms?.customerScope !== 'own_orders'}
+                          onChange={() => setAddPerms(prev => ({ ...prev, customerScope: 'all' }))}
+                        />
+                        <span>All Customers (Store ke tamam customers dekhein)</span>
+                      </label>
+                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                        <input
+                          type="radio"
+                          name="addCustomerScope"
+                          value="own_orders"
+                          checked={addPerms?.customerScope === 'own_orders'}
+                          onChange={() => setAddPerms(prev => ({ ...prev, customerScope: 'own_orders' }))}
+                        />
+                        <span>Only Their Product Customers (Sirf unhi orders ke customers jo is staff ki products ke hon)</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -512,18 +575,72 @@ export default function StaffManagement() {
       >
         <div style={{ display: 'grid', gap: 8 }}>
           {PERM_SPECS.map((p) => (
-            <label key={p.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <input
-                type="checkbox"
-                checked={Boolean(editPerms?.[p.key])}
-                onChange={() => togglePerm(setEditPerms)(p.key)}
-                style={{ marginTop: 4 }}
-              />
-              <div>
-                <div style={{ fontWeight: 650 }}>{p.label}</div>
-                {p.note ? <div className="text-muted" style={{ fontSize: 13 }}>{p.note}</div> : null}
-              </div>
-            </label>
+            <div key={p.key} style={{ display: 'grid', gap: 6 }}>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(editPerms?.[p.key])}
+                  onChange={() => togglePerm(setEditPerms)(p.key)}
+                  style={{ marginTop: 4 }}
+                />
+                <div>
+                  <div style={{ fontWeight: 650 }}>{p.label}</div>
+                  {p.note ? <div className="text-muted" style={{ fontSize: 13 }}>{p.note}</div> : null}
+                </div>
+              </label>
+
+              {p.key === 'manageOrders' && Boolean(editPerms?.manageOrders) && (
+                <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Orders Scope:</div>
+                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <input
+                      type="radio"
+                      name="editOrderScope"
+                      value="all"
+                      checked={editPerms?.orderScope !== 'own_products'}
+                      onChange={() => setEditPerms(prev => ({ ...prev, orderScope: 'all' }))}
+                    />
+                    <span>All Orders (Store ke tamam orders dekhein)</span>
+                  </label>
+                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <input
+                      type="radio"
+                      name="editOrderScope"
+                      value="own_products"
+                      checked={editPerms?.orderScope === 'own_products'}
+                      onChange={() => setEditPerms(prev => ({ ...prev, orderScope: 'own_products' }))}
+                    />
+                    <span>Only Their Products (Sirf apne add kiye hue products/categories ke orders)</span>
+                  </label>
+                </div>
+              )}
+
+              {p.key === 'manageCustomers' && Boolean(editPerms?.manageCustomers) && (
+                <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Customers Scope:</div>
+                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <input
+                      type="radio"
+                      name="editCustomerScope"
+                      value="all"
+                      checked={editPerms?.customerScope !== 'own_orders'}
+                      onChange={() => setEditPerms(prev => ({ ...prev, customerScope: 'all' }))}
+                    />
+                    <span>All Customers (Store ke tamam customers dekhein)</span>
+                  </label>
+                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <input
+                      type="radio"
+                      name="editCustomerScope"
+                      value="own_orders"
+                      checked={editPerms?.customerScope === 'own_orders'}
+                      onChange={() => setEditPerms(prev => ({ ...prev, customerScope: 'own_orders' }))}
+                    />
+                    <span>Only Their Product Customers (Sirf unhi orders ke customers jo is staff ki products ke hon)</span>
+                  </label>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </Modal>

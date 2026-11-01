@@ -51,6 +51,9 @@ const AdminBlogs = lazy(() =>
 const StaffManagement = lazy(() =>
   import(/* webpackChunkName: "admin-staff-page" */ '../pages/admin/StaffManagement')
 );
+const AdminAuditLogs = lazy(() =>
+  import(/* webpackChunkName: "admin-audit-logs-page" */ '../pages/admin/AdminAuditLogs')
+);
 
 /** Admin panel — loaded only when visiting /admin/* */
 export default function AdminRoutes() {
@@ -82,6 +85,7 @@ export default function AdminRoutes() {
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="store-settings" element={<AdminStoreSettings />} />
           <Route path="staff" element={<StaffManagement />} />
+          <Route path="audit-logs" element={<AdminAuditLogs />} />
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>
       </Routes>
