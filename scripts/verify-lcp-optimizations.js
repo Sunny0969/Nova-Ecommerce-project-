@@ -44,8 +44,12 @@ if (indexHtml.includes('href="https://res.cloudinary.com"') && !cloudinaryPrecon
   fail('Preconnect for res.cloudinary.com must include crossorigin.');
 }
 
+if (/href="https:\/\/nova-ecommerce-project-backend\.onrender\.com"[^>]*crossorigin/i.test(indexHtml)) {
+  fail('Render API preconnect must NOT use crossorigin (API fetch is cross-origin XHR, not CORS font/image).');
+}
+// Railway (old) check kept in case a stale build slips through
 if (/href="https:\/\/nova-ecommerce-project-backend-production\.up\.railway\.app"[^>]*crossorigin/i.test(indexHtml)) {
-  fail('Railway API preconnect must NOT use crossorigin (same-origin API fetch).');
+  fail('API preconnect must NOT use crossorigin.');
 }
 
 console.log('[verify-lcp-optimizations] OK — LCP, fonts, CSS, and preconnect checks passed.');

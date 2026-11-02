@@ -1,9 +1,10 @@
 /**
- * Production API origin (Railway).
+ * Production API origin (Render).
  * Hostinger: override anytime in `public/api-config.js` without rebuild.
+ * Railway (old): https://nova-ecommerce-project-backend-production.up.railway.app
  */
 export const DEFAULT_PRODUCTION_API_ORIGIN =
-  'https://nova-ecommerce-project-backend-production.up.railway.app';
+  'https://nova-ecommerce-project-backend.onrender.com';
 
 export function normalizeApiOrigin(url) {
   if (url == null || url === '') return '';
@@ -31,7 +32,7 @@ export function resolveProductionApiOrigin() {
 
 /**
  * Single source of truth for storefront + staff API base URL.
- * Live domains always use Railway — never localhost — even if api-config.js is missing.
+ * Live domains always use production API — never localhost — even if api-config.js is missing.
  */
 export function resolveStoreApiOrigin() {
   if (typeof window !== 'undefined' && window.__REACT_APP_API_URL__) {

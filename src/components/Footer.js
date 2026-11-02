@@ -23,13 +23,6 @@ const ABOUT_LINKS = [
   { label: 'FAQs', to: '/faqs' }
 ];
 
-const POLICY_LINKS = [
-  { label: 'Privacy Policy', to: '/privacy-policy' },
-  { label: 'Terms & Conditions', to: '/terms-and-conditions' },
-  { label: 'Returns & Refunds', to: '/returns-and-refunds' },
-  { label: 'Shipping Policy', to: '/shipping-policy' }
-];
-
 function splitIntoColumns(items, numCols = 3) {
   const sorted = sortCategoriesAlphabetically(items);
   const cols = Array.from({ length: numCols }, () => []);
@@ -114,14 +107,6 @@ const Footer = () => {
                   ) : (
                     <Link to={link.to}>{link.label}</Link>
                   )}
-                </li>
-              ))}
-            </ul>
-            <p className="footer-col__heading footer-col__heading--sub">Policies</p>
-            <ul className="footer-links">
-              {POLICY_LINKS.map((link) => (
-                <li key={link.label}>
-                  <Link to={link.to}>{link.label}</Link>
                 </li>
               ))}
             </ul>
@@ -211,9 +196,6 @@ const Footer = () => {
             </span>
             <span className="footer-pay footer-pay--paypal" title="PayPal">
               PayPal
-            </span>
-            <span className="footer-pay footer-pay--stripe" title="Stripe">
-              stripe
             </span>
           </div>
         </div>

@@ -15,18 +15,36 @@ export default function HomeCategoryStrip() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    let retryTimer = null;
+
+    const loadCats = async (attempt = 1) => {
       try {
         const res = await api.get('/api/categories');
-        if (!cancelled) setCategories(unwrapCategoriesResponse(res));
+        if (!cancelled) {
+          const list = unwrapCategoriesResponse(res);
+          setCategories(list);
+          if (list.length === 0 && attempt < 3) {
+            retryTimer = setTimeout(() => loadCats(attempt + 1), 3000);
+          }
+        }
       } catch {
-        if (!cancelled) setCategories([]);
+        if (!cancelled) {
+          if (attempt < 3) {
+            retryTimer = setTimeout(() => loadCats(attempt + 1), 3000);
+          } else {
+            setCategories([]);
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+
+    loadCats(1);
+
     return () => {
       cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
     };
   }, []);
 

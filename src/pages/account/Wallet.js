@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
+
 import { Wallet as WalletIcon, ArrowDownLeft, ArrowUpRight, Gift, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { walletAPI } from '../../api/wallet';
@@ -241,49 +240,5 @@ function WalletContent({ stripeEnabled }) {
 }
 
 export default function Wallet() {
-  const [stripeKey, setStripeKey] = useState('');
-  const [stripeReady, setStripeReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    publicAPI
-      .getStripeConfig()
-      .then((res) => {
-        if (cancelled) return;
-        const data = res.data?.data;
-        if (data?.configured && data?.publishableKey) {
-          setStripeKey(String(data.publishableKey).trim());
-        } else {
-          setStripeKey('');
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setStripeKey('');
-      })
-      .finally(() => {
-        if (!cancelled) setStripeReady(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const stripePromise = useMemo(
-    () => (stripeKey ? loadStripe(stripeKey) : null),
-    [stripeKey]
-  );
-
-  if (!stripeReady) {
-    return <LoadingSpinner label="Loading wallet" />;
-  }
-
-  if (stripePromise) {
-    return (
-      <Elements stripe={stripePromise}>
-        <WalletContent stripeEnabled />
-      </Elements>
-    );
-  }
-
   return <WalletContent stripeEnabled={false} />;
 }

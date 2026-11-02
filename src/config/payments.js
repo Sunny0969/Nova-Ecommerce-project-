@@ -4,23 +4,16 @@ const COD_OPTION = {
   description: 'Pay with cash when your order arrives at your doorstep.'
 };
 
-const STRIPE_OPTION = {
-  id: 'stripe',
-  label: 'Credit / debit card (Stripe)',
-  description: 'Pay securely online with Visa, Mastercard, or other supported cards.'
+const BANK_TRANSFER_OPTION = {
+  id: 'bank_transfer',
+  label: 'Account Payment',
+  description: 'Easypaisa: 03483510584 (Sanil Parkash) | Jazzcash: 03483510584 (Sanil Parkash)'
 };
 
-/** Legacy Easypaisa number — shown only for older bank-transfer orders. */
 export const EASYPAISA_NUMBER = '03483510584';
 
-/** @param {{ includeStripe?: boolean }} [opts] */
-export function getPaymentOptions(opts = {}) {
-  const options = [COD_OPTION];
-  if (opts.includeStripe) {
-    options.push(STRIPE_OPTION);
-  }
-  return options;
+export function getPaymentOptions() {
+  return [BANK_TRANSFER_OPTION, COD_OPTION];
 }
 
-/** @deprecated use getPaymentOptions() */
-export const PAYMENT_OPTIONS = [COD_OPTION];
+export const PAYMENT_OPTIONS = [BANK_TRANSFER_OPTION, COD_OPTION];

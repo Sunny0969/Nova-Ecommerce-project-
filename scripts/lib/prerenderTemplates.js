@@ -115,7 +115,7 @@ function renderProductCard(product) {
   const desc = truncate(product?.shortDescription || product?.description, 120);
   const cardUrl = `${config.siteUrl}${href.startsWith('/') ? href : `/${href}`}`;
 
-  return `<li class="products-grid__item" role="listitem">
+  return `<div class="products-grid__item" role="listitem">
   <article class="product-card" itemscope itemtype="https://schema.org/Product">
     <div class="product-image">
       <a class="product-image-link product-image-link--cover" href="${escapeHtml(href)}" itemprop="url">
@@ -139,7 +139,7 @@ function renderProductCard(product) {
       </div>
     </div>
   </article>
-</li>`;
+</div>`;
 }
 
 function renderCategoryList(categories, activeSlug) {
@@ -235,9 +235,9 @@ function wrapPrerenderBody({ title, description, canonicalPath, bodyHtml, jsonLd
 }
 
 function buildHomePage({ categories, products, maxDiscountPercent, promoItems }) {
-  const title = 'Online Shopping Pakistan — Groceries & Essentials | Bazaar';
+  const title = 'Online Shopping Hyderabad — Groceries & Essentials | Bazaar';
   const description =
-    'Shop groceries, cleaning, tea, rice, fashion and electronics online in Pakistan. Bazaar offers secure checkout and fast delivery from Hyderabad.';
+    'Shop groceries, cleaning, tea, rice, fashion and electronics online in Hyderabad, Pakistan. Bazaar offers secure checkout and fast local delivery.';
 
   const body = renderProductGrid(products, 'Popular products');
 
@@ -257,9 +257,9 @@ function buildHomePage({ categories, products, maxDiscountPercent, promoItems })
 }
 
 function buildShopPage({ categories, products, totalCount, promoItems = [] }) {
-  const title = 'Shop Online Pakistan — Groceries & Lifestyle | Bazaar';
+  const title = 'Shop Online Hyderabad — Groceries & Lifestyle | Bazaar';
   const description =
-    'Browse the full Bazaar catalog — groceries, homecare, fashion, and electronics with secure payment and nationwide delivery.';
+    'Browse the full Bazaar catalog — groceries, homecare, fashion, and electronics with secure payment and fast delivery in Hyderabad.';
 
   const body = renderProductGrid(products, `All products${totalCount ? ` (${totalCount})` : ''}`);
 

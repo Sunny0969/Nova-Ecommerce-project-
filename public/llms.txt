@@ -36,7 +36,7 @@
 - **Canonical site:** [https://www.bazaar-pk.com](https://www.bazaar-pk.com)
 - **XML sitemap:** [https://www.bazaar-pk.com/sitemap.xml](https://www.bazaar-pk.com/sitemap.xml)
 - **HTML without JavaScript:** Product, category, blog, brand, and policy pages are pre-rendered at deploy time as static HTML (`/category/product/`, `/blog/slug/`, etc.). Crawl those URLs directly — no JS required.
-- **Storefront API (read-only):** [https://nova-ecommerce-project-backend-production.up.railway.app](https://nova-ecommerce-project-backend-production.up.railway.app)
+- **Storefront API (read-only):** [https://nova-ecommerce-project-backend.onrender.com](https://nova-ecommerce-project-backend.onrender.com)
 - **Product URLs:** `https://www.bazaar-pk.com/{category-slug}/{product-slug}` or `https://www.bazaar-pk.com/shop/{product-slug}`
 - **Category URLs:** `https://www.bazaar-pk.com/{category-slug}`
 

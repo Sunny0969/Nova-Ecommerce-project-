@@ -20,6 +20,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import { DeliveryLocationProvider } from './context/DeliveryLocationContext';
 import { prefetchStorefrontRoutes } from './lib/prefetchStorefront';
 import { registerServiceWorker } from './lib/registerServiceWorker';
+import { hidePrerenderFallback, isPrerenderFallbackActive } from './lib/prerenderFallback';
 import PushNotificationPrompt from './components/PushNotificationPrompt';
 
 const Footer = lazy(() => import(/* webpackChunkName: "footer" */ './components/Footer'));
@@ -55,6 +56,33 @@ function AppShell() {
   useEffect(() => {
     if (isStorefront) registerServiceWorker();
   }, [isStorefront]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'visible';
+    document.body.style.overflowX = 'hidden';
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isPrerenderFallbackActive()) return;
+
+    // Prerender-aware routes hide the fallback themselves after fetching data
+    // For all other routes (login, cart, checkout, admin, etc.), hide immediately
+    const knownNonCatalog = [
+      '/login', '/register', '/cart', '/checkout', '/account', '/orders', 
+      '/wishlist', '/forgot-password', '/reset-password', '/verify-email', 
+      '/blog', '/about-us', '/privacy-policy', '/contact-us', '/faqs', 
+      '/terms-and-conditions', '/returns-and-refunds', '/shipping-policy', 
+      '/admin', '/staff'
+    ];
+
+    const shouldHideImmediately = knownNonCatalog.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    );
+
+    if (shouldHideImmediately) {
+      hidePrerenderFallback();
+    }
+  }, [pathname]);
 
   return (
     <div className="App">

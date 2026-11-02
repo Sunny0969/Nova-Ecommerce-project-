@@ -1,6 +1,6 @@
 /**
  * Build-time catalog prerender — injects semantic HTML into #root for SEO.
- * Run after `npm run build`. Requires live API (Railway) or PRERENDER_API_URL.
+ * Run after `npm run build`. Requires live API (Render) or PRERENDER_API_URL.
  */
 const fs = require('fs');
 const path = require('path');

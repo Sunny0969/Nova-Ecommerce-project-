@@ -49,10 +49,10 @@ export default function HomeHero() {
   const promo = stats?.promo;
   const apiPct = Number(promo?.maxDiscountPercent);
   const maxDiscountPercent = loading
-    ? 0
+    ? 20
     : Math.max(
-        Number.isFinite(apiPct) && apiPct > 0 ? Math.round(apiPct) : 0,
-        maxFromProducts
+        Number.isFinite(apiPct) && apiPct > 0 ? Math.round(apiPct) : 20,
+        maxFromProducts || 20
       );
 
   const renderPromoSub = () => {
@@ -102,8 +102,8 @@ export default function HomeHero() {
           <p className="rozana-hero__eyebrow">Pakistan ka no. 1 online store</p>
 
           <h1 className="rozana-hero__title">
-            Online Shopping Pakistan — sab kuch{' '}
-            <span className="rozana-hero__accent">ghar pe</span>, sab se sasti qeemat pe.
+            Online Shopping in Hyderabad — Quality Products{' '}
+            <span className="rozana-hero__accent">Delivered Fast</span>, Best Prices Guaranteed.
           </h1>
 
           <p className="rozana-hero__lead">

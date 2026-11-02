@@ -38,6 +38,11 @@ const PRERENDER_CSS = `<style id="prerender-catalog-css">
 #static-fallback[data-prerender="catalog"]:not([hidden]){min-height:100vh;background:var(--cream,#fff7f0)}
 html.js #static-fallback[data-prerender="catalog"]:not([hidden]){position:fixed;inset:0;z-index:10000;overflow-y:auto}
 body.prerender-fallback-hidden #static-fallback{display:none!important}
+.home-banner-slider,.home-banner-slider-wrapper{position:relative;width:min(var(--page-max-width,1280px),calc(100% - 2*var(--home-slider-gutter,0.25rem)));aspect-ratio:1920/575;height:auto;margin:.35rem auto 0;border-radius:var(--radius-lg,12px);overflow:hidden;justify-self:center}
+.home-banner-slider__viewport{position:relative;width:100%;height:100%}
+.home-banner-slider__slide{position:relative;width:100%;height:100%;background:#fff}
+.home-banner-slider__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media (max-width:768px){.home-banner-slider{margin-top:.25rem}.home-top-stack__lead .home-banner-slider{align-self:center;flex-shrink:0}}
 </style>`;
 
 function escapeAttr(value) {

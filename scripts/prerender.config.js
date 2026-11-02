@@ -37,7 +37,8 @@ const RESERVED_CATEGORY_SLUGS = new Set([
 
 module.exports = {
   siteUrl: (process.env.PRERENDER_SITE_URL || 'https://www.bazaar-pk.com').replace(/\/+$/, ''),
-  apiBaseUrl: (process.env.PRERENDER_API_URL || process.env.REACT_APP_API_URL || 'https://nova-ecommerce-project-backend-production.up.railway.app').replace(/\/+$/, ''),
+  apiBaseUrl: (process.env.PRERENDER_API_URL || process.env.REACT_APP_API_URL || 'https://nova-ecommerce-project-backend.onrender.com').replace(/\/+$/, ''),
+  // Railway (old): https://nova-ecommerce-project-backend-production.up.railway.app
   productsPerPage: Number(process.env.PRERENDER_PRODUCTS_PER_PAGE || 48),
   /** 0 = all categories */
   maxCategories: Number(process.env.PRERENDER_MAX_CATEGORIES || 0),
@@ -45,7 +46,7 @@ module.exports = {
   maxProducts: Number(process.env.PRERENDER_MAX_PRODUCTS || 0),
   homeFeaturedLimit: Number(process.env.PRERENDER_HOME_PRODUCTS || 24),
   productFetchConcurrency: Number(process.env.PRERENDER_CONCURRENCY || 8),
-  /** Set PRERENDER_ENRICH_PRODUCTS=1 to fetch full description per product (slow, can fail on Railway). */
+  /** Set PRERENDER_ENRICH_PRODUCTS=1 to fetch full description per product (slow). */
   enrichProductDetails: process.env.PRERENDER_ENRICH_PRODUCTS === '1',
   reservedCategorySlugs: RESERVED_CATEGORY_SLUGS,
   staticRoutes: ['/', '/shop']

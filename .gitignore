@@ -12,3 +12,6 @@ node_modules/
 /build
 scripts/.crawl-cache.json
 
+
+*.zip
+build.zip

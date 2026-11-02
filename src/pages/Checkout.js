@@ -9,8 +9,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { boolean, object, string } from 'yup';
 import { ShieldCheck, Banknote, CreditCard, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { apiMessage } from '../lib/api';
@@ -24,7 +22,6 @@ import { buildProductPath, getProductCategorySlug } from '../utils/urls';
 import { trackInitiateCheckout } from '../lib/metaPixel';
 import { computeTotalsPreview, computeCartWeightKg, calculateShipping } from '../utils/pricing';
 import { getPaymentOptions } from '../config/payments';
-import StripePaymentModal from '../components/StripePaymentModal';
 import PakistanLocationFields from '../components/checkout/PakistanLocationFields';
 import { normalizeProvinceName } from '../data/pakistanLocations';
 import { useStoreSettings } from '../hooks/useStoreSettings';
@@ -61,10 +58,10 @@ function paymentReviewLabel(method, payTotal, walletPreview) {
   }
   if (walletUsed > 0) {
     const walletPart = `${formatPKR(walletUsed)} from wallet + `;
-    if (method === 'stripe') {
+    if (method === 'bank_transfer') {
       return (
         <>
-          {walletPart}pay {formatPKR(payTotal)} by card (Stripe).
+          {walletPart}pay {formatPKR(payTotal)} via Bank Transfer / Mobile Wallet.
         </>
       );
     }
@@ -74,8 +71,8 @@ function paymentReviewLabel(method, payTotal, walletPreview) {
       </>
     );
   }
-  if (method === 'stripe') {
-    return <>Credit / debit card (Stripe) — {formatPKR(payTotal)} charged securely online.</>;
+  if (method === 'bank_transfer') {
+    return <>Bank Transfer / Mobile Wallet — {formatPKR(payTotal)} paid manually.</>;
   }
   return <>Cash on delivery — pay {formatPKR(payTotal)} when your order arrives.</>;
 }
@@ -177,69 +174,16 @@ function guestCartPayload(cartLines) {
 }
 
 export default function Checkout() {
-  const [stripeKey, setStripeKey] = useState('');
-  const [stripeReady, setStripeReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    publicAPI
-      .getStripeConfig()
-      .then((res) => {
-        if (cancelled) return;
-        const data = res.data?.data;
-        if (data?.configured && data?.publishableKey) {
-          setStripeKey(String(data.publishableKey).trim());
-        } else {
-          setStripeKey('');
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setStripeKey('');
-      })
-      .finally(() => {
-        if (!cancelled) setStripeReady(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const stripePromise = useMemo(
-    () => (stripeKey ? loadStripe(stripeKey) : null),
-    [stripeKey]
-  );
-
-  if (!stripeReady) {
-    return (
-      <div className="section checkout-page">
-        <BrandLogoLoader label="Loading checkout" />
-      </div>
-    );
-  }
-
-  if (stripePromise) {
-    return (
-      <Elements stripe={stripePromise}>
-        <CheckoutFlow stripeEnabled />
-      </Elements>
-    );
-  }
-  return <CheckoutFlow stripeEnabled={false} />;
-}
-
-function CheckoutFlow({ stripeEnabled }) {
+  const stripeEnabled = false;
   const navigate = useNavigate();
   const { cart, cartState, loading, fetchCart, getSubtotal, clearCart } = useCart();
   const { user, canAccessCustomerApp, loading: authLoading, token, checkAuth } = useAuth();
   const isLoggedInCustomer = Boolean(user && canAccessCustomerApp && token);
   const isGuestCheckout = !isLoggedInCustomer;
-  const useGuestStripeApi =
-    isGuestCheckout || !token || !localStorage.getItem('nova_shop_token');
   const [step, setStep] = useState(1);
   const [lockedShipping, setLockedShipping] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [placing, setPlacing] = useState(false);
-  const [stripeModalOpen, setStripeModalOpen] = useState(false);
   const [useWallet, setUseWallet] = useState(false);
   const [walletPreview, setWalletPreview] = useState(null);
   const placeLockRef = useRef(false);
@@ -306,19 +250,10 @@ function CheckoutFlow({ stripeEnabled }) {
     [stripeEnabled]
   );
 
-  const openStripeModal = () => {
-    if (!stripeEnabled) {
-      toast.error('Card payment is not available right now.');
-      return;
-    }
-    setStripeModalOpen(true);
-  };
-
   const handlePaymentMethodChange = (methodId) => {
     setPaymentMethod(methodId);
-    if (methodId === 'stripe') {
+    if (methodId === 'bank_transfer') {
       setUseWallet(false);
-      openStripeModal();
     }
   };
 
@@ -410,7 +345,7 @@ function CheckoutFlow({ stripeEnabled }) {
       country: lockedShipping.country
     },
     paymentMethod,
-    useWallet: isLoggedInCustomer && useWallet && paymentMethod !== 'stripe',
+    useWallet: isLoggedInCustomer && useWallet && paymentMethod !== 'bank_transfer',
     ...extra
   });
 
@@ -438,10 +373,6 @@ function CheckoutFlow({ stripeEnabled }) {
   const handlePlaceOrder = () => {
     if (!lockedShipping) return;
     if (placeLockRef.current || placing) return;
-    if (paymentMethod === 'stripe') {
-      openStripeModal();
-      return;
-    }
     if (!paymentMethod) {
       toast.error('Choose a payment method');
       return;
@@ -478,22 +409,6 @@ function CheckoutFlow({ stripeEnabled }) {
 
   return (
     <>
-      {stripeEnabled ? (
-        <StripePaymentModal
-          isOpen={stripeModalOpen}
-          onClose={() => !placing && setStripeModalOpen(false)}
-          orderTotal={payTotal}
-          lockedShipping={lockedShipping}
-          getShippingAddress={() => placeOrderPayload().shippingAddress}
-          isGuestCheckout={isGuestCheckout}
-          useGuestStripeApi={useGuestStripeApi}
-          guestItems={guestCartPayload(cart)}
-          guestCouponCode={cartState.coupon?.code || ''}
-          onSuccess={(res) => finalizePlacement(res, { guest: isGuestCheckout })}
-          submitting={placing}
-          setSubmitting={setPlacing}
-        />
-      ) : null}
 
       <SEO noIndex title="Checkout" />
 
@@ -641,7 +556,7 @@ function CheckoutFlow({ stripeEnabled }) {
 
                 <p className="checkout-trust">
                   <ShieldCheck size={16} strokeWidth={1.75} className="checkout-trust__icon" aria-hidden />
-                  Secure checkout — cash on delivery or pay securely by card via Stripe.
+                  Secure checkout — cash on delivery or pay manually via Bank Transfer / Mobile Wallet.
                 </p>
               </form>
             )}
@@ -654,7 +569,7 @@ function CheckoutFlow({ stripeEnabled }) {
                 >
                   <h2 className="checkout-card-title">Step 2 — Payment method</h2>
                   <p className="checkout-panel__lead">
-                    Choose cash on delivery{stripeEnabled ? ' or pay securely by card.' : '.'}
+                    Choose cash on delivery or Bank Transfer / Mobile Wallet.
                   </p>
 
                   <div className="checkout-payment-methods" role="radiogroup" aria-label="Payment method">
@@ -676,24 +591,22 @@ function CheckoutFlow({ stripeEnabled }) {
                         <span className="checkout-payment-option__body">
                           <span className="checkout-payment-option__label">{opt.label}</span>
                           <span className="checkout-payment-option__desc">{opt.description}</span>
+                          {opt.id === 'bank_transfer' && (
+                            <span className="checkout-payment-option__desc" style={{ marginTop: '0.25rem', display: 'block' }}>
+                              Please share payment receipt on WhatsApp:{' '}
+                              <a href="https://wa.me/923483510584" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-orange)', fontWeight: '600', textDecoration: 'underline' }}>
+                                03483510584
+                              </a>
+                            </span>
+                          )}
                         </span>
                       </label>
                     ))}
                   </div>
 
-                  {paymentMethod === 'stripe' && stripeEnabled ? (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm checkout-stripe-open"
-                      onClick={openStripeModal}
-                    >
-                      Enter card details
-                    </button>
-                  ) : null}
-
                   {isLoggedInCustomer ? (
                     <div className="checkout-wallet">
-                      {paymentMethod === 'stripe' ? (
+                      {paymentMethod === 'bank_transfer' ? (
                         <p className="checkout-wallet__hint">
                           Wallet balance can be used with cash on delivery. Switch payment method to
                           apply your wallet.
@@ -795,25 +708,14 @@ function CheckoutFlow({ stripeEnabled }) {
                     >
                       ← Change payment
                     </button>
-                    {paymentMethod === 'stripe' && stripeEnabled ? (
-                      <button
-                        type="button"
-                        className="btn btn-gold btn-full checkout-place-order"
-                        disabled={placing}
-                        onClick={openStripeModal}
-                      >
-                        {placing ? 'Processing payment…' : 'PAY WITH CARD'}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-gold btn-full checkout-place-order"
-                        disabled={placing}
-                        onClick={handlePlaceOrder}
-                      >
-                        {placing ? 'Placing order…' : 'PLACE ORDER'}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="btn btn-gold btn-full checkout-place-order"
+                      disabled={placing}
+                      onClick={handlePlaceOrder}
+                    >
+                      {placing ? 'Placing order…' : 'PLACE ORDER'}
+                    </button>
                   </div>
                 </div>
               </>
@@ -946,7 +848,7 @@ function CheckoutFlow({ stripeEnabled }) {
 
                   <p className="checkout-summary__lock">
                     <ShieldCheck size={14} strokeWidth={1.75} aria-hidden />
-                    {stripeEnabled ? 'COD or Stripe card payment' : 'Cash on delivery'}
+                    Cash on delivery or Bank Transfer
                   </p>
                 </div>
               </aside>

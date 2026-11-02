@@ -54,11 +54,13 @@
     <link rel="dns-prefetch" href="https://res.cloudinary.com" />
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
-    <link rel="preconnect" href="https://nova-ecommerce-project-backend-production.up.railway.app" />
-    <link rel="dns-prefetch" href="https://nova-ecommerce-project-backend-production.up.railway.app" />
+    <!-- Railway (old): https://nova-ecommerce-project-backend-production.up.railway.app -->
+    <link rel="preconnect" href="https://nova-ecommerce-project-backend.onrender.com" />
+    <link rel="dns-prefetch" href="https://nova-ecommerce-project-backend.onrender.com" />
     <script>
       (function () {
-        var PRODUCTION_API = 'https://nova-ecommerce-project-backend-production.up.railway.app';
+        // var PRODUCTION_API = 'https://nova-ecommerce-project-backend-production.up.railway.app'; // Railway (old)
+        var PRODUCTION_API = 'https://nova-ecommerce-project-backend.onrender.com';
         var host = window.location.hostname;
         var isLocal = host === 'localhost' || host === '127.0.0.1';
         if (!isLocal) window.__REACT_APP_API_URL__ = PRODUCTION_API;

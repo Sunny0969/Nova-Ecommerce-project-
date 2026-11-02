@@ -5,7 +5,8 @@
 .home-banner-slider,
 .home-banner-slider-wrapper {
   position: relative;
-  width: min(var(--page-max-width, 1280px), calc(100% - 2 * var(--home-slider-gutter, 0.25rem)));
+  width: min(var(--page-max-width, 1480px), calc(100% - 2 * var(--home-slider-gutter, 0.25rem)));
+  max-width: 1480px;
   aspect-ratio: 1920 / 575;
   height: auto;
   margin: 0.35rem auto 0;

@@ -78,10 +78,16 @@ function ensureApiConfigDefer(html) {
 }
 
 function fixPreconnectOrigins(html) {
-  return html.replace(
-    /<link rel="preconnect" href="https:\/\/nova-ecommerce-project-backend-production\.up\.railway\.app"\s*crossorigin\s*\/?>/gi,
-    '<link rel="preconnect" href="https://nova-ecommerce-project-backend-production.up.railway.app" />'
+  // Migrate old Railway preconnect → Render
+  let out = html.replace(
+    /https:\/\/nova-ecommerce-project-backend-production\.up\.railway\.app/gi,
+    'https://nova-ecommerce-project-backend.onrender.com'
   );
+  out = out.replace(
+    /<link rel="preconnect" href="https:\/\/nova-ecommerce-project-backend\.onrender\.com"\s*crossorigin\s*\/?>/gi,
+    '<link rel="preconnect" href="https://nova-ecommerce-project-backend.onrender.com" />'
+  );
+  return out;
 }
 
 function ensureBaseHref(html) {

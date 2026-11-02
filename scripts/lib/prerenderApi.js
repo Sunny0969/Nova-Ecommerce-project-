@@ -1,7 +1,8 @@
 const config = require('../prerender.config');
 
-const DEFAULT_RAILWAY =
-  'https://nova-ecommerce-project-backend-production.up.railway.app';
+const DEFAULT_PRODUCTION_API =
+  'https://nova-ecommerce-project-backend.onrender.com';
+// Railway (old): 'https://nova-ecommerce-project-backend-production.up.railway.app'
 const LOCAL_API = 'http://127.0.0.1:5001';
 
 function apiBaseCandidates() {
@@ -11,7 +12,7 @@ function apiBaseCandidates() {
   const list = [];
   if (explicit) list.push(explicit);
   if (!list.includes(LOCAL_API)) list.push(LOCAL_API);
-  if (!list.includes(DEFAULT_RAILWAY)) list.push(DEFAULT_RAILWAY);
+  if (!list.includes(DEFAULT_PRODUCTION_API)) list.push(DEFAULT_PRODUCTION_API);
   return list;
 }
 

@@ -2,19 +2,20 @@ import { buildMetaDescription, buildMetaKeywords, buildPageTitle } from '../util
 
 /** Homepage — keep in sync with `public/index.html` first-paint meta tags. */
 export const homeRouteSeo = {
-  title: buildPageTitle('Online Shopping Pakistan', 'Groceries & Essentials'),
+  title: buildPageTitle('Online Shopping Hyderabad', 'Groceries & Essentials'),
   description: buildMetaDescription(
-    'online shopping Pakistan',
-    'Shop groceries, cleaning, tea, rice, fashion & electronics with fast delivery from Hyderabad.',
-    'Bazaar — quality products, secure checkout, nationwide delivery.'
+    'online shopping Hyderabad Pakistan',
+    'Shop groceries, homecare, fashion & electronics with fast delivery in Hyderabad.',
+    'Bazaar — The best online store in Hyderabad. Premium quality and secure checkout.'
   ),
   keywords: buildMetaKeywords(
-    'online shopping Pakistan',
-    'grocery delivery',
-    'Bazaar',
-    'Hyderabad',
+    'online shopping Hyderabad',
+    'grocery delivery Hyderabad',
+    'best online store in Hyderabad',
+    'best school bag in Hyderabad',
+    'Bazaar Hyderabad',
     'groceries online',
-    'fast delivery'
+    'fast delivery Pakistan'
   )
 };
 
@@ -23,13 +24,13 @@ export const ROUTE_SEO_BY_PATH = {
   '/': homeRouteSeo,
   '/home': homeRouteSeo,
   '/shop': {
-    title: buildPageTitle('Shop Online Pakistan', 'Groceries & Lifestyle'),
+    title: buildPageTitle('Shop Online Hyderabad', 'Groceries & Lifestyle'),
     description: buildMetaDescription(
-      'Online shopping Pakistan',
+      'Online shopping Hyderabad',
       'Browse groceries, homecare, fashion, and electronics with secure payment.',
-      'Bazaar — curated products delivered across Pakistan.'
+      'Bazaar — curated products delivered across Hyderabad and Pakistan.'
     ),
-    keywords: buildMetaKeywords('shop online Pakistan', 'groceries', 'Bazaar', 'online store', 'fast delivery')
+    keywords: buildMetaKeywords('shop online Hyderabad', 'groceries Hyderabad', 'Bazaar', 'online store Hyderabad', 'fast delivery')
   },
   '/blog': {
     title: buildPageTitle('Shopping Guides & Tips', 'Blog'),

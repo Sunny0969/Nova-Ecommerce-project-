@@ -6,7 +6,8 @@ const path = require('path');
 
 const buildDir = path.join(__dirname, '..', 'build');
 const required = ['index.html', '404.html', 'api-config.js', '.htaccess', 'robots.txt', 'sitemap.xml', 'prerender-manifest.json', 'static'];
-const railway = 'nova-ecommerce-project-backend-production.up.railway.app';
+// Railway (old): 'nova-ecommerce-project-backend-production.up.railway.app'
+const productionApiHost = 'nova-ecommerce-project-backend.onrender.com';
 
 function fail(msg) {
   console.error(`[verify-hostinger-build] ${msg}`);
@@ -34,13 +35,13 @@ if (!indexHtml.includes('<base href="/"')) {
 if (!indexHtml.includes('src="/static/js/')) {
   fail('index.html must use absolute /static/js/ paths (not relative ./static/).');
 }
-if (!indexHtml.includes(railway)) {
-  fail('index.html does not reference the Railway API — live site will fail to load data.');
+if (!indexHtml.includes(productionApiHost)) {
+  fail('index.html does not reference the Render API — live site will fail to load data.');
 }
 
 const apiConfig = fs.readFileSync(path.join(buildDir, 'api-config.js'), 'utf8');
-if (!apiConfig.includes(railway)) {
-  fail('api-config.js does not point to Railway.');
+if (!apiConfig.includes(productionApiHost)) {
+  fail('api-config.js does not point to Render (nova-ecommerce-project-backend.onrender.com).');
 }
 
 const htaccess = fs.readFileSync(path.join(buildDir, '.htaccess'), 'utf8');

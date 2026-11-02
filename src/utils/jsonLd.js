@@ -90,15 +90,21 @@ export const PRODUCT_OFFER_SCHEMA_DEFAULTS = {
   transitDaysMax: 5
 };
 
-/** Social profile URLs shown in site footer (sameAs). */
+/** Social profile URLs shown in site footer (sameAs). Identity graph for AI bots. */
 export const organizationSameAs = [
-  'https://www.facebook.com/',
-  'https://twitter.com/',
-  'https://www.instagram.com/',
-  'https://www.youtube.com/'
+  'https://www.facebook.com/bazaar-pk',
+  'https://twitter.com/bazaar_pk',
+  'https://www.instagram.com/bazaar_pk',
+  'https://www.linkedin.com/company/bazaar-pk',
+  'https://github.com/bazaar-pk',
+  'https://www.upwork.com/agencies/bazaar-pk'
 ];
 
 export const editorialAuthorName = 'Bazaar Editorial Team';
+export const editorialAuthorSameAs = [
+  'https://www.linkedin.com/company/bazaar-pk',
+  'https://twitter.com/bazaar_pk'
+];
 
 function normalizeBaseUrl(baseUrl) {
   const base =
@@ -359,14 +365,15 @@ export function buildArticleSchema(blog, pageUrl) {
 
   return {
     '@context': SCHEMA_CONTEXT,
-    '@type': 'BlogPosting',
+    '@type': blog.category === 'Tech' ? 'TechArticle' : 'BlogPosting',
     headline,
     description: String(blog.metaDescription || blog.description || '').trim() || undefined,
     image: image ? [image] : undefined,
     articleSection: blog.category ? String(blog.category).trim() : undefined,
     author: {
-      '@type': 'Person',
-      name: editorialAuthorName
+      '@type': 'Organization',
+      name: editorialAuthorName,
+      sameAs: editorialAuthorSameAs
     },
     datePublished,
     dateModified,
