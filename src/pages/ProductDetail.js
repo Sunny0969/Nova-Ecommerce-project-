@@ -1188,11 +1188,12 @@ export default function ProductDetail() {
 
               <button
                 type="button"
-                className="w-full mt-2.5 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-gradient-to-r from-purple-900/40 via-pink-900/30 to-purple-900/40 hover:from-purple-900/60 hover:to-pink-900/50 text-purple-200 border border-purple-500/40 shadow-sm transition transform active:scale-[0.99]"
-                onClick={() => setArModalOpen(true)}
+                disabled
+                className="w-full mt-2.5 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-neutral-800/60 text-neutral-400 border border-neutral-700/60 shadow-sm cursor-not-allowed opacity-80"
+                title="Virtual Fitting Room coming soon"
               >
-                <Camera size={18} className="text-pink-400 animate-pulse" />
-                <span>Try Live in AR (Virtual Fitting Room)</span>
+                <Camera size={18} className="text-neutral-500" />
+                <span>AR Virtual Fitting Room (Coming Soon)</span>
               </button>
             </div>
 

@@ -508,54 +508,82 @@ export default function StaffManagement() {
                   </label>
 
                   {p.key === 'manageOrders' && Boolean(addPerms?.manageOrders) && (
-                    <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Orders Scope:</div>
-                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <div style={{ marginLeft: 26, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #cbd5e1', display: 'grid', gap: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Orders Scope:</div>
+                      <div
+                        onClick={() => setAddPerms(prev => ({ ...prev, orderScope: 'all' }))}
+                        style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                      >
                         <input
                           type="radio"
+                          id="add-order-scope-all"
                           name="addOrderScope"
                           value="all"
                           checked={addPerms?.orderScope !== 'own_products'}
                           onChange={() => setAddPerms(prev => ({ ...prev, orderScope: 'all' }))}
+                          style={{ cursor: 'pointer' }}
                         />
-                        <span>All Orders (Store ke tamam orders dekhein)</span>
-                      </label>
-                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                        <label htmlFor="add-order-scope-all" style={{ cursor: 'pointer', margin: 0 }}>
+                          All Orders (Store ke tamam orders dekhein)
+                        </label>
+                      </div>
+                      <div
+                        onClick={() => setAddPerms(prev => ({ ...prev, orderScope: 'own_products' }))}
+                        style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                      >
                         <input
                           type="radio"
+                          id="add-order-scope-own"
                           name="addOrderScope"
                           value="own_products"
                           checked={addPerms?.orderScope === 'own_products'}
                           onChange={() => setAddPerms(prev => ({ ...prev, orderScope: 'own_products' }))}
+                          style={{ cursor: 'pointer' }}
                         />
-                        <span>Only Their Products (Sirf apne add kiye hue products/categories ke orders)</span>
-                      </label>
+                        <label htmlFor="add-order-scope-own" style={{ cursor: 'pointer', margin: 0 }}>
+                          Only Their Products (Sirf apne add kiye hue products/categories ke orders)
+                        </label>
+                      </div>
                     </div>
                   )}
 
                   {p.key === 'manageCustomers' && Boolean(addPerms?.manageCustomers) && (
-                    <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Customers Scope:</div>
-                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <div style={{ marginLeft: 26, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #cbd5e1', display: 'grid', gap: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Customers Scope:</div>
+                      <div
+                        onClick={() => setAddPerms(prev => ({ ...prev, customerScope: 'all' }))}
+                        style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                      >
                         <input
                           type="radio"
+                          id="add-cust-scope-all"
                           name="addCustomerScope"
                           value="all"
                           checked={addPerms?.customerScope !== 'own_orders'}
                           onChange={() => setAddPerms(prev => ({ ...prev, customerScope: 'all' }))}
+                          style={{ cursor: 'pointer' }}
                         />
-                        <span>All Customers (Store ke tamam customers dekhein)</span>
-                      </label>
-                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                        <label htmlFor="add-cust-scope-all" style={{ cursor: 'pointer', margin: 0 }}>
+                          All Customers (Store ke tamam customers dekhein)
+                        </label>
+                      </div>
+                      <div
+                        onClick={() => setAddPerms(prev => ({ ...prev, customerScope: 'own_orders' }))}
+                        style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                      >
                         <input
                           type="radio"
+                          id="add-cust-scope-own"
                           name="addCustomerScope"
                           value="own_orders"
                           checked={addPerms?.customerScope === 'own_orders'}
                           onChange={() => setAddPerms(prev => ({ ...prev, customerScope: 'own_orders' }))}
+                          style={{ cursor: 'pointer' }}
                         />
-                        <span>Only Their Product Customers (Sirf unhi orders ke customers jo is staff ki products ke hon)</span>
-                      </label>
+                        <label htmlFor="add-cust-scope-own" style={{ cursor: 'pointer', margin: 0 }}>
+                          Only Their Product Customers (Sirf unhi orders ke customers jo is staff ki products ke hon)
+                        </label>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -590,54 +618,82 @@ export default function StaffManagement() {
               </label>
 
               {p.key === 'manageOrders' && Boolean(editPerms?.manageOrders) && (
-                <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Orders Scope:</div>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                <div style={{ marginLeft: 26, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #cbd5e1', display: 'grid', gap: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Orders Scope:</div>
+                  <div
+                    onClick={() => setEditPerms(prev => ({ ...prev, orderScope: 'all' }))}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                  >
                     <input
                       type="radio"
+                      id="edit-order-scope-all"
                       name="editOrderScope"
                       value="all"
                       checked={editPerms?.orderScope !== 'own_products'}
                       onChange={() => setEditPerms(prev => ({ ...prev, orderScope: 'all' }))}
+                      style={{ cursor: 'pointer' }}
                     />
-                    <span>All Orders (Store ke tamam orders dekhein)</span>
-                  </label>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <label htmlFor="edit-order-scope-all" style={{ cursor: 'pointer', margin: 0 }}>
+                      All Orders (Store ke tamam orders dekhein)
+                    </label>
+                  </div>
+                  <div
+                    onClick={() => setEditPerms(prev => ({ ...prev, orderScope: 'own_products' }))}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                  >
                     <input
                       type="radio"
+                      id="edit-order-scope-own"
                       name="editOrderScope"
                       value="own_products"
                       checked={editPerms?.orderScope === 'own_products'}
                       onChange={() => setEditPerms(prev => ({ ...prev, orderScope: 'own_products' }))}
+                      style={{ cursor: 'pointer' }}
                     />
-                    <span>Only Their Products (Sirf apne add kiye hue products/categories ke orders)</span>
-                  </label>
+                    <label htmlFor="edit-order-scope-own" style={{ cursor: 'pointer', margin: 0 }}>
+                      Only Their Products (Sirf apne add kiye hue products/categories ke orders)
+                    </label>
+                  </div>
                 </div>
               )}
 
               {p.key === 'manageCustomers' && Boolean(editPerms?.manageCustomers) && (
-                <div style={{ marginLeft: 26, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', display: 'grid', gap: 6 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Customers Scope:</div>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                <div style={{ marginLeft: 26, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #cbd5e1', display: 'grid', gap: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Customers Scope:</div>
+                  <div
+                    onClick={() => setEditPerms(prev => ({ ...prev, customerScope: 'all' }))}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                  >
                     <input
                       type="radio"
+                      id="edit-cust-scope-all"
                       name="editCustomerScope"
                       value="all"
                       checked={editPerms?.customerScope !== 'own_orders'}
                       onChange={() => setEditPerms(prev => ({ ...prev, customerScope: 'all' }))}
+                      style={{ cursor: 'pointer' }}
                     />
-                    <span>All Customers (Store ke tamam customers dekhein)</span>
-                  </label>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <label htmlFor="edit-cust-scope-all" style={{ cursor: 'pointer', margin: 0 }}>
+                      All Customers (Store ke tamam customers dekhein)
+                    </label>
+                  </div>
+                  <div
+                    onClick={() => setEditPerms(prev => ({ ...prev, customerScope: 'own_orders' }))}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                  >
                     <input
                       type="radio"
+                      id="edit-cust-scope-own"
                       name="editCustomerScope"
                       value="own_orders"
                       checked={editPerms?.customerScope === 'own_orders'}
                       onChange={() => setEditPerms(prev => ({ ...prev, customerScope: 'own_orders' }))}
+                      style={{ cursor: 'pointer' }}
                     />
-                    <span>Only Their Product Customers (Sirf unhi orders ke customers jo is staff ki products ke hon)</span>
-                  </label>
+                    <label htmlFor="edit-cust-scope-own" style={{ cursor: 'pointer', margin: 0 }}>
+                      Only Their Product Customers (Sirf unhi orders ke customers jo is staff ki products ke hon)
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
