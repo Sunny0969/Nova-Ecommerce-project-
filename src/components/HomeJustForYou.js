@@ -124,13 +124,8 @@ export default function HomeJustForYou({ onAddToCart }) {
         {/* Header */}
         <div className="just-for-you-header">
           <div className="just-for-you-title-group">
-            <span className="just-for-you-badge">
-              <Flame size={16} className="just-for-you-badge-icon" />
-              <span>TEMU & DARAZ STYLE FEED</span>
-            </span>
             <h2 className="just-for-you-title">
               Just For You
-              {totalCount > 0 && <span className="just-for-you-count">({totalCount}+ items)</span>}
             </h2>
             <p className="just-for-you-subtitle">
               Explore thousands of verified products with fast delivery across Pakistan

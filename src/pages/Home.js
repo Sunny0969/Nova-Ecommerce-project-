@@ -156,7 +156,7 @@ const Home = () => {
       {/* 5. Trust Assurances (4 Pillars) */}
       <HomeWhyChoose />
 
-      {/* 6. Temu & Daraz Style Infinite Product Feed ("Just For You") */}
+      {/* 6. Infinite Product Feed ("Just For You") */}
       <HomeJustForYou onAddToCart={handleAddToCart} />
 
       {/* 7. SEO Informational & FAQ Blocks */}
