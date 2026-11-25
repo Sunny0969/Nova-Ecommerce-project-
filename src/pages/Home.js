@@ -150,16 +150,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 4. Season Sale Banner (Up to 60% Off) */}
-      <HomeSeasonSaleBanner />
-
-      {/* 5. Trust Assurances (4 Pillars) */}
-      <HomeWhyChoose />
-
-      {/* 6. Infinite Product Feed ("Just For You") */}
+      {/* 4. Infinite Product Feed ("Just For You") */}
       <HomeJustForYou onAddToCart={handleAddToCart} />
 
-      {/* 7. SEO Informational & FAQ Blocks */}
+      {/* 5. SEO Informational & FAQ Blocks */}
       <LazySection minHeight="280px">
         <Suspense fallback={<HomeSectionFallback label="Loading summary" />}>
           <HomeTopSummary />
@@ -171,6 +165,12 @@ const Home = () => {
           <HomeFaq />
         </Suspense>
       </LazySection>
+
+      {/* 6. Season Sale Banner (Up to 60% Off) */}
+      <HomeSeasonSaleBanner />
+
+      {/* 7. Trust Assurances (Free Shipping, Secure Payment, Easy Returns, 24/7 Support) - Above Footer */}
+      <HomeWhyChoose />
     </>
   );
 };
