@@ -1,0 +1,141 @@
+/* Season Sale Banner - Modern Lilac Aesthetic */
+.season-sale-section {
+  width: 100%;
+  padding: 1.5rem 0 2.5rem;
+}
+
+.season-sale-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 50%, #e9d5ff 100%);
+  border-radius: 24px;
+  padding: 3rem 4rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -8px rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(196, 181, 253, 0.4);
+}
+
+.season-sale-card__content {
+  flex: 1;
+  max-width: 480px;
+  z-index: 2;
+}
+
+.season-sale-card__eyebrow {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #7c3aed;
+  margin-bottom: 0.5rem;
+}
+
+.season-sale-card__title {
+  font-size: clamp(2.2rem, 3.5vw, 3rem);
+  font-weight: 800;
+  color: #1e1b4b;
+  margin: 0 0 0.5rem;
+  line-height: 1.15;
+}
+
+.season-sale-card__sub {
+  font-size: 1.05rem;
+  color: #4b5563;
+  margin: 0 0 1.75rem;
+}
+
+.season-sale-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #7c3aed;
+  color: #ffffff !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.8rem 1.8rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 0 8px 18px -4px rgba(124, 58, 237, 0.4);
+  transition: all 0.25s ease;
+}
+
+.season-sale-btn:hover {
+  background-color: #6d28d9;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px -4px rgba(124, 58, 237, 0.5);
+}
+
+.season-sale-card__media {
+  flex: 0 0 35%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.season-sale-bags-cluster {
+  position: relative;
+  width: 220px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.season-sale-bag {
+  position: absolute;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 28px -8px rgba(0, 0, 0, 0.15);
+}
+
+.season-sale-bag--purple {
+  width: 130px;
+  height: 160px;
+  background: linear-gradient(145deg, #7c3aed, #6d28d9);
+  color: white;
+  right: 20px;
+  bottom: 0;
+  z-index: 2;
+  transform: rotate(6deg);
+}
+
+.season-sale-bag--white {
+  width: 110px;
+  height: 135px;
+  background: white;
+  color: #7c3aed;
+  left: 10px;
+  bottom: 10px;
+  z-index: 1;
+  transform: rotate(-8deg);
+  border: 1px solid #e2e8f0;
+}
+
+.season-sale-tag {
+  position: absolute;
+  top: 40px;
+  right: -10px;
+  background-color: #ffffff;
+  color: #7c3aed;
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  transform: rotate(12deg);
+}
+
+@media (max-width: 768px) {
+  .season-sale-card {
+    flex-direction: column;
+    padding: 2.5rem 1.5rem;
+    text-align: left;
+  }
+  .season-sale-card__media {
+    margin-top: 2rem;
+  }
+}

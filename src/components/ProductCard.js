@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Skeleton from 'react-loading-skeleton';
-import { Heart } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
 import { productImageUrl } from '../lib/productImage';
 import { buildProductImageAlt } from '../utils/imageAlt';
@@ -83,6 +83,7 @@ const ProductCard = ({
 
   const handleAddToCart = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (onAddToCart) onAddToCart(product);
   };
 
@@ -96,24 +97,21 @@ const ProductCard = ({
         <div className="product-image product-image--skeleton">
           <Skeleton
             height="100%"
-            baseColor="#e8e2d8"
-            highlightColor="#FFF7F0"
+            baseColor="#f3f4f6"
+            highlightColor="#fafafa"
             className="product-card__skeleton-img"
           />
         </div>
         <div className="product-info product-info--skeleton">
-          <Skeleton width={90} height={11} baseColor="#e5e5e5" />
-          <Skeleton height={15} style={{ marginTop: 10 }} baseColor="#e5e5e5" />
-          <Skeleton height={15} width="78%" style={{ marginTop: 6 }} baseColor="#e5e5e5" />
-          <div className="product-card__skeleton-rating">
-            <Skeleton width={88} height={14} baseColor="#e5e5e5" />
+          <Skeleton width={90} height={12} baseColor="#e5e7eb" />
+          <Skeleton height={16} style={{ marginTop: 8 }} baseColor="#e5e7eb" />
+          <div className="product-card__skeleton-rating" style={{ marginTop: 6 }}>
+            <Skeleton width={88} height={14} baseColor="#e5e7eb" />
           </div>
-          <Skeleton height={22} width={110} style={{ marginTop: 10 }} baseColor="#e5e5e5" />
-          <Skeleton
-            height={44}
-            style={{ marginTop: 14, borderRadius: 8 }}
-            baseColor="#d4d4d4"
-          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+            <Skeleton height={22} width={80} baseColor="#e5e7eb" />
+            <Skeleton height={36} width={36} style={{ borderRadius: 8 }} baseColor="#e5e7eb" />
+          </div>
         </div>
       </article>
     );
@@ -142,7 +140,7 @@ const ProductCard = ({
     (product.stockQuantity == null || Number(product.stockQuantity) > 0);
 
   return (
-    <article className={`product-card${layout === 'list' ? ' product-card--list' : ''}`}>
+    <article className={`product-card product-card--modern${layout === 'list' ? ' product-card--list' : ''}`}>
       <div className="product-image">
         <Link
           to={productPath}
@@ -180,12 +178,10 @@ const ProductCard = ({
         ) : null}
       </div>
       <div className="product-info">
-        {categoryLabel ? (
-          <div className="product-category product-category--muted">{categoryLabel}</div>
-        ) : null}
         <Link to={productPath} className="product-name-link" {...prefetchHandlers}>
-          <h3 className="product-name product-name--lines-2">{displayName}</h3>
+          <h3 className="product-name product-name--lines-1">{displayName}</h3>
         </Link>
+
         <div className="product-rating product-rating--stars">
           <StarRating
             value={rating}
@@ -193,22 +189,27 @@ const ProductCard = ({
           />
           <span className="rating-count">({ratingCount})</span>
         </div>
-        <div className="product-price">
-          <span className="price-current">{formatPKR(price)}</span>
-          {compareAt != null && Number(compareAt) > price && (
-            <span className="price-original">{formatPKR(Number(compareAt))}</span>
+
+        <div className="product-card__footer-row">
+          <div className="product-price">
+            <span className="price-current">{formatPKR(price)}</span>
+            {compareAt != null && Number(compareAt) > price && (
+              <span className="price-original">{formatPKR(Number(compareAt))}</span>
+            )}
+          </div>
+          {showAddToCartButton && (
+            <button
+              type="button"
+              className="product-card__quick-cart-btn"
+              onClick={handleAddToCart}
+              disabled={!inStock}
+              title={inStock ? 'Add to Cart' : 'Out of stock'}
+              aria-label={inStock ? 'Add to Cart' : 'Out of stock'}
+            >
+              <ShoppingCart size={17} strokeWidth={2} />
+            </button>
           )}
         </div>
-        {showAddToCartButton ? (
-          <button
-            type="button"
-            className="product-card__add-cart"
-            onClick={handleAddToCart}
-            disabled={!inStock}
-          >
-            {inStock ? 'Add to Cart' : 'Out of stock'}
-          </button>
-        ) : null}
       </div>
     </article>
   );

@@ -38,7 +38,10 @@ api.interceptors.request.use(
     const skipAuth =
       /\/api\/stripe\/guest\//.test(url) ||
       /\/api\/orders\/guest\//.test(url) ||
-      /\/api\/public\/validate-coupon/.test(url);
+      /\/api\/public\/validate-coupon/.test(url) ||
+      /\/api\/categories$/.test(url) ||
+      /\/api\/brands/.test(url) ||
+      /\/api\/products\/flash-sale/.test(url);
 
     if (!skipAuth) {
       const token = localStorage.getItem(TOKEN_KEY);

@@ -115,6 +115,29 @@ export default function StaffManagement() {
   // block form
   const [blockChoice, setBlockChoice] = useState('24h');
 
+  // admin management
+  const [activeTab, setActiveTab] = useState('staff'); // 'staff' | 'admins' | 'pending'
+  const [admins, setAdmins] = useState([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [addAdminOpen, setAddAdminOpen] = useState(false);
+  const [addAdminName, setAddAdminName] = useState('');
+  const [addAdminEmail, setAddAdminEmail] = useState('');
+  const [addAdminPassword, setAddAdminPassword] = useState('');
+  const [adminSaving, setAdminSaving] = useState(false);
+
+  const loadAdmins = useCallback(async () => {
+    setAdminsLoading(true);
+    try {
+      const res = await adminAPI.staff.listAdmins();
+      const list = res.data?.data || res.data || [];
+      setAdmins(Array.isArray(list) ? list : []);
+    } catch (e) {
+      toast.error(apiMessage(e, 'Could not load administrator accounts'));
+    } finally {
+      setAdminsLoading(false);
+    }
+  }, []);
+
   const loadStaff = useCallback(async () => {
     setLoading(true);
     try {
@@ -145,7 +168,47 @@ export default function StaffManagement() {
   useEffect(() => {
     loadStaff();
     loadPending();
-  }, [loadStaff, loadPending]);
+    loadAdmins();
+  }, [loadStaff, loadPending, loadAdmins]);
+
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    if (!addAdminName.trim() || !addAdminEmail.trim() || !addAdminPassword) {
+      toast.error('Name, email, and password are required');
+      return;
+    }
+    setAdminSaving(true);
+    try {
+      await adminAPI.staff.createAdmin({
+        name: addAdminName.trim(),
+        email: addAdminEmail.trim(),
+        password: addAdminPassword
+      });
+      toast.success('Administrator account created successfully');
+      setAddAdminOpen(false);
+      setAddAdminName('');
+      setAddAdminEmail('');
+      setAddAdminPassword('');
+      loadAdmins();
+    } catch (err) {
+      toast.error(apiMessage(err, 'Failed to create admin'));
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
+  const handleDeleteAdmin = async (adm) => {
+    if (!window.confirm(`Are you sure you want to delete admin account "${adm.name}" (${adm.email})?`)) {
+      return;
+    }
+    try {
+      await adminAPI.staff.removeAdmin(adm._id);
+      toast.success('Admin account removed');
+      loadAdmins();
+    } catch (err) {
+      toast.error(apiMessage(err, 'Failed to delete admin'));
+    }
+  };
 
   const loginUrl = useMemo(() => `${window.location.origin}/login`, []);
 
@@ -295,17 +358,148 @@ export default function StaffManagement() {
 
   return (
     <div className="container" style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ margin: 0 }}>Staff Access Management</h1>
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>Team & Access Control</h1>
           <p className="text-muted" style={{ marginTop: 6 }}>
-            Create staff accounts with limited permissions.
+            Manage staff members, assign permissions, and create/manage administrator accounts.
           </p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={openAdd}>
-          <Plus size={16} aria-hidden /> Add Staff Member
+
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          {activeTab === 'staff' && (
+            <button type="button" className="btn btn-primary" onClick={openAdd}>
+              <Plus size={16} aria-hidden /> Add Staff Member
+            </button>
+          )}
+          {activeTab === 'admins' && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setAddAdminOpen(true)}
+              style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
+            >
+              <Plus size={16} aria-hidden /> Add New Admin
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('staff')}
+          style={{
+            padding: '0.5rem 1.25rem',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            background: activeTab === 'staff' ? '#1e1b4b' : 'transparent',
+            color: activeTab === 'staff' ? '#ffffff' : '#64748b'
+          }}
+        >
+          Staff Members ({staff.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('admins')}
+          style={{
+            padding: '0.5rem 1.25rem',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            background: activeTab === 'admins' ? '#7c3aed' : 'transparent',
+            color: activeTab === 'admins' ? '#ffffff' : '#64748b'
+          }}
+        >
+          Administrators ({admins.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('pending')}
+          style={{
+            padding: '0.5rem 1.25rem',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            background: activeTab === 'pending' ? '#e11d48' : 'transparent',
+            color: activeTab === 'pending' ? '#ffffff' : '#64748b'
+          }}
+        >
+          Product Approvals ({pending.length})
         </button>
       </div>
+
+      {/* ADMINS VIEW */}
+      {activeTab === 'admins' && (
+        <div className="admin-table-wrap" style={{ marginTop: 16 }}>
+          {adminsLoading ? (
+            <div style={{ padding: 18 }}>
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Admin Name & Email</th>
+                  <th>Role</th>
+                  <th>Account Status</th>
+                  <th>Created Date</th>
+                  <th style={{ width: 140 }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {admins.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="admin-table__empty">
+                      No admin accounts found.
+                    </td>
+                  </tr>
+                ) : (
+                  admins.map((adm) => (
+                    <tr key={adm._id}>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#1e1b4b' }}>{adm.name || 'Admin User'}</div>
+                        <div className="text-muted" style={{ fontSize: 13 }}>{adm.email}</div>
+                      </td>
+                      <td>
+                        <span style={{ background: '#ede9fe', color: '#7c3aed', padding: '3px 10px', borderRadius: 9999, fontWeight: 700, fontSize: '0.78rem' }}>
+                          Administrator
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.85rem' }}>Active</span>
+                      </td>
+                      <td>{formatDate(adm.createdAt)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                          onClick={() => handleDeleteAdmin(adm)}
+                          title="Remove Admin"
+                        >
+                          <Trash2 size={14} aria-hidden /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* STAFF VIEW */}
+      {activeTab === 'staff' && (
 
       <div className="admin-table-wrap" style={{ marginTop: 16 }}>
         {loading ? (
@@ -368,8 +562,10 @@ export default function StaffManagement() {
           </table>
         )}
       </div>
+      )}
 
       {/* Pending approvals */}
+      {activeTab === 'pending' && (
       <section style={{ marginTop: 28 }}>
         <h2 style={{ margin: '0 0 8px' }}>Pending Product Approvals</h2>
         <p className="text-muted" style={{ marginTop: 0 }}>
@@ -441,6 +637,79 @@ export default function StaffManagement() {
           )}
         </div>
       </section>
+      )}
+
+      {/* Add Admin Modal */}
+      {addAdminOpen && (
+        <Modal
+          isOpen={addAdminOpen}
+          onClose={() => setAddAdminOpen(false)}
+          title="Add New Administrator"
+        >
+          <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b' }}>
+              Create an administrator account with full privileges across orders, products, banners, and settings.
+            </p>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                Admin Full Name *
+              </label>
+              <input
+                type="text"
+                required
+                className={formFieldClass}
+                placeholder="e.g. Asad Khan"
+                value={addAdminName}
+                onChange={(e) => setAddAdminName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                Admin Email Address *
+              </label>
+              <input
+                type="email"
+                required
+                className={formFieldClass}
+                placeholder="admin@bazaar-pk.com"
+                value={addAdminEmail}
+                onChange={(e) => setAddAdminEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                Password (min 6 characters) *
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                className={formFieldClass}
+                placeholder="••••••••"
+                value={addAdminPassword}
+                onChange={(e) => setAddAdminPassword(e.target.value)}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setAddAdminOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={adminSaving}
+                className="btn btn-primary"
+                style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
+              >
+                {adminSaving ? 'Creating...' : 'Create Admin Account'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Add staff modal */}
       <Modal

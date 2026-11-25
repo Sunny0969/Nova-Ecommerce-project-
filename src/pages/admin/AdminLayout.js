@@ -18,7 +18,8 @@ import {
   BookOpen,
   Bell,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -27,6 +28,7 @@ import { adminAPI } from '../../api/adminApi';
 const NAV_LINKS = [
   { to: '/admin/dashboard', end: true, label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/banners', label: 'Banners & Offers', icon: Sparkles },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/admin/categories', label: 'Categories', icon: LayoutGrid },
   { to: '/admin/customers', label: 'Customers', icon: Users },

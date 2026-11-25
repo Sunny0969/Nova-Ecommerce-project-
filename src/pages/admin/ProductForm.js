@@ -611,12 +611,22 @@ export default function ProductForm() {
       ? Math.round(((Number(priceW) - Number(costW)) / Number(priceW)) * 10000) / 100
       : null;
 
-  // Categories — admin list (includes new/empty categories like Towels)
+  // Categories — admin / staff scoped list
   useEffect(() => {
     (async () => {
       try {
-        const list = await fetchAdminCategories(adminAPI);
-        setCategories(list);
+        let list = [];
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/staff')) {
+          try {
+            const staffRes = await adminAPI.categories.listAll();
+            list = staffRes?.data?.data || [];
+          } catch {
+            list = await fetchAdminCategories(adminAPI);
+          }
+        } else {
+          list = await fetchAdminCategories(adminAPI);
+        }
+        setCategories(Array.isArray(list) ? list : []);
       } catch {
         toast.error('Failed to load categories');
       }

@@ -220,7 +220,6 @@ function wrapStorefrontDocument(opts) {
   return `<div class="App">
   ${renderPromoTicker(promoItems)}
   ${renderNavbar()}
-  ${renderCategoryStrip(categories, activeCategorySlug)}
   <main id="main-content" class="main-content" tabindex="-1">
     ${homeLead}
     <div class="container">${bodyHtml}</div>

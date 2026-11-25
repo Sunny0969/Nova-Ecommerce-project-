@@ -10,7 +10,6 @@ import RouteDocumentHead from './components/RouteDocumentHead';
 import MobileBottomNav from './components/MobileBottomNav';
 import Navbar from './components/Navbar';
 import PromoTicker from './components/PromoTicker';
-import HomeCategoryStrip from './components/HomeCategoryStrip';
 import RouteTree from './routes/RouteTree';
 import { isAdminPath, isStaffPath } from './utils/appShell';
 
@@ -96,7 +95,6 @@ function AppShell() {
           <Navbar />
         </>
       )}
-      {isStorefront && <HomeCategoryStrip />}
       {isStorefront && (
         <Suspense fallback={null}>
           <WhatsAppFloatingButton />

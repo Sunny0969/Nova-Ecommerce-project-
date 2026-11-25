@@ -10,7 +10,8 @@ import {
   Package,
   LogOut,
   Star,
-  Search
+  Search,
+  ShoppingBag
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -137,16 +138,7 @@ export default function Navbar() {
 
   const handleSearchPick = (picked) => {
     if (picked?.type === 'product') {
-      navigate(
-        buildProductPath(
-          picked.slug,
-          getProductCategorySlug(picked.product || { slug: picked.slug })
-        )
-      );
-    } else if (picked?.type === 'basic') {
-      navigate(buildProductPath(picked.slug, picked.categorySlug || ''));
-    } else if (picked?.type === 'blog' && picked.slug) {
-      navigate(`/blog/${encodeURIComponent(picked.slug)}`);
+      navigate(buildProductPath(picked.slug || picked.id, getProductCategorySlug(picked)));
     } else if (picked?.type === 'query') {
       navigate(`/shop?search=${encodeURIComponent(picked.query)}`);
     }
@@ -168,25 +160,31 @@ export default function Navbar() {
     location.pathname.startsWith('/shop/') ||
     location.pathname.startsWith('/brand/') ||
     isRootCatalogPath(location.pathname);
-  const isBlogActive = location.pathname.startsWith('/blog');
   const staffSections = isStaff ? getGrantedStaffSections(permissionMap) : [];
 
-  const navLinkClass = (active) => `nav-main__link ${active ? 'active' : ''}`;
+  const navLinkClass = (active) => `nav-fashion-link ${active ? 'nav-fashion-link--active' : ''}`;
 
   const renderNavLinks = (onNavigate, tabIndex) => (
     <>
-      {/* <Link to="/home" className={navLinkClass(isHomeActive)} onClick={onNavigate} tabIndex={tabIndex}>
-        Home
+      <Link to="/" className={navLinkClass(isHomeActive)} onClick={onNavigate} tabIndex={tabIndex}>
+        <span>Home</span>
+        {isHomeActive && <span className="nav-fashion-link__bar" />}
       </Link>
-      <Link to="/shop" className={navLinkClass(isShopActive)} onClick={onNavigate} tabIndex={tabIndex}>
-        Shop
+      <Link to="/shop" className={navLinkClass(isShopActive && !location.search)} onClick={onNavigate} tabIndex={tabIndex}>
+        <span>Shop</span>
       </Link>
-      <Link to="/blog" className={navLinkClass(isBlogActive)} onClick={onNavigate} tabIndex={tabIndex}>
-        Blog
-      </Link> */}
-        {/* <Link to="/cart" className={navLinkClass(isActive('/cart'))} onClick={onNavigate} tabIndex={tabIndex}>
-          Cart
-        </Link> */}
+      <Link to="/shop?category=men" className={navLinkClass(location.search.includes('men'))} onClick={onNavigate} tabIndex={tabIndex}>
+        <span>Men</span>
+      </Link>
+      <Link to="/shop?category=women" className={navLinkClass(location.search.includes('women'))} onClick={onNavigate} tabIndex={tabIndex}>
+        <span>Women</span>
+      </Link>
+      <Link to="/shop?category=kids" className={navLinkClass(location.search.includes('kids'))} onClick={onNavigate} tabIndex={tabIndex}>
+        <span>Kids</span>
+      </Link>
+      <Link to="/shop?category=accessories" className={navLinkClass(location.search.includes('accessories'))} onClick={onNavigate} tabIndex={tabIndex}>
+        <span>Accessories</span>
+      </Link>
     </>
   );
 
@@ -195,7 +193,7 @@ export default function Navbar() {
       {isAdmin ? (
         <Link
           to="/admin/dashboard"
-          className={navLinkClass(location.pathname.startsWith('/admin'))}
+          className="nav-fashion-link nav-fashion-link--badge"
           onClick={onNavigate}
           tabIndex={tabIndex}
         >
@@ -206,7 +204,7 @@ export default function Navbar() {
         <Link
           key={section.permission}
           to={section.path}
-          className={navLinkClass(location.pathname.startsWith(section.path))}
+          className="nav-fashion-link nav-fashion-link--badge"
           onClick={onNavigate}
           tabIndex={tabIndex}
         >
@@ -220,29 +218,29 @@ export default function Navbar() {
     <>
       <Link
         to="/wishlist"
-        className={`nav-icon-btn ${location.pathname.includes('wishlist') ? 'nav-icon-btn--active' : ''}`}
+        className={`nav-fashion-icon-btn ${location.pathname.includes('wishlist') ? 'active' : ''}`}
         aria-label={`Wishlist${wishCount ? `, ${wishCount} items` : ''}`}
         onClick={onNavigate}
         tabIndex={tabIndex}
       >
-        <Heart size={22} strokeWidth={1.75} />
+        <Heart size={21} strokeWidth={1.8} />
         {wishCount > 0 && (
-          <span className="nav-badge nav-badge--wish" aria-hidden="true">
+          <span className="nav-fashion-badge" aria-hidden="true">
             {wishCount > 99 ? '99+' : wishCount}
           </span>
         )}
       </Link>
       <Link
         to="/cart"
-        className={`nav-icon-btn ${isActive('/cart') ? 'nav-icon-btn--active' : ''}`}
+        className={`nav-fashion-icon-btn ${isActive('/cart') ? 'active' : ''}`}
         aria-label={`Shopping cart, ${itemCount} items`}
         onClick={onNavigate}
         tabIndex={tabIndex}
       >
-        <ShoppingCart size={22} strokeWidth={1.75} />
+        <ShoppingCart size={21} strokeWidth={1.8} />
         {itemCount > 0 && (
           <span
-            className={`nav-badge nav-badge--cart ${cartBump ? 'nav-badge--bump' : ''}`}
+            className={`nav-fashion-badge ${cartBump ? 'nav-fashion-badge--bump' : ''}`}
             aria-hidden="true"
           >
             {itemCount > 99 ? '99+' : itemCount}
@@ -269,7 +267,7 @@ export default function Navbar() {
             <span className="nav-avatar" aria-hidden="true">
               {getInitials(user?.name)}
             </span>
-            <ChevronDown size={16} className={`nav-avatar-chevron ${accountOpen ? 'open' : ''}`} />
+            <ChevronDown size={14} className={`nav-avatar-chevron ${accountOpen ? 'open' : ''}`} />
           </button>
           {accountOpen && (
             <ul id={menuId} className="nav-dropdown" role="menu">
@@ -336,12 +334,12 @@ export default function Navbar() {
     return (
       <Link
         to="/login"
-        className={`nav-icon-btn ${isActive('/login') ? 'nav-icon-btn--active' : ''}`}
+        className={`nav-fashion-icon-btn ${isActive('/login') ? 'active' : ''}`}
         aria-label="Sign in"
         onClick={onNavigate}
         tabIndex={tabIndex}
       >
-        <User size={22} strokeWidth={1.75} />
+        <User size={21} strokeWidth={1.8} />
       </Link>
     );
   };
@@ -349,35 +347,38 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}
+        className={`navbar navbar--modern ${scrolled ? 'navbar--scrolled' : ''}`}
         aria-label="Main navigation"
       >
-        <div className="nav-inner">
-          <div className="nav-brand">
-            <Link to="/" className="nav-logo" aria-label="Bazaar Home" onClick={() => setDrawerOpen(false)}>
-              {businessDisplayName}
-              <span className="nav-logo__dot">.</span>
+        <div className="nav-inner nav-inner--fashion">
+          {/* Brand Logo with Fashion Hanger/Bag Icon */}
+          <div className="nav-brand-fashion">
+            <Link to="/" className="nav-logo-fashion" aria-label="Home" onClick={() => setDrawerOpen(false)}>
+              <span className="nav-logo-fashion__icon">
+                <ShoppingBag size={22} strokeWidth={2.2} />
+              </span>
+              <span className="nav-logo-fashion__text">{businessDisplayName || 'Fashion'}</span>
             </Link>
-            <NavDeliveryLocation className="nav-location--desktop" />
-            <div className="nav-main nav-main--desktop">
-              {renderNavLinks(() => {})}
-              {renderRoleLinks(() => {})}
-            </div>
           </div>
 
-          <div className="nav-search nav-search--inline" ref={searchWrapRef}>
+          {/* Desktop Category Navigation with Indicator Bar */}
+          <div className="nav-links-fashion">
+            {renderNavLinks(() => {})}
+            {renderRoleLinks(() => {})}
+          </div>
+
+          {/* Pill Search Bar */}
+          <div className="nav-search-fashion" ref={searchWrapRef}>
             {searchBarActive ? (
               <Suspense
                 fallback={
-                  <div className="nav-search__field" aria-busy="true">
-                    <span className="nav-search__submit" aria-hidden="true">
-                      <Search size={18} strokeWidth={1.75} className="nav-search__icon" />
-                    </span>
+                  <div className="nav-search-fashion__field" aria-busy="true">
+                    <Search size={16} strokeWidth={2} className="nav-search-fashion__icon" />
                     <input
-                      className="nav-search__input"
+                      className="nav-search-fashion__input"
                       type="search"
                       readOnly
-                      placeholder="Loading search…"
+                      placeholder="Search for products..."
                       aria-label="Search products"
                     />
                   </div>
@@ -394,14 +395,12 @@ export default function Navbar() {
                 />
               </Suspense>
             ) : (
-              <div className="nav-search__field">
-                <span className="nav-search__submit" aria-hidden="true">
-                  <Search size={18} strokeWidth={1.75} className="nav-search__icon" />
-                </span>
+              <div className="nav-search-fashion__field">
+                <Search size={16} strokeWidth={2} className="nav-search-fashion__icon" />
                 <input
-                  className="nav-search__input"
+                  className="nav-search-fashion__input"
                   type="search"
-                  placeholder="Search products, blogs & more…"
+                  placeholder="Search for products..."
                   aria-label="Search products"
                   onFocus={activateSearchBar}
                   onClick={activateSearchBar}
@@ -410,9 +409,10 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="nav-tools nav-tools--desktop">
-            <div className="nav-tools__icons">{renderIconButtons(() => {})}</div>
+          {/* Right Action Tools: User & Cart */}
+          <div className="nav-actions-fashion">
             {renderProfileControl(() => {}, accountDesktopRef, 'nav-account-menu-desktop')}
+            {renderIconButtons(() => {})}
 
             <button
               type="button"
@@ -427,23 +427,23 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {drawerOpen ? (
+      {/* Mobile Drawer */}
+      {drawerOpen && (
         <>
           <button
             type="button"
-            className="nav-drawer-backdrop nav-drawer-backdrop--desktop is-open"
+            className="nav-drawer-backdrop is-open"
             aria-label="Close menu"
             onClick={() => setDrawerOpen(false)}
           />
           <nav
-            className="nav-drawer nav-drawer--desktop is-open"
+            className="nav-drawer is-open"
             aria-label="Mobile navigation"
-            aria-modal="true"
           >
             <div className="nav-drawer__head">
-              <Link to="/" className="nav-logo nav-drawer__brand" onClick={() => setDrawerOpen(false)}>
-                {businessDisplayName}
-                <span className="nav-logo__dot">.</span>
+              <Link to="/" className="nav-logo-fashion" onClick={() => setDrawerOpen(false)}>
+                <ShoppingBag size={22} strokeWidth={2.2} />
+                <span className="nav-logo-fashion__text">{businessDisplayName || 'Fashion'}</span>
               </Link>
               <button
                 type="button"
@@ -469,16 +469,16 @@ export default function Navbar() {
                 'nav-account-menu-mobile'
               )}
             </div>
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <div className="nav-drawer__auth">
                 <button type="button" className="btn btn-outline btn-full" onClick={handleLogout}>
                   Logout
                 </button>
               </div>
-            ) : null}
+            )}
           </nav>
         </>
-      ) : null}
+      )}
     </>
   );
 }

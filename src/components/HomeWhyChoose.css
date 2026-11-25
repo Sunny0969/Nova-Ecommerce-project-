@@ -1,79 +1,81 @@
-.section.home-why-choose {
-  padding-top: 2.5rem;
-  padding-bottom: 2.75rem;
-  background-color: rgba(249, 115, 22, 0.1);
+/* Trust Assurances Bar - Clean 4-Pillars Aesthetic */
+.fashion-trust-section {
+  width: 100%;
+  padding: 1.5rem 0 3rem;
 }
 
-.home-why-choose__title {
-  margin: 0 0 1.5rem;
-  max-width: 22ch;
-  font-family: var(--font-display);
-  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
-  font-weight: 800;
-  line-height: 1.25;
-  color: var(--navy);
-  text-align: left;
-}
-
-.home-why-choose__grid {
+.fashion-trust-bar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 0;
+  grid-template-columns: repeat(4, 1fr);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.75rem 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
 }
 
-.home-why-choose__card {
+.fashion-trust-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding: 1.5rem 1.15rem 1.35rem;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #eef0f3;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  padding: 0.5rem 1rem;
 }
 
-.home-why-choose__icon-wrap {
-  display: inline-flex;
+.fashion-trust-item--bordered {
+  border-left: 1px solid #f1f5f9;
+}
+
+.fashion-trust-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: #f5f3ff;
+  color: #7c3aed;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  margin: 0 auto 1rem;
-  border-radius: 50%;
-  background: rgba(249, 115, 22, 0.15);
-  color: var(--brand-orange);
-  font-size: inherit;
+  margin-bottom: 0.85rem;
+  transition: all 0.25s ease;
 }
 
-.home-why-choose__card-title {
-  margin: 0 0 0.65rem;
-  font-family: var(--font-body);
-  font-size: var(--text-size-base, 1rem);
+.fashion-trust-item:hover .fashion-trust-icon-box {
+  background-color: #7c3aed;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.fashion-trust-title {
+  font-size: 1rem;
   font-weight: 700;
-  line-height: 1.3;
-  color: var(--navy);
+  color: #1e1b4b;
+  margin: 0 0 0.35rem;
 }
 
-.home-why-choose__card-text {
+.fashion-trust-sub {
+  font-size: 0.82rem;
+  color: #64748b;
   margin: 0;
-  font-size: var(--text-size-secondary, 0.875rem);
-  line-height: 1.55;
-  color: var(--gray);
-  text-align: left;
 }
 
-@media (max-width: 1023px) {
-  .home-why-choose__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.85rem;
+@media (max-width: 1024px) {
+  .fashion-trust-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem 0;
+  }
+  .fashion-trust-item:nth-child(3) {
+    border-left: none;
   }
 }
 
-@media (max-width: 639px) {
-  .home-why-choose__grid {
+@media (max-width: 640px) {
+  .fashion-trust-bar {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
-
-  .home-why-choose__title {
-    max-width: none;
+  .fashion-trust-item--bordered {
+    border-left: none;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1.25rem;
   }
 }

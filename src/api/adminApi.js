@@ -52,7 +52,23 @@ export const adminAPI = {
     block: (id, durationHours) =>
       api.post(`/api/admin/staff/${encodeURIComponent(id)}/block`, { duration: durationHours }),
     unblock: (id) => api.post(`/api/admin/staff/${encodeURIComponent(id)}/unblock`, {}),
-    remove: (id) => api.delete(`/api/admin/staff/${encodeURIComponent(id)}`)
+    remove: (id) => api.delete(`/api/admin/staff/${encodeURIComponent(id)}`),
+    listAdmins: () => api.get('/api/admin/staff/admins/list'),
+    createAdmin: (body) => api.post('/api/admin/staff/admins/create', body),
+    removeAdmin: (id) => api.delete(`/api/admin/staff/admins/${encodeURIComponent(id)}`)
+  },
+  banners: {
+    list: () => api.get('/api/admin/banners'),
+    create: (data) => {
+      const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
+      return api.post('/api/admin/banners', data, { headers });
+    },
+    update: (id, data) => {
+      const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
+      return api.put(`/api/admin/banners/${encodeURIComponent(id)}`, data, { headers });
+    },
+    toggle: (id) => api.patch(`/api/admin/banners/${encodeURIComponent(id)}/toggle`),
+    remove: (id) => api.delete(`/api/admin/banners/${encodeURIComponent(id)}`)
   },
   auditLogs: {
     list: (params) => api.get('/api/admin/audit-logs', { params })

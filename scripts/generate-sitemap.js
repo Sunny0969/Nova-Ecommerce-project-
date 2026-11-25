@@ -12,6 +12,20 @@ const {
   fetchBlogPosts,
   getActiveApiBase
 } = require('./lib/prerenderApi');
+let sitemapBuilder;
+try {
+  sitemapBuilder = require('../../backend/lib/sitemapBuilder');
+} catch (e1) {
+  try {
+    sitemapBuilder = require('../../../Nova-Ecommerce-project-Backend-main/lib/sitemapBuilder');
+  } catch (e2) {
+    try {
+      sitemapBuilder = require('../../Nova-Ecommerce-project-Backend-main/lib/sitemapBuilder');
+    } catch (e3) {
+      sitemapBuilder = require(path.resolve(__dirname, '../../Nova-Ecommerce-project-Backend-main/lib/sitemapBuilder'));
+    }
+  }
+}
 const {
   buildSitemapEntriesFromCatalog,
   renderSitemapXml,
@@ -19,7 +33,7 @@ const {
   buildSitemapChunks,
   buildSitemapIndexEntries,
   MAX_URLS_PER_SITEMAP
-} = require('../../backend/lib/sitemapBuilder');
+} = sitemapBuilder;
 
 async function writeSitemapBundle(dir, siteUrl, entries) {
   fs.mkdirSync(dir, { recursive: true });

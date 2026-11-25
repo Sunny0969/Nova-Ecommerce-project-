@@ -24,6 +24,9 @@ const AdminOrderDetail = lazy(() =>
 const AdminCategories = lazy(() =>
   import(/* webpackChunkName: "admin-categories-page" */ '../pages/admin/AdminCategories')
 );
+const AdminBanners = lazy(() =>
+  import(/* webpackChunkName: "admin-banners-page" */ '../pages/admin/AdminBanners')
+);
 const AdminShopSubcategories = lazy(() =>
   import(/* webpackChunkName: "admin-shop-subcategories" */ '../pages/admin/AdminShopSubcategories')
 );
@@ -73,6 +76,7 @@ export default function AdminRoutes() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="products/new" element={<ProductForm />} />
           <Route path="products/:id/edit" element={<ProductForm />} />
+          <Route path="banners" element={<AdminBanners />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:id" element={<AdminOrderDetail />} />
           <Route path="categories" element={<AdminCategories />} />
